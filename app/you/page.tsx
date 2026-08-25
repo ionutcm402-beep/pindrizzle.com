@@ -26,6 +26,7 @@ export default function YouPage() {
   const [stats, setStats] = useState<StatsRow>({ helpful_pings: 0, confirmations: 0 });
   const [radius, setRadius] = useState<Radius>(1);
   const [locationState, setLocationState] = useState<"idle" | "requesting" | "granted" | "denied">("idle");
+  const [moderator, setModerator] = useState(false);
 
   const loadAccount = useCallback(async () => {
     const supabase = createClient();
@@ -34,14 +35,20 @@ export default function YouPage() {
     setEmail(session?.user.email || null);
     if (!session?.user) {
       setStats({ helpful_pings: 0, confirmations: 0 });
+      setModerator(false);
       return;
     }
     try {
-      const { data: statData, error } = await supabase.rpc("my_community_stats");
-      if (error) throw error;
-      setStats(firstRow<StatsRow>(statData) || { helpful_pings: 0, confirmations: 0 });
+      const [statResult, moderatorResult] = await Promise.all([
+        supabase.rpc("my_community_stats"),
+        supabase.rpc("is_moderator"),
+      ]);
+      if (statResult.error) throw statResult.error;
+      setStats(firstRow<StatsRow>(statResult.data) || { helpful_pings: 0, confirmations: 0 });
+      setModerator(!moderatorResult.error && Boolean(moderatorResult.data));
     } catch {
       setStats({ helpful_pings: 0, confirmations: 0 });
+      setModerator(false);
     }
   }, []);
 
@@ -82,6 +89,7 @@ export default function YouPage() {
     await createClient().auth.signOut();
     setEmail(null);
     setStats({ helpful_pings: 0, confirmations: 0 });
+    setModerator(false);
   };
 
   return (
@@ -127,6 +135,7 @@ export default function YouPage() {
             </div>
             <button type="button" onClick={() => window.location.assign("/notifications")}><span>🔔</span><div><strong>Notifications</strong><small>Replies, confirmations and Helpful</small></div><b>›</b></button>
             <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("ping:open-privacy"))}><span>🛡️</span><div><strong>Privacy & safety</strong><small>Blocked users, reports, location privacy</small></div><b>›</b></button>
+            {moderator && <button type="button" onClick={() => window.location.assign("/moderation")}><span>🧭</span><div><strong>Moderation</strong><small>Review reported Pings</small></div><b>›</b></button>}
             {email && <button type="button" onClick={signOut}><span>↪</span><div><strong>Sign out</strong><small>Leave this account on this device</small></div><b>›</b></button>}
           </section>
         </main>
