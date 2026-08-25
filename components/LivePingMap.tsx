@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import maplibregl from "maplibre-gl";
 
 export type MapPing = {
   id: string;
@@ -30,9 +29,10 @@ function zoomForRadius(radiusMiles: number) {
 
 export default function LivePingMap({ center, radiusMiles, pings, selectedId, onSelect }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<maplibregl.Map | null>(null);
-  const markersRef = useRef<maplibregl.Marker[]>([]);
-  const userMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const maplibreRef = useRef<any>(null);
+  const mapRef = useRef<any>(null);
+  const markersRef = useRef<any[]>([]);
+  const userMarkerRef = useRef<any>(null);
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
 
@@ -40,64 +40,73 @@ export default function LivePingMap({ center, radiusMiles, pings, selectedId, on
     const container = containerRef.current;
     if (!container || mapRef.current) return;
 
+    let disposed = false;
+    let resizeObserver: ResizeObserver | null = null;
+    let delayedResize = 0;
+
     setMapError(null);
     setMapReady(false);
 
-    let map: maplibregl.Map;
-    try {
-      map = new maplibregl.Map({
-        container,
-        style: STYLE_URL,
-        center: [center.lng, center.lat],
-        zoom: zoomForRadius(radiusMiles),
-        attributionControl: true,
-      });
-    } catch (error) {
-      setMapError(error instanceof Error ? error.message : "The live map could not start.");
-      return;
-    }
+    const start = async () => {
+      try {
+        const module = await import("maplibre-gl");
+        if (disposed) return;
+        const maplibre = (module as any).default ?? module;
+        maplibreRef.current = maplibre;
 
-    mapRef.current = map;
+        const map = new maplibre.Map({
+          container,
+          style: STYLE_URL,
+          center: [center.lng, center.lat],
+          zoom: zoomForRadius(radiusMiles),
+          attributionControl: true,
+        });
+        mapRef.current = map;
 
-    const handleLoad = () => {
-      map.resize();
-      requestAnimationFrame(() => map.resize());
-      setMapReady(true);
+        map.on("error", (event: any) => {
+          const message = event?.error?.message || "The map tiles could not be loaded.";
+          setMapError(message);
+        });
+
+        map.on("load", () => {
+          if (disposed) return;
+          map.resize();
+          requestAnimationFrame(() => map.resize());
+          setMapReady(true);
+        });
+
+        map.addControl(new maplibre.NavigationControl({ showCompass: false }), "top-right");
+
+        const userEl = document.createElement("div");
+        userEl.className = "ping-user-marker";
+        userEl.setAttribute("aria-label", "Your location");
+        userMarkerRef.current = new maplibre.Marker({ element: userEl })
+          .setLngLat([center.lng, center.lat])
+          .addTo(map);
+
+        resizeObserver = new ResizeObserver(() => map.resize());
+        resizeObserver.observe(container);
+        delayedResize = window.setTimeout(() => map.resize(), 300);
+      } catch (error) {
+        if (!disposed) {
+          setMapError(error instanceof Error ? error.message : "The live map could not start.");
+        }
+      }
     };
 
-    const handleError = (event: maplibregl.ErrorEvent) => {
-      const message = event?.error?.message || "The map tiles could not be loaded.";
-      setMapError(message);
-    };
-
-    map.on("load", handleLoad);
-    map.on("error", handleError);
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
-
-    const userEl = document.createElement("div");
-    userEl.className = "ping-user-marker";
-    userEl.setAttribute("aria-label", "Your location");
-    userMarkerRef.current = new maplibregl.Marker({ element: userEl })
-      .setLngLat([center.lng, center.lat])
-      .addTo(map);
-
-    const resizeObserver = new ResizeObserver(() => map.resize());
-    resizeObserver.observe(container);
-
-    const delayedResize = window.setTimeout(() => map.resize(), 250);
+    void start();
 
     return () => {
-      window.clearTimeout(delayedResize);
-      resizeObserver.disconnect();
+      disposed = true;
+      if (delayedResize) window.clearTimeout(delayedResize);
+      resizeObserver?.disconnect();
       markersRef.current.forEach((marker) => marker.remove());
       markersRef.current = [];
       userMarkerRef.current?.remove();
       userMarkerRef.current = null;
-      map.off("load", handleLoad);
-      map.off("error", handleError);
-      map.remove();
+      mapRef.current?.remove();
       mapRef.current = null;
-      setMapReady(false);
+      maplibreRef.current = null;
     };
   }, []);
 
@@ -114,7 +123,8 @@ export default function LivePingMap({ center, radiusMiles, pings, selectedId, on
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !mapReady) return;
+    const maplibre = maplibreRef.current;
+    if (!map || !maplibre || !mapReady) return;
 
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = pings.map((ping) => {
@@ -125,7 +135,7 @@ export default function LivePingMap({ center, radiusMiles, pings, selectedId, on
       button.setAttribute("aria-label", `${ping.category}: ${ping.title}`);
       button.addEventListener("click", () => onSelect(ping.id));
 
-      return new maplibregl.Marker({ element: button, anchor: "bottom" })
+      return new maplibre.Marker({ element: button, anchor: "bottom" })
         .setLngLat([ping.lng, ping.lat])
         .addTo(map);
     });
