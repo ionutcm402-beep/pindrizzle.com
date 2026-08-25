@@ -40,7 +40,9 @@ export default function Phase4MapRoute() {
   const [radius, setRadius] = useState<Radius>(1);
   const [pings, setPings] = useState<MapPing[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [status, setStatus] = useState("Open Map to see what is nearby.");
+  const [status, setStatus] = useState("Enable location to see the real nearby map.");
+  const [locationBusy, setLocationBusy] = useState(false);
+  const [locationBlocked, setLocationBlocked] = useState(false);
 
   useEffect(() => {
     const findHost = () => setHost(document.querySelector<HTMLElement>(".app-shell"));
@@ -68,24 +70,48 @@ export default function Phase4MapRoute() {
     return () => document.removeEventListener("click", handleNav, true);
   }, []);
 
-  useEffect(() => {
-    if (!open) return;
-    setRadius(readRadius());
-
+  const requestLocation = () => {
     if (!navigator.geolocation) {
       setStatus("Location is unavailable on this device.");
+      setLocationBlocked(true);
       return;
     }
 
+    setLocationBusy(true);
+    setLocationBlocked(false);
     setStatus("Finding your location…");
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setCenter({ lat: position.coords.latitude, lng: position.coords.longitude });
         setStatus("Loading live Pings near you…");
+        setLocationBusy(false);
       },
-      () => setStatus("Enable location to see the real nearby map."),
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 },
+      (error) => {
+        setLocationBusy(false);
+        if (error.code === 1) {
+          setLocationBlocked(true);
+          setStatus("Location is blocked for this site.");
+        } else if (error.code === 3) {
+          setStatus("Location request timed out. Please try again.");
+        } else {
+          setStatus("We could not get your location. Please try again.");
+        }
+      },
+      { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 },
     );
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    setRadius(readRadius());
+    setPings([]);
+    setSelectedId(null);
+
+    // Reuse an existing position if this preview has already received permission.
+    // Otherwise wait for the user's explicit Enable location action.
+    if (center) return;
+    setStatus("Enable location to see the real nearby map.");
   }, [open]);
 
   useEffect(() => {
@@ -140,7 +166,14 @@ export default function Phase4MapRoute() {
         <div className="phase4-route-loading">
           <span>📍</span>
           <strong>{status}</strong>
-          <small>Map is public. Sign-in is only needed to post or confirm.</small>
+          <small>
+            {locationBlocked
+              ? "Allow location for this Vercel site in your browser settings, then press Try again."
+              : "Map is public. Your location is only used to find nearby Pings; sign-in is not required."}
+          </small>
+          <button className="phase4-enable-location" type="button" onClick={requestLocation} disabled={locationBusy}>
+            {locationBusy ? "Finding location…" : locationBlocked ? "Try again" : "Enable location"}
+          </button>
         </div>
       )}
 
@@ -179,14 +212,29 @@ export default function Phase4MapRoute() {
           z-index:1;
           display:grid;
           place-content:center;
-          gap:10px;
+          justify-items:center;
+          gap:12px;
           padding:28px;
           text-align:center;
           color:#183924;
           background:#e9efe8;
         }
         .phase4-route-loading span { font-size:38px; }
-        .phase4-route-loading small { color:#647168; max-width:280px; line-height:1.45; }
+        .phase4-route-loading small { color:#647168; max-width:300px; line-height:1.45; }
+        .phase4-enable-location {
+          margin-top:8px;
+          min-width:180px;
+          padding:13px 20px;
+          border:0;
+          border-radius:16px;
+          background:#55d84d;
+          color:#102817;
+          font:inherit;
+          font-weight:900;
+          cursor:pointer;
+          box-shadow:0 10px 28px rgba(50,155,58,.22);
+        }
+        .phase4-enable-location:disabled { opacity:.62; cursor:wait; }
         .phase4-route-header {
           position:absolute;
           z-index:4;
