@@ -8,7 +8,7 @@ type Category = "Alert" | "Traffic" | "Lost & Found" | "Free" | "Help" | "Local"
 type Radius = 0.5 | 1 | 3 | 5;
 type LocationState = "idle" | "requesting" | "granted" | "denied" | "unavailable";
 type Coordinates = { lat: number; lng: number };
-type DataMode = "demo" | "loading" | "live" | "offline";
+type DataMode = "demo" | "loading" | "live" | "quiet" | "offline";
 
 type PingItem = {
   id: string;
@@ -139,7 +139,15 @@ function RadiusSelect({ radius, onRadius }: { radius: Radius; onRadius: (r: Radi
 
 function LocationBanner({ state, radius, dataMode, onRequest, onRadius }: { state: LocationState; radius: Radius; dataMode: DataMode; onRequest: () => void; onRadius: (r: Radius) => void }) {
   if (state === "granted") {
-    const detail = dataMode === "loading" ? "Checking your area…" : dataMode === "live" ? "Connected to live community data." : dataMode === "offline" ? "Live data unavailable — showing safe preview data." : "No live Pings yet — showing useful preview data.";
+    const detail = dataMode === "loading"
+      ? "Checking your area…"
+      : dataMode === "live"
+        ? "Connected to live community data."
+        : dataMode === "quiet"
+          ? "No active Pings inside your radius right now."
+          : dataMode === "offline"
+            ? "Live data is temporarily unavailable."
+            : "Location is ready.";
     return (
       <div className="location-status good">
         <span>●</span>
@@ -199,7 +207,7 @@ function AlertsView({ myPingCount }: { myPingCount: number }) {
 }
 
 function YouView({ radius, locationState, dataMode, userEmail, onRadius, onRequestLocation, onSignIn, onSignOut }: { radius: Radius; locationState: LocationState; dataMode: DataMode; userEmail: string | null; onRadius: (r: Radius) => void; onRequestLocation: () => void; onSignIn: () => void; onSignOut: () => void }) {
-  return <div className="simple-screen"><header className="simple-header"><div><div className="brand small">ping<span>.</span></div><h1>You</h1></div></header><div className="profile-card"><div className="avatar">{userEmail ? userEmail.slice(0, 2).toUpperCase() : "YOU"}</div><div><h2>{userEmail ? "Your Ping account" : "Join your local community"}</h2><p>{userEmail || (dataMode === "live" ? "Live nearby data active" : "Sign in to post and confirm Pings")}</p></div></div><div className="trust-row"><div><strong>7</strong><span>Helpful Pings</span></div><div><strong>19</strong><span>Confirmations</span></div><div><strong>{radius} mi</strong><span>Your radius</span></div></div><div className="settings-list">{!userEmail && <button onClick={onSignIn}><span>✉️</span><div><strong>Sign in</strong><small>Email magic link — no password needed</small></div><b>›</b></button>}<button onClick={onRequestLocation}><span>📍</span><div><strong>Location</strong><small>{locationState === "granted" ? "Location permission active" : "Tap to enable location"}</small></div><b>›</b></button><div className="radius-setting"><span>↔</span><div><strong>Nearby radius</strong><small>Control how local your feed feels</small></div><RadiusSelect radius={radius} onRadius={onRadius} /></div><button><span>🔔</span><div><strong>Notifications</strong><small>Important nearby activity only</small></div><b>›</b></button><button><span>🛡️</span><div><strong>Privacy & safety</strong><small>Blocked users, reports, location privacy</small></div><b>›</b></button>{userEmail && <button onClick={onSignOut}><span>↪</span><div><strong>Sign out</strong><small>Leave this account on this device</small></div><b>›</b></button>}</div></div>;
+  return <div className="simple-screen"><header className="simple-header"><div><div className="brand small">ping<span>.</span></div><h1>You</h1></div></header><div className="profile-card"><div className="avatar">{userEmail ? userEmail.slice(0, 2).toUpperCase() : "YOU"}</div><div><h2>{userEmail ? "Your Ping account" : "Join your local community"}</h2><p>{userEmail || (dataMode === "live" ? "Live nearby data active" : dataMode === "quiet" ? "Your area is quiet right now" : "Sign in to post and confirm Pings")}</p></div></div><div className="trust-row"><div><strong>7</strong><span>Helpful Pings</span></div><div><strong>19</strong><span>Confirmations</span></div><div><strong>{radius} mi</strong><span>Your radius</span></div></div><div className="settings-list">{!userEmail && <button onClick={onSignIn}><span>✉️</span><div><strong>Sign in</strong><small>Email magic link — no password needed</small></div><b>›</b></button>}<button onClick={onRequestLocation}><span>📍</span><div><strong>Location</strong><small>{locationState === "granted" ? "Location permission active" : "Tap to enable location"}</small></div><b>›</b></button><div className="radius-setting"><span>↔</span><div><strong>Nearby radius</strong><small>Control how local your feed feels</small></div><RadiusSelect radius={radius} onRadius={onRadius} /></div><button><span>🔔</span><div><strong>Notifications</strong><small>Important nearby activity only</small></div><b>›</b></button><button><span>🛡️</span><div><strong>Privacy & safety</strong><small>Blocked users, reports, location privacy</small></div><b>›</b></button>{userEmail && <button onClick={onSignOut}><span>↪</span><div><strong>Sign out</strong><small>Leave this account on this device</small></div><b>›</b></button>}</div></div>;
 }
 
 function Composer({ onClose, onPublish }: { onClose: () => void; onPublish: (draft: { category: Category; title: string; body: string }) => void | Promise<void> }) {
@@ -273,18 +281,13 @@ export default function Home() {
         if (cancelled) return;
         if (error) throw error;
         const live = ((data || []) as NearbyRow[]).map((row) => mapNearbyRow(row, userId));
-        if (live.length) {
-          setPings(live);
-          setSelectedMapPing(live[0]?.id || null);
-          setDataMode("live");
-        } else {
-          setPings(seedPings);
-          setSelectedMapPing(seedPings[0].id);
-          setDataMode("demo");
-        }
+        setPings(live);
+        setSelectedMapPing(live[0]?.id || null);
+        setDataMode(live.length ? "live" : "quiet");
       } catch {
         if (!cancelled) {
-          setPings(seedPings);
+          setPings([]);
+          setSelectedMapPing(null);
           setDataMode("offline");
         }
       }
@@ -292,6 +295,18 @@ export default function Home() {
     loadNearby();
     return () => { cancelled = true; };
   }, [coordinates, radius, refreshNonce, userId]);
+
+  useEffect(() => {
+    if (!coordinates) return;
+    const supabase = createClient();
+    const channel = supabase
+      .channel("ping-feed-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "pings" }, () => {
+        setRefreshNonce((value) => value + 1);
+      })
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [coordinates]);
 
   const setAndStoreRadius = (next: Radius) => { setRadius(next); try { localStorage.setItem("ping-radius", String(next)); } catch {} };
 
