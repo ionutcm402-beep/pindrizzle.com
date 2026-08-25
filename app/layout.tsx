@@ -6,6 +6,8 @@ import Phase4RealtimeBridge from "@/components/Phase4RealtimeBridge";
 import Phase5PingDetail from "@/components/Phase5PingDetail";
 import Phase5CommunityBridge from "@/components/Phase5CommunityBridge";
 import YouNavHardLink from "@/components/YouNavHardLink";
+import AlertsNavHardLink from "@/components/AlertsNavHardLink";
+import Phase6NotificationBadge from "@/components/Phase6NotificationBadge";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 
@@ -33,6 +35,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <PasswordAuthOverlay />
         <AuthRecovery />
         <YouNavHardLink />
+        <AlertsNavHardLink />
+        <Phase6NotificationBadge />
       </body>
     </html>
   );
