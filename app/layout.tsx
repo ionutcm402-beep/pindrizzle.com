@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Phase4MapEnhancer from "@/components/Phase4MapEnhancer";
+import PublicMapNavGuard from "@/components/PublicMapNavGuard";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         {children}
         <Phase4MapEnhancer />
+        <PublicMapNavGuard />
       </body>
     </html>
   );
