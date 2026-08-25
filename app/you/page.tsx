@@ -27,6 +27,7 @@ export default function YouPage() {
   const [radius, setRadius] = useState<Radius>(1);
   const [locationState, setLocationState] = useState<"idle" | "requesting" | "granted" | "denied">("idle");
   const [moderator, setModerator] = useState(false);
+  const [followedCount, setFollowedCount] = useState(0);
 
   const loadAccount = useCallback(async () => {
     const supabase = createClient();
@@ -36,19 +37,23 @@ export default function YouPage() {
     if (!session?.user) {
       setStats({ helpful_pings: 0, confirmations: 0 });
       setModerator(false);
+      setFollowedCount(0);
       return;
     }
     try {
-      const [statResult, moderatorResult] = await Promise.all([
+      const [statResult, moderatorResult, followResult] = await Promise.all([
         supabase.rpc("my_community_stats"),
         supabase.rpc("is_moderator"),
+        supabase.from("ping_follows").select("ping_id", { count: "exact", head: true }).eq("user_id", session.user.id),
       ]);
       if (statResult.error) throw statResult.error;
       setStats(firstRow<StatsRow>(statResult.data) || { helpful_pings: 0, confirmations: 0 });
       setModerator(!moderatorResult.error && Boolean(moderatorResult.data));
+      setFollowedCount(followResult.error ? 0 : Number(followResult.count || 0));
     } catch {
       setStats({ helpful_pings: 0, confirmations: 0 });
       setModerator(false);
+      setFollowedCount(0);
     }
   }, []);
 
@@ -60,7 +65,12 @@ export default function YouPage() {
       setEmail(session?.user.email || null);
       setTimeout(() => void loadAccount(), 0);
     });
-    return () => data.subscription.unsubscribe();
+    const handleFollowChanged = () => void loadAccount();
+    window.addEventListener("ping:follow-changed", handleFollowChanged);
+    return () => {
+      data.subscription.unsubscribe();
+      window.removeEventListener("ping:follow-changed", handleFollowChanged);
+    };
   }, [loadAccount]);
 
   const chooseRadius = (next: Radius) => {
@@ -90,6 +100,7 @@ export default function YouPage() {
     setEmail(null);
     setStats({ helpful_pings: 0, confirmations: 0 });
     setModerator(false);
+    setFollowedCount(0);
   };
 
   return (
@@ -133,6 +144,7 @@ export default function YouPage() {
                 <option value={0.5}>0.5 mi</option><option value={1}>1 mi</option><option value={3}>3 mi</option><option value={5}>5 mi</option>
               </select>
             </div>
+            {email && <button type="button" onClick={() => window.location.assign("/following")}><span>★</span><div><strong>Followed Pings</strong><small>{followedCount ? `${followedCount} ${followedCount === 1 ? "Ping" : "Pings"} you’re following` : "Keep track of useful local outcomes"}</small></div><b>›</b></button>}
             <button type="button" onClick={() => window.location.assign("/notifications")}><span>🔔</span><div><strong>Notifications</strong><small>Replies, confirmations and Helpful</small></div><b>›</b></button>
             <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("ping:open-privacy"))}><span>🛡️</span><div><strong>Privacy & safety</strong><small>Blocked users, reports, location privacy</small></div><b>›</b></button>
             {moderator && <button type="button" onClick={() => window.location.assign("/moderation")}><span>🧭</span><div><strong>Moderation</strong><small>Review reported Pings</small></div><b>›</b></button>}
