@@ -245,7 +245,12 @@ export default function Phase4MapRoute() {
       )}
 
       {selected && (
-        <button className="phase4-route-card" type="button" onClick={() => setSelectedId(selected.id)}>
+        <button
+          className="phase4-route-card"
+          type="button"
+          data-ping-id={selected.id}
+          onClick={() => window.dispatchEvent(new CustomEvent("ping:open-detail", { detail: { ...selected, live: true } }))}
+        >
           <div className="phase4-route-card-top">
             <span>{selected.emoji} {selected.category}</span>
             <b>{selected.distanceMiles.toFixed(1)} mi away</b>
