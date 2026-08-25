@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Phase4MapRoute from "@/components/Phase4MapRoute";
+import Phase4PingDetail from "@/components/Phase4PingDetail";
 import Phase4RealtimeBridge from "@/components/Phase4RealtimeBridge";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         {children}
         <Phase4MapRoute />
+        <Phase4PingDetail />
         <Phase4RealtimeBridge />
       </body>
     </html>
