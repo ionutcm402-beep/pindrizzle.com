@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import AuthRecovery from "@/components/AuthRecovery";
 import Phase4MapRoute from "@/components/Phase4MapRoute";
-import Phase4PingDetail from "@/components/Phase4PingDetail";
 import Phase4RealtimeBridge from "@/components/Phase4RealtimeBridge";
+import Phase5PingDetail from "@/components/Phase5PingDetail";
+import Phase5CommunityBridge from "@/components/Phase5CommunityBridge";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 
@@ -24,8 +25,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         {children}
         <Phase4MapRoute />
-        <Phase4PingDetail />
+        <Phase5PingDetail />
         <Phase4RealtimeBridge />
+        <Phase5CommunityBridge />
         <AuthRecovery />
       </body>
     </html>
