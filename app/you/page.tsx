@@ -125,7 +125,7 @@ export default function YouPage() {
                 <option value={0.5}>0.5 mi</option><option value={1}>1 mi</option><option value={3}>3 mi</option><option value={5}>5 mi</option>
               </select>
             </div>
-            <button type="button"><span>🔔</span><div><strong>Notifications</strong><small>Important nearby activity only</small></div><b>›</b></button>
+            <button type="button" onClick={() => window.location.assign("/notifications")}><span>🔔</span><div><strong>Notifications</strong><small>Replies, confirmations and Helpful</small></div><b>›</b></button>
             <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("ping:open-privacy"))}><span>🛡️</span><div><strong>Privacy & safety</strong><small>Blocked users, reports, location privacy</small></div><b>›</b></button>
             {email && <button type="button" onClick={signOut}><span>↪</span><div><strong>Sign out</strong><small>Leave this account on this device</small></div><b>›</b></button>}
           </section>
@@ -135,7 +135,7 @@ export default function YouPage() {
           <a href="/"><span>⌂</span>Feed</a>
           <a href="/#map"><span>⌖</span>Map</a>
           <a href="/#ping" className="compose-nav"><span>+</span>Ping</a>
-          <a href="/#alerts"><span>♢</span>Alerts</a>
+          <a href="/alerts"><span>♢</span>Alerts</a>
           <a href="/you" className="active"><span>○</span>You</a>
         </nav>
       </div>
