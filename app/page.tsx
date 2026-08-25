@@ -103,12 +103,35 @@ function mapNearbyRow(row: NearbyRow, currentUserId: string | null): PingItem {
   };
 }
 
-function FeedCard({ ping, onConfirm }: { ping: PingItem; onConfirm: (id: string) => void }) {
+function FeedCard({ ping, onConfirm, onOpen }: { ping: PingItem; onConfirm: (id: string) => void; onOpen: (ping: PingItem) => void }) {
+  const sharePing = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    const url = `${window.location.origin}${window.location.pathname}#ping=${encodeURIComponent(ping.id)}`;
+    const text = `${ping.title} — ${ping.distanceMiles.toFixed(1)} mi away`;
+    try {
+      if (navigator.share) await navigator.share({ title: ping.title, text, url });
+      else await navigator.clipboard.writeText(`${text}\n${url}`);
+    } catch {}
+  };
+
   return (
-    <article className={`ping-card tone-${ping.tone}`}>
+    <article
+      className={`ping-card tone-${ping.tone}`}
+      data-ping-id={ping.id}
+      role="button"
+      tabIndex={0}
+      style={{ cursor: "pointer" }}
+      onClick={() => onOpen(ping)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpen(ping);
+        }
+      }}
+    >
       <div className="ping-card-topline">
         <div className="category-badge"><span>{ping.emoji}</span>{ping.category}</div>
-        {ping.createdByMe ? <span className="mine-badge">Your Ping</span> : ping.live ? <span className="mine-badge">Live</span> : <button className="icon-button" aria-label="More options">•••</button>}
+        {ping.createdByMe ? <span className="mine-badge">Your Ping</span> : ping.live ? <span className="mine-badge">Live</span> : <button className="icon-button" aria-label="More options" onClick={(event) => event.stopPropagation()}>•••</button>}
       </div>
       <h2>{ping.title}</h2>
       <p className="ping-body">{ping.body}</p>
@@ -118,9 +141,9 @@ function FeedCard({ ping, onConfirm }: { ping: PingItem; onConfirm: (id: string)
         <span>{ageLabel(ping.ageMinutes)} ago</span>
       </div>
       <div className="ping-actions">
-        <button onClick={() => onConfirm(ping.id)}>✓ {ping.confirmations} confirmed</button>
-        <button>💬 Reply</button>
-        <button>↗ Share</button>
+        <button onClick={(event) => { event.stopPropagation(); onConfirm(ping.id); }}>✓ {ping.confirmations} confirmed</button>
+        <button onClick={(event) => { event.stopPropagation(); onOpen(ping); }}>💬 Reply</button>
+        <button onClick={sharePing}>↗ Share</button>
       </div>
     </article>
   );
@@ -166,7 +189,7 @@ function LocationBanner({ state, radius, dataMode, onRequest, onRadius }: { stat
   );
 }
 
-function FeedView({ pings, radius, locationState, dataMode, onRequestLocation, onRadius, onConfirm }: { pings: PingItem[]; radius: Radius; locationState: LocationState; dataMode: DataMode; onRequestLocation: () => void; onRadius: (r: Radius) => void; onConfirm: (id: string) => void }) {
+function FeedView({ pings, radius, locationState, dataMode, onRequestLocation, onRadius, onConfirm, onOpen }: { pings: PingItem[]; radius: Radius; locationState: LocationState; dataMode: DataMode; onRequestLocation: () => void; onRadius: (r: Radius) => void; onConfirm: (id: string) => void; onOpen: (ping: PingItem) => void }) {
   const [filter, setFilter] = useState<(typeof filters)[number]>("All");
   const visible = useMemo(() => pings.filter((p) => {
     if (p.distanceMiles > radius) return false;
@@ -184,7 +207,7 @@ function FeedView({ pings, radius, locationState, dataMode, onRequestLocation, o
       <section className="hero-strip"><div><span className="live-dot" /><strong>{visible.length} active nearby</strong></div><p>What matters around you, right now.</p></section>
       <LocationBanner state={locationState} radius={radius} dataMode={dataMode} onRequest={onRequestLocation} onRadius={onRadius} />
       <div className="filter-row" aria-label="Feed filters">{filters.map((item) => <button key={item} className={filter === item ? "active" : ""} onClick={() => setFilter(item)}>{item}</button>)}</div>
-      <main className="feed-list">{visible.length ? visible.map((ping) => <FeedCard key={ping.id} ping={ping} onConfirm={onConfirm} />) : <div className="quiet-card"><div className="quiet-icon">☀️</div><h2>Quiet around here.</h2><p>Nothing important has been reported in this category inside your current radius. That’s usually good news.</p></div>}</main>
+      <main className="feed-list">{visible.length ? visible.map((ping) => <FeedCard key={ping.id} ping={ping} onConfirm={onConfirm} onOpen={onOpen} />) : <div className="quiet-card"><div className="quiet-icon">☀️</div><h2>Quiet around here.</h2><p>Nothing important has been reported in this category inside your current radius. That’s usually good news.</p></div>}</main>
     </>
   );
 }
@@ -263,6 +286,16 @@ export default function Home() {
       unsubscribe = () => data.subscription.unsubscribe();
     } catch {}
     return () => unsubscribe?.();
+  }, []);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const message = (event as CustomEvent<{ message?: string }>).detail?.message || "Sign in to continue.";
+      setAuthMessage(message);
+      setAuthOpen(true);
+    };
+    window.addEventListener("ping:auth-needed", handler as EventListener);
+    return () => window.removeEventListener("ping:auth-needed", handler as EventListener);
   }, []);
 
   useEffect(() => {
@@ -380,7 +413,11 @@ export default function Home() {
     }
   };
 
+  const openPingDetail = (ping: PingItem) => {
+    window.dispatchEvent(new CustomEvent("ping:open-detail", { detail: ping }));
+  };
+
   const myPingCount = pings.filter((p) => p.createdByMe).length;
 
-  return <div className="page-shell"><div className="app-shell"><div className="screen-content">{tab === "feed" && <FeedView pings={pings} radius={radius} locationState={locationState} dataMode={dataMode} onRequestLocation={requestLocation} onRadius={setAndStoreRadius} onConfirm={confirmPing} />}{tab === "map" && <MapView pings={pings.filter((p) => p.distanceMiles <= radius)} selectedId={selectedMapPing} onSelect={setSelectedMapPing} />}{tab === "alerts" && <AlertsView myPingCount={myPingCount} />}{tab === "you" && <YouView radius={radius} locationState={locationState} dataMode={dataMode} userEmail={userEmail} onRadius={setAndStoreRadius} onRequestLocation={requestLocation} onSignIn={() => { setAuthMessage(""); setAuthOpen(true); }} onSignOut={signOut} />}</div><nav className="bottom-nav" aria-label="Primary navigation"><button className={tab === "feed" ? "active" : ""} onClick={() => setTab("feed")}><span>⌂</span>Feed</button><button className={tab === "map" ? "active" : ""} onClick={() => setTab("map")}><span>⌖</span>Map</button><button className="compose-nav" onClick={openComposer} aria-label="Create a Ping"><span>+</span>Ping</button><button className={tab === "alerts" ? "active" : ""} onClick={() => setTab("alerts")}><span>♢</span>Alerts<i>{myPingCount ? 2 : 1}</i></button><button className={tab === "you" ? "active" : ""} onClick={() => setTab("you")}><span>○</span>You</button></nav></div>{composerOpen && <Composer onClose={() => setComposerOpen(false)} onPublish={publishPing} />}{authOpen && <AuthSheet onClose={() => setAuthOpen(false)} onSend={sendMagicLink} busy={authBusy} message={authMessage} />}</div>;
+  return <div className="page-shell"><div className="app-shell"><div className="screen-content">{tab === "feed" && <FeedView pings={pings} radius={radius} locationState={locationState} dataMode={dataMode} onRequestLocation={requestLocation} onRadius={setAndStoreRadius} onConfirm={confirmPing} onOpen={openPingDetail} />}{tab === "map" && <MapView pings={pings.filter((p) => p.distanceMiles <= radius)} selectedId={selectedMapPing} onSelect={setSelectedMapPing} />}{tab === "alerts" && <AlertsView myPingCount={myPingCount} />}{tab === "you" && <YouView radius={radius} locationState={locationState} dataMode={dataMode} userEmail={userEmail} onRadius={setAndStoreRadius} onRequestLocation={requestLocation} onSignIn={() => { setAuthMessage(""); setAuthOpen(true); }} onSignOut={signOut} />}</div><nav className="bottom-nav" aria-label="Primary navigation"><button className={tab === "feed" ? "active" : ""} onClick={() => setTab("feed")}><span>⌂</span>Feed</button><button className={tab === "map" ? "active" : ""} onClick={() => setTab("map")}><span>⌖</span>Map</button><button className="compose-nav" onClick={openComposer} aria-label="Create a Ping"><span>+</span>Ping</button><button className={tab === "alerts" ? "active" : ""} onClick={() => setTab("alerts")}><span>♢</span>Alerts<i>{myPingCount ? 2 : 1}</i></button><button className={tab === "you" ? "active" : ""} onClick={() => setTab("you")}><span>○</span>You</button></nav></div>{composerOpen && <Composer onClose={() => setComposerOpen(false)} onPublish={publishPing} />}{authOpen && <AuthSheet onClose={() => setAuthOpen(false)} onSend={sendMagicLink} busy={authBusy} message={authMessage} />}</div>;
 }
