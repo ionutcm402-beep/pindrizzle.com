@@ -122,12 +122,12 @@ export default function Phase7ContributorContext() {
           <small>{memberLabel(context.member_since)}</small>
         </div>
         <div className="phase7-contributor-signals">
-          <div><strong>{context.helpful_pings}</strong><span>Helpful</span></div>
-          <div><strong>{context.confirmations}</strong><span>Confirmed</span></div>
+          <div><strong>{context.helpful_pings}</strong><span>Helpful earned</span></div>
+          <div><strong>{context.confirmations}</strong><span>Confirms earned</span></div>
         </div>
       </div>
       <style jsx global>{`
-        .phase7-contributor-anchor{margin:14px 0 0}.phase7-contributor-card{display:grid;grid-template-columns:42px 1fr auto;gap:10px;align-items:center;padding:12px 13px;border:1px solid #dfe7dc;border-radius:17px;background:#f5f8f2;color:#172019}.phase7-contributor-avatar{width:42px;height:42px;border-radius:14px;background:#dfeadb;display:grid;place-items:center;color:#326039;font-size:10px;font-weight:1000}.phase7-contributor-copy>span{display:block;color:#758078;font-size:8px;font-weight:850;text-transform:uppercase;letter-spacing:.45px}.phase7-contributor-copy>strong{display:block;margin-top:2px;font-size:12px}.phase7-contributor-copy>small{display:block;margin-top:2px;color:#7d877f;font-size:8px}.phase7-contributor-signals{display:flex;gap:6px}.phase7-contributor-signals div{min-width:52px;padding:7px 6px;border-radius:11px;background:#fff;text-align:center}.phase7-contributor-signals strong{display:block;font-size:12px}.phase7-contributor-signals span{display:block;margin-top:1px;color:#7a857c;font-size:7px;font-weight:750}@media(max-width:420px){.phase7-contributor-card{grid-template-columns:38px 1fr}.phase7-contributor-signals{grid-column:1/-1}.phase7-contributor-signals div{flex:1}}
+        .phase7-contributor-anchor{margin:14px 0 0}.phase7-contributor-card{display:grid;grid-template-columns:42px 1fr auto;gap:10px;align-items:center;padding:12px 13px;border:1px solid #dfe7dc;border-radius:17px;background:#f5f8f2;color:#172019}.phase7-contributor-avatar{width:42px;height:42px;border-radius:14px;background:#dfeadb;display:grid;place-items:center;color:#326039;font-size:10px;font-weight:1000}.phase7-contributor-copy>span{display:block;color:#758078;font-size:8px;font-weight:850;text-transform:uppercase;letter-spacing:.45px}.phase7-contributor-copy>strong{display:block;margin-top:2px;font-size:12px}.phase7-contributor-copy>small{display:block;margin-top:2px;color:#7d877f;font-size:8px}.phase7-contributor-signals{display:flex;gap:6px}.phase7-contributor-signals div{min-width:62px;padding:7px 6px;border-radius:11px;background:#fff;text-align:center}.phase7-contributor-signals strong{display:block;font-size:12px}.phase7-contributor-signals span{display:block;margin-top:1px;color:#7a857c;font-size:7px;font-weight:750;white-space:nowrap}@media(max-width:420px){.phase7-contributor-card{grid-template-columns:38px 1fr}.phase7-contributor-signals{grid-column:1/-1}.phase7-contributor-signals div{flex:1}}
       `}</style>
     </>,
     host,
