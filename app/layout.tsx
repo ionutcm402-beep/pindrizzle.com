@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Phase4MapRoute from "@/components/Phase4MapRoute";
+import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
