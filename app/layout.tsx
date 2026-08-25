@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import AuthRecovery from "@/components/AuthRecovery";
 import Phase4MapRoute from "@/components/Phase4MapRoute";
 import Phase4PingDetail from "@/components/Phase4PingDetail";
 import Phase4RealtimeBridge from "@/components/Phase4RealtimeBridge";
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Phase4MapRoute />
         <Phase4PingDetail />
         <Phase4RealtimeBridge />
+        <AuthRecovery />
       </body>
     </html>
   );
