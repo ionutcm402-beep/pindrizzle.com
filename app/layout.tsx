@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Phase4MapEnhancer from "@/components/Phase4MapEnhancer";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,7 +17,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+        <Phase4MapEnhancer />
+      </body>
     </html>
   );
 }
