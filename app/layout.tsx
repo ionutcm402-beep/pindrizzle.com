@@ -5,7 +5,7 @@ import Phase4MapRoute from "@/components/Phase4MapRoute";
 import Phase4RealtimeBridge from "@/components/Phase4RealtimeBridge";
 import Phase5PingDetail from "@/components/Phase5PingDetail";
 import Phase5CommunityBridge from "@/components/Phase5CommunityBridge";
-import Phase5YouRoute from "@/components/Phase5YouRoute";
+import YouNavHardLink from "@/components/YouNavHardLink";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 
@@ -27,12 +27,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         {children}
         <Phase4MapRoute />
-        <Phase5YouRoute />
         <Phase5PingDetail />
         <Phase4RealtimeBridge />
         <Phase5CommunityBridge />
         <PasswordAuthOverlay />
         <AuthRecovery />
+        <YouNavHardLink />
       </body>
     </html>
   );
