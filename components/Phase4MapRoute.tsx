@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import LivePingMap, { type MapPing } from "@/components/LivePingMap";
 import { createClient } from "@/lib/supabase/client";
@@ -16,6 +16,8 @@ type MapRow = {
   map_lng: number;
 };
 
+const RADII: Radius[] = [0.5, 1, 3, 5];
+
 const meta: Record<MapRow["category"], { label: string; emoji: string }> = {
   alert: { label: "Alert", emoji: "🚨" },
   traffic: { label: "Traffic", emoji: "🚧" },
@@ -28,7 +30,7 @@ const meta: Record<MapRow["category"], { label: string; emoji: string }> = {
 function readRadius(): Radius {
   try {
     const value = Number(localStorage.getItem("ping-radius") || 1);
-    if ([0.5, 1, 3, 5].includes(value)) return value as Radius;
+    if (RADII.includes(value as Radius)) return value as Radius;
   } catch {}
   return 1;
 }
@@ -43,6 +45,8 @@ export default function Phase4MapRoute() {
   const [status, setStatus] = useState("Enable location to see the real nearby map.");
   const [locationBusy, setLocationBusy] = useState(false);
   const [locationBlocked, setLocationBlocked] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [dataBusy, setDataBusy] = useState(false);
 
   useEffect(() => {
     const findHost = () => setHost(document.querySelector<HTMLElement>(".app-shell"));
@@ -70,7 +74,7 @@ export default function Phase4MapRoute() {
     return () => document.removeEventListener("click", handleNav, true);
   }, []);
 
-  const requestLocation = () => {
+  const requestLocation = useCallback(() => {
     if (!navigator.geolocation) {
       setStatus("Location is unavailable on this device.");
       setLocationBlocked(true);
@@ -86,6 +90,7 @@ export default function Phase4MapRoute() {
         setCenter({ lat: position.coords.latitude, lng: position.coords.longitude });
         setStatus("Loading live Pings near you…");
         setLocationBusy(false);
+        setRefreshKey((value) => value + 1);
       },
       (error) => {
         setLocationBusy(false);
@@ -98,8 +103,14 @@ export default function Phase4MapRoute() {
           setStatus("We could not get your location. Please try again.");
         }
       },
-      { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 },
+      { enableHighAccuracy: false, timeout: 12000, maximumAge: 60000 },
     );
+  }, []);
+
+  const chooseRadius = (next: Radius) => {
+    setRadius(next);
+    setSelectedId(null);
+    try { localStorage.setItem("ping-radius", String(next)); } catch {}
   };
 
   useEffect(() => {
@@ -107,10 +118,10 @@ export default function Phase4MapRoute() {
     setRadius(readRadius());
     setPings([]);
     setSelectedId(null);
-
-    // Reuse an existing position if this preview has already received permission.
-    // Otherwise wait for the user's explicit Enable location action.
-    if (center) return;
+    if (center) {
+      setRefreshKey((value) => value + 1);
+      return;
+    }
     setStatus("Enable location to see the real nearby map.");
   }, [open]);
 
@@ -119,7 +130,8 @@ export default function Phase4MapRoute() {
     let cancelled = false;
 
     const load = async () => {
-      setStatus("Loading live Pings near you…");
+      setDataBusy(true);
+      setStatus("Checking what is happening nearby…");
       try {
         const { data, error } = await createClient().rpc("nearby_map_pings", {
           viewer_lat: center.lat,
@@ -142,19 +154,26 @@ export default function Phase4MapRoute() {
         }));
 
         setPings(mapped);
-        setSelectedId(mapped[0]?.id || null);
-        setStatus(mapped.length ? `${mapped.length} live Ping${mapped.length === 1 ? "" : "s"} inside ${radius} mi` : `No live Pings inside ${radius} mi yet`);
+        setSelectedId((current) => current && mapped.some((ping) => ping.id === current) ? current : mapped[0]?.id || null);
+        setStatus(mapped.length
+          ? `${mapped.length} live Ping${mapped.length === 1 ? "" : "s"} within ${radius} mi`
+          : `Quiet within ${radius} mi right now`);
       } catch (error) {
         console.error("Ping live map query failed", error);
-        if (!cancelled) setStatus("Live Ping data could not load. The map itself should still work.");
+        if (!cancelled) setStatus("Live Ping data could not load. The map itself still works.");
+      } finally {
+        if (!cancelled) setDataBusy(false);
       }
     };
 
     load();
     return () => { cancelled = true; };
-  }, [open, center, radius]);
+  }, [open, center, radius, refreshKey]);
 
-  const selected = useMemo(() => pings.find((ping) => ping.id === selectedId) || pings[0], [pings, selectedId]);
+  const selected = useMemo(
+    () => pings.find((ping) => ping.id === selectedId) || pings[0],
+    [pings, selectedId],
+  );
 
   if (!host || !open) return null;
 
@@ -177,23 +196,66 @@ export default function Phase4MapRoute() {
         </div>
       )}
 
-      <div className="phase4-route-header">
-        <div>
-          <div className="phase4-route-brand">ping<span>.</span></div>
-          <div className="phase4-route-status">● {status}</div>
+      <div className="phase4-map-topbar">
+        <div className="phase4-map-brand">ping<span>.</span></div>
+        <div className="phase4-map-actions">
+          {center && (
+            <button type="button" className="phase4-map-icon" onClick={requestLocation} disabled={locationBusy} aria-label="Recenter on my location" title="Recenter">
+              ◎
+            </button>
+          )}
+          {center && (
+            <button type="button" className="phase4-map-icon" onClick={() => setRefreshKey((value) => value + 1)} disabled={dataBusy} aria-label="Refresh nearby Pings" title="Refresh">
+              ↻
+            </button>
+          )}
         </div>
-        <div className="phase4-radius-pill">{radius} mi</div>
       </div>
 
+      {center && (
+        <div className="phase4-map-panel">
+          <div className="phase4-map-status-row">
+            <span className={`phase4-live-dot${dataBusy ? " busy" : ""}`} />
+            <strong>{status}</strong>
+          </div>
+          <div className="phase4-radius-options" aria-label="Nearby radius">
+            {RADII.map((option) => (
+              <button
+                type="button"
+                key={option}
+                className={radius === option ? "active" : ""}
+                onClick={() => chooseRadius(option)}
+              >
+                {option} mi
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {center && !dataBusy && pings.length === 0 && (
+        <div className="phase4-quiet-card">
+          <div className="phase4-quiet-icon">✓</div>
+          <div>
+            <strong>Nothing urgent nearby.</strong>
+            <span>No active Pings inside {radius} mi right now.</span>
+          </div>
+          <button type="button" onClick={() => setRefreshKey((value) => value + 1)}>Check again</button>
+        </div>
+      )}
+
       {selected && (
-        <div className="phase4-route-card">
+        <button className="phase4-route-card" type="button" onClick={() => setSelectedId(selected.id)}>
           <div className="phase4-route-card-top">
             <span>{selected.emoji} {selected.category}</span>
             <b>{selected.distanceMiles.toFixed(1)} mi away</b>
           </div>
           <h2>{selected.title}</h2>
-          <p>✓ {selected.confirmations} confirmed</p>
-        </div>
+          <div className="phase4-card-footer">
+            <span>✓ {selected.confirmations} confirmed</span>
+            <b>View Ping →</b>
+          </div>
+        </button>
       )}
 
       <style jsx global>{`
@@ -235,67 +297,106 @@ export default function Phase4MapRoute() {
           box-shadow:0 10px 28px rgba(50,155,58,.22);
         }
         .phase4-enable-location:disabled { opacity:.62; cursor:wait; }
-        .phase4-route-header {
+        .phase4-map-topbar {
           position:absolute;
-          z-index:4;
-          top:18px;
-          left:18px;
-          right:18px;
+          z-index:5;
+          top:16px;
+          left:16px;
+          right:16px;
           display:flex;
+          align-items:center;
           justify-content:space-between;
-          align-items:flex-start;
           pointer-events:none;
         }
-        .phase4-route-brand {
-          display:inline-block;
-          padding:9px 12px;
-          border-radius:14px;
-          background:rgba(255,255,255,.95);
+        .phase4-map-brand {
+          padding:10px 13px;
+          border-radius:16px;
+          background:rgba(255,255,255,.96);
           color:#17251c;
           font-size:27px;
           line-height:1;
           font-weight:900;
           letter-spacing:-1.3px;
-          box-shadow:0 8px 24px rgba(16,48,26,.12);
+          box-shadow:0 8px 24px rgba(16,48,26,.14);
         }
-        .phase4-route-brand span { color:#55d84d; }
-        .phase4-route-status {
-          margin-top:8px;
-          padding:8px 11px;
-          border-radius:999px;
-          background:rgba(255,255,255,.94);
-          color:#173723;
-          font-size:11px;
-          font-weight:800;
-          box-shadow:0 8px 24px rgba(16,48,26,.10);
-        }
-        .phase4-radius-pill {
-          padding:9px 12px;
-          border-radius:999px;
-          background:#173723;
-          color:#fff;
-          font-size:12px;
+        .phase4-map-brand span { color:#55d84d; }
+        .phase4-map-actions { display:flex; gap:8px; pointer-events:auto; }
+        .phase4-map-icon {
+          width:43px;
+          height:43px;
+          border:0;
+          border-radius:15px;
+          background:rgba(255,255,255,.96);
+          color:#183924;
+          font-size:22px;
           font-weight:900;
+          cursor:pointer;
+          box-shadow:0 8px 24px rgba(16,48,26,.14);
         }
+        .phase4-map-icon:disabled { opacity:.55; cursor:wait; }
+        .phase4-map-panel {
+          position:absolute;
+          z-index:5;
+          top:72px;
+          left:16px;
+          right:16px;
+          padding:11px;
+          border-radius:20px;
+          background:rgba(255,255,255,.95);
+          box-shadow:0 10px 30px rgba(16,48,26,.14);
+          backdrop-filter:blur(12px);
+        }
+        .phase4-map-status-row { display:flex; align-items:center; gap:8px; padding:2px 5px 9px; color:#193a26; font-size:12px; }
+        .phase4-live-dot { width:8px; height:8px; border-radius:50%; background:#55d84d; box-shadow:0 0 0 4px rgba(85,216,77,.14); }
+        .phase4-live-dot.busy { animation:pingPulse 1s ease-in-out infinite; }
+        @keyframes pingPulse { 50% { opacity:.35; transform:scale(.75); } }
+        .phase4-radius-options { display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; }
+        .phase4-radius-options button {
+          border:1px solid #e1e7df;
+          border-radius:13px;
+          padding:9px 4px;
+          background:#f7f9f5;
+          color:#647168;
+          font:inherit;
+          font-size:11px;
+          font-weight:850;
+          cursor:pointer;
+        }
+        .phase4-radius-options button.active { background:#183924; border-color:#183924; color:white; }
+        .phase4-quiet-card,
         .phase4-route-card {
           position:absolute;
-          z-index:4;
+          z-index:5;
           left:16px;
           right:16px;
           bottom:16px;
-          padding:16px 18px;
+          border:0;
           border-radius:22px;
           background:rgba(255,255,255,.97);
           box-shadow:0 18px 45px rgba(16,48,26,.20);
           color:#17251c;
         }
+        .phase4-quiet-card {
+          display:grid;
+          grid-template-columns:auto 1fr auto;
+          align-items:center;
+          gap:12px;
+          padding:14px 15px;
+        }
+        .phase4-quiet-icon { width:38px; height:38px; border-radius:14px; display:grid; place-items:center; background:#e9f8e7; color:#2b8b31; font-weight:1000; }
+        .phase4-quiet-card strong { display:block; font-size:13px; }
+        .phase4-quiet-card span { display:block; margin-top:3px; color:#718076; font-size:10px; }
+        .phase4-quiet-card button { border:0; border-radius:12px; padding:9px 10px; background:#edf2eb; color:#27402f; font-weight:850; font-size:10px; cursor:pointer; }
+        .phase4-route-card { padding:16px 18px; text-align:left; cursor:pointer; }
         .phase4-route-card-top { display:flex; justify-content:space-between; gap:12px; font-size:12px; }
         .phase4-route-card-top span { font-weight:900; }
         .phase4-route-card-top b { color:#607066; }
-        .phase4-route-card h2 { margin:8px 0 4px; font-size:19px; line-height:1.15; }
-        .phase4-route-card p { margin:0; color:#617068; font-size:12px; font-weight:700; }
+        .phase4-route-card h2 { margin:8px 0 11px; font-size:19px; line-height:1.15; }
+        .phase4-card-footer { display:flex; align-items:center; justify-content:space-between; gap:12px; color:#617068; font-size:11px; font-weight:750; }
+        .phase4-card-footer b { color:#285733; }
         @media(max-width:520px) {
           .phase4-map-route { border-radius:0; }
+          .phase4-map-panel { top:68px; }
         }
       `}</style>
     </section>,
