@@ -54,9 +54,9 @@ export default function PasswordAuthOverlay() {
     const supabase = createClient();
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY") {
-        setMode("new-password");
-        setMessage("Choose a new password for your Ping account.");
-        setOpen(true);
+        if (window.location.pathname === "/reset-password") return;
+        const fragment = window.location.hash || "";
+        window.location.replace(`/reset-password${fragment}`);
         return;
       }
       if (session?.user && event === "SIGNED_IN") {
@@ -123,10 +123,10 @@ export default function PasswordAuthOverlay() {
         }
       } else if (mode === "recovery") {
         const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
-          redirectTo: window.location.origin,
+          redirectTo: `${window.location.origin}/reset-password`,
         });
         if (error) throw error;
-        setMessage("Password reset requested. If Supabase email delivery is available, open the newest Ping reset email and choose a new password.");
+        setMessage("Password reset email sent. Open the newest email; its link will take you directly to Ping’s password reset page.");
       } else {
         const { error } = await supabase.auth.updateUser({ password });
         if (error) throw error;
@@ -138,7 +138,7 @@ export default function PasswordAuthOverlay() {
     } catch (error) {
       const text = error instanceof Error ? error.message : "Authentication failed.";
       if (/invalid login credentials/i.test(text)) {
-        setMessage("Email or password is incorrect. Use Set / reset password only if you have forgotten the password.");
+        setMessage("Email or password is incorrect. Use Forgot password? only if you have forgotten the password.");
       } else if (/already registered|already exists/i.test(text)) {
         setMessage("This email already has a Ping account. No second account was created. Choose Sign in instead.");
       } else if (/rate limit|too many requests|429/i.test(text)) {
@@ -160,7 +160,7 @@ export default function PasswordAuthOverlay() {
 
   if (!open) return <style jsx global>{`.composer-backdrop[aria-label="Sign in to Ping"]{display:none!important}`}</style>;
 
-  const heading = mode === "signup" ? "Create your Ping account." : mode === "recovery" ? "Set or reset your password." : mode === "new-password" ? "Choose your new password." : "Welcome back.";
+  const heading = mode === "signup" ? "Create your Ping account." : mode === "recovery" ? "Reset your password." : mode === "new-password" ? "Choose your new password." : "Welcome back.";
 
   return (
     <>
@@ -187,7 +187,7 @@ export default function PasswordAuthOverlay() {
             {mode === "signup"
               ? "Create one account per email. If the email already belongs to Ping, a duplicate account will not be created."
               : mode === "recovery"
-                ? "Use this only if you forgot your password. Password recovery sends an email and can be affected by Supabase's test-email limits."
+                ? "Enter your email once. The reset link will open a dedicated page where you can choose a new password."
                 : mode === "new-password"
                   ? "Use at least 8 characters. After this, normal password sign-in will work."
                   : "Sign in with your email and password. Normal sign-in does not send an email."}
