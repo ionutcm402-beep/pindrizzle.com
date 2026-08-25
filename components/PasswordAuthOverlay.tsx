@@ -92,34 +92,41 @@ export default function PasswordAuthOverlay() {
     setBusy(true);
     setMessage("");
     const supabase = createClient();
+    const normalizedEmail = email.trim().toLowerCase();
 
     try {
       if (mode === "signin") {
-        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        const { error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
         if (error) throw error;
         setMessage("Signed in.");
         closeLegacy();
         setOpen(false);
       } else if (mode === "signup") {
         const { data, error } = await supabase.auth.signUp({
-          email: email.trim(),
+          email: normalizedEmail,
           password,
           options: { emailRedirectTo: window.location.origin },
         });
         if (error) throw error;
+
         if (data.session) {
           setMessage("Account created. You are signed in.");
           closeLegacy();
           setOpen(false);
         } else {
-          setMessage("Account created. Check your email once to confirm the address, then sign in with your password.");
+          const identities = data.user?.identities;
+          if (Array.isArray(identities) && identities.length === 0) {
+            setMessage("This email already has a Ping account. No second account was created. Choose Sign in and use your password.");
+          } else {
+            setMessage("If this email is new, Ping has requested a confirmation email. If you already have an account with this email, no duplicate account is created — use Sign in instead.");
+          }
         }
       } else if (mode === "recovery") {
-        const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
           redirectTo: window.location.origin,
         });
         if (error) throw error;
-        setMessage("Password reset email sent. Open the newest Ping email and choose a new password.");
+        setMessage("Password reset requested. If Supabase email delivery is available, open the newest Ping reset email and choose a new password.");
       } else {
         const { error } = await supabase.auth.updateUser({ password });
         if (error) throw error;
@@ -131,11 +138,11 @@ export default function PasswordAuthOverlay() {
     } catch (error) {
       const text = error instanceof Error ? error.message : "Authentication failed.";
       if (/invalid login credentials/i.test(text)) {
-        setMessage("Email or password is incorrect. If this account was created with a magic link, use Set / reset password once.");
-      } else if (/already registered/i.test(text)) {
-        setMessage("This email already has a Ping account. Choose Sign in, or Set / reset password if it was created with a magic link.");
-      } else if (/rate limit/i.test(text)) {
-        setMessage("Email sending is temporarily rate-limited. Password sign-in will not need email after the account is set up.");
+        setMessage("Email or password is incorrect. Use Set / reset password only if you have forgotten the password.");
+      } else if (/already registered|already exists/i.test(text)) {
+        setMessage("This email already has a Ping account. No second account was created. Choose Sign in instead.");
+      } else if (/rate limit|too many requests|429/i.test(text)) {
+        setMessage("Supabase's test email service is temporarily rate-limited. This is separate from your database usage quota. Normal password sign-in does not send an email.");
       } else {
         setMessage(text);
       }
@@ -178,12 +185,12 @@ export default function PasswordAuthOverlay() {
           {contextMessage && mode === "signin" && <p className="password-auth-context">{contextMessage}</p>}
           <p className="password-auth-copy">
             {mode === "signup"
-              ? "Create an account once, then use your email and password whenever you return."
+              ? "Create one account per email. If the email already belongs to Ping, a duplicate account will not be created."
               : mode === "recovery"
-                ? "Use this if your account was originally created with a magic link, or if you forgot your password."
+                ? "Use this only if you forgot your password. Password recovery sends an email and can be affected by Supabase's test-email limits."
                 : mode === "new-password"
                   ? "Use at least 8 characters. After this, normal password sign-in will work."
-                  : "Sign in with your email and password. No email link is needed for normal sign-in."}
+                  : "Sign in with your email and password. Normal sign-in does not send an email."}
           </p>
 
           {mode !== "new-password" && (
@@ -215,7 +222,7 @@ export default function PasswordAuthOverlay() {
             {busy ? "Please wait…" : mode === "signup" ? "Create account" : mode === "recovery" ? "Send password reset" : mode === "new-password" ? "Save new password" : "Sign in"}
           </button>
 
-          {mode === "signin" && <button type="button" className="password-auth-link" onClick={() => switchMode("recovery")}>Set / reset password</button>}
+          {mode === "signin" && <button type="button" className="password-auth-link" onClick={() => switchMode("recovery")}>Forgot password?</button>}
           {mode === "recovery" && <button type="button" className="password-auth-link" onClick={() => switchMode("signin")}>Back to Sign in</button>}
 
           <div className="password-auth-note">Your email is never shown publicly.</div>
