@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-type NotificationKind = "reply" | "confirmation" | "helpful";
+type NotificationKind = "reply" | "confirmation" | "helpful" | "follow_update";
 type NotificationRow = {
   id: string;
   user_id: string;
@@ -20,6 +20,7 @@ const kindMeta: Record<NotificationKind, { icon: string; label: string }> = {
   reply: { icon: "💬", label: "Reply" },
   confirmation: { icon: "✓", label: "Confirmation" },
   helpful: { icon: "★", label: "Helpful" },
+  follow_update: { icon: "◎", label: "Outcome" },
 };
 
 function relativeTime(value: string) {
@@ -105,6 +106,10 @@ export default function AlertsPage() {
 
   const openNotification = async (item: NotificationRow) => {
     await markRead(item);
+    if (item.kind === "follow_update") {
+      window.location.assign("/following");
+      return;
+    }
     if (item.ping_id) {
       window.dispatchEvent(new CustomEvent("ping:open-detail", { detail: { id: item.ping_id, live: true } }));
     }
@@ -127,7 +132,7 @@ export default function AlertsPage() {
   };
 
   const openAuth = () => {
-    window.dispatchEvent(new CustomEvent("ping:auth-needed", { detail: { message: "Sign in to see replies, confirmations and Helpful activity." } }));
+    window.dispatchEvent(new CustomEvent("ping:auth-needed", { detail: { message: "Sign in to see useful local activity and followed Ping outcomes." } }));
   };
 
   return (
@@ -147,7 +152,7 @@ export default function AlertsPage() {
             <section className="phase6-empty-card">
               <div className="phase6-empty-icon">🔔</div>
               <h2>Your useful activity lives here.</h2>
-              <p>Sign in to see replies, confirmations and Helpful marks on the Pings you care about.</p>
+              <p>Sign in to see replies, confirmations, Helpful marks and outcomes from Pings you follow.</p>
               <button type="button" onClick={openAuth}>Sign in / Sign up</button>
             </section>
           ) : loading ? (
@@ -155,7 +160,7 @@ export default function AlertsPage() {
           ) : notifications.length ? (
             <section className="phase6-alert-list" aria-label="Notifications">
               {notifications.map((item) => {
-                const meta = kindMeta[item.kind];
+                const meta = kindMeta[item.kind] || { icon: "•", label: "Update" };
                 return (
                   <button key={item.id} type="button" className={`phase6-alert-card ${item.read_at ? "read" : "unread"}`} onClick={() => openNotification(item)}>
                     <div className="phase6-alert-icon">{meta.icon}</div>
@@ -173,13 +178,13 @@ export default function AlertsPage() {
             <section className="phase6-empty-card">
               <div className="phase6-empty-icon">✓</div>
               <h2>You’re all caught up.</h2>
-              <p>When someone replies to, confirms or marks one of your Pings Helpful, it will appear here.</p>
+              <p>Useful replies, confirmations, Helpful marks and followed Ping outcomes will appear here.</p>
             </section>
           )}
 
           {email && <div className="phase6-account-note">Alerts for <strong>{email}</strong></div>}
           {message && <div className="phase6-message">{message}</div>}
-          <section className="phase6-rule-card"><strong>Useful notifications only.</strong><p>No “we miss you” messages. Ping alerts are reserved for real activity that matters.</p></section>
+          <section className="phase6-rule-card"><strong>Useful notifications only.</strong><p>No “we miss you” messages. Ping alerts are reserved for real activity and outcomes that matter.</p></section>
         </main>
 
         <nav className="bottom-nav" aria-label="Primary navigation">
