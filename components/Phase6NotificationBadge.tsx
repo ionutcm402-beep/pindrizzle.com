@@ -82,28 +82,46 @@ export default function Phase6NotificationBadge() {
   }, [toast]);
 
   useEffect(() => {
+    let scheduled = false;
+
     const apply = () => {
+      scheduled = false;
       const navs = Array.from(document.querySelectorAll<HTMLElement>(".bottom-nav"));
+      const nextText = unread > 99 ? "99+" : String(unread);
+      const nextLabel = `${unread} unread alerts`;
+
       for (const nav of navs) {
         const controls = Array.from(nav.querySelectorAll<HTMLElement>("button,a"));
         const alerts = controls.find((control) => control.textContent?.replace(/\d+/g, "").trim().endsWith("Alerts"));
         if (!alerts) continue;
+
         let badge = alerts.querySelector<HTMLElement>("i");
         if (unread <= 0) {
-          badge?.remove();
+          if (badge) badge.remove();
           continue;
         }
+
         if (!badge) {
           badge = document.createElement("i");
+          badge.textContent = nextText;
+          badge.setAttribute("aria-label", nextLabel);
           alerts.appendChild(badge);
+          continue;
         }
-        badge.textContent = unread > 99 ? "99+" : String(unread);
-        badge.setAttribute("aria-label", `${unread} unread alerts`);
+
+        if (badge.textContent !== nextText) badge.textContent = nextText;
+        if (badge.getAttribute("aria-label") !== nextLabel) badge.setAttribute("aria-label", nextLabel);
       }
     };
 
+    const scheduleApply = () => {
+      if (scheduled) return;
+      scheduled = true;
+      window.requestAnimationFrame(apply);
+    };
+
     apply();
-    const observer = new MutationObserver(apply);
+    const observer = new MutationObserver(scheduleApply);
     observer.observe(document.body, { childList: true, subtree: true });
     return () => observer.disconnect();
   }, [unread]);
