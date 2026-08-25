@@ -9,6 +9,7 @@ import YouNavHardLink from "@/components/YouNavHardLink";
 import AlertsNavHardLink from "@/components/AlertsNavHardLink";
 import Phase6NotificationBadge from "@/components/Phase6NotificationBadge";
 import Phase7VisibilityBridge from "@/components/Phase7VisibilityBridge";
+import Phase7ContributorContext from "@/components/Phase7ContributorContext";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <AlertsNavHardLink />
         <Phase6NotificationBadge />
         <Phase7VisibilityBridge />
+        <Phase7ContributorContext />
       </body>
     </html>
   );
