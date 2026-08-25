@@ -69,12 +69,24 @@ function FeedCard({ ping, onConfirm }: { ping: PingItem; onConfirm: (id: string)
   );
 }
 
+function RadiusSelect({ radius, onRadius }: { radius: Radius; onRadius: (r: Radius) => void }) {
+  return (
+    <select value={radius} onChange={(e) => onRadius(Number(e.target.value) as Radius)} aria-label="Nearby radius">
+      <option value={0.5}>0.5 mi</option>
+      <option value={1}>1 mi</option>
+      <option value={3}>3 mi</option>
+      <option value={5}>5 mi</option>
+    </select>
+  );
+}
+
 function LocationBanner({ state, radius, onRequest, onRadius }: { state: LocationState; radius: Radius; onRequest: () => void; onRadius: (r: Radius) => void }) {
   if (state === "granted") {
     return (
       <div className="location-status good">
         <span>●</span>
-        <div><strong>Location active</strong><small>Showing useful activity within {radius} mile{radius === 1 ? "" : "s"}.</small></div>
+        <div><strong>Location active</strong><small>Showing useful activity near you.</small></div>
+        <RadiusSelect radius={radius} onRadius={onRadius} />
       </div>
     );
   }
@@ -83,9 +95,7 @@ function LocationBanner({ state, radius, onRequest, onRadius }: { state: Locatio
       <span>📍</span>
       <div><strong>{state === "denied" ? "Location blocked" : "Use your real location"}</strong><small>{state === "denied" ? "Enable location in your browser to unlock true nearby results." : "Ping works best when it knows what is actually near you."}</small></div>
       <button onClick={onRequest} disabled={state === "requesting"}>{state === "requesting" ? "Checking…" : "Enable"}</button>
-      <select value={radius} onChange={(e) => onRadius(Number(e.target.value) as Radius)} aria-label="Radius">
-        <option value={0.5}>0.5 mi</option><option value={1}>1 mi</option><option value={3}>3 mi</option><option value={5}>5 mi</option>
-      </select>
+      <RadiusSelect radius={radius} onRadius={onRadius} />
     </div>
   );
 }
@@ -131,7 +141,7 @@ function AlertsView({ myPingCount }: { myPingCount: number }) {
 }
 
 function YouView({ radius, locationState, onRadius, onRequestLocation }: { radius: Radius; locationState: LocationState; onRadius: (r: Radius) => void; onRequestLocation: () => void }) {
-  return <div className="simple-screen"><header className="simple-header"><div><div className="brand small">ping<span>.</span></div><h1>You</h1></div></header><div className="profile-card"><div className="avatar">IC</div><div><h2>Your local profile</h2><p>Three Bridges · local member</p></div></div><div className="trust-row"><div><strong>7</strong><span>Helpful Pings</span></div><div><strong>19</strong><span>Confirmations</span></div><div><strong>{radius} mi</strong><span>Your radius</span></div></div><div className="settings-list"><button onClick={onRequestLocation}><span>📍</span><div><strong>Location</strong><small>{locationState === "granted" ? "Location permission active" : "Tap to enable location"}</small></div><b>›</b></button><div className="radius-setting"><span>↔</span><div><strong>Nearby radius</strong><small>Control how local your feed feels</small></div><select value={radius} onChange={(e) => onRadius(Number(e.target.value) as Radius)}><option value={0.5}>0.5 mi</option><option value={1}>1 mi</option><option value={3}>3 mi</option><option value={5}>5 mi</option></select></div><button><span>🔔</span><div><strong>Notifications</strong><small>Important nearby activity only</small></div><b>›</b></button><button><span>🛡️</span><div><strong>Privacy & safety</strong><small>Blocked users, reports, location privacy</small></div><b>›</b></button></div></div>;
+  return <div className="simple-screen"><header className="simple-header"><div><div className="brand small">ping<span>.</span></div><h1>You</h1></div></header><div className="profile-card"><div className="avatar">IC</div><div><h2>Your local profile</h2><p>Three Bridges · local member</p></div></div><div className="trust-row"><div><strong>7</strong><span>Helpful Pings</span></div><div><strong>19</strong><span>Confirmations</span></div><div><strong>{radius} mi</strong><span>Your radius</span></div></div><div className="settings-list"><button onClick={onRequestLocation}><span>📍</span><div><strong>Location</strong><small>{locationState === "granted" ? "Location permission active" : "Tap to enable location"}</small></div><b>›</b></button><div className="radius-setting"><span>↔</span><div><strong>Nearby radius</strong><small>Control how local your feed feels</small></div><RadiusSelect radius={radius} onRadius={onRadius} /></div><button><span>🔔</span><div><strong>Notifications</strong><small>Important nearby activity only</small></div><b>›</b></button><button><span>🛡️</span><div><strong>Privacy & safety</strong><small>Blocked users, reports, location privacy</small></div><b>›</b></button></div></div>;
 }
 
 function Composer({ onClose, onPublish }: { onClose: () => void; onPublish: (draft: { category: Category; title: string; body: string }) => void }) {
