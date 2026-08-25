@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { Map as MapLibreMap, Marker as MapLibreMarker } from "maplibre-gl";
 
 export type MapPing = {
   id: string;
@@ -22,42 +21,80 @@ type Props = {
   onSelect: (id: string) => void;
 };
 
+type MapLibreApi = {
+  Map: new (options: Record<string, unknown>) => any;
+  Marker: new (options?: Record<string, unknown>) => any;
+  NavigationControl: new (options?: Record<string, unknown>) => any;
+};
+
+declare global {
+  interface Window {
+    maplibregl?: MapLibreApi;
+  }
+}
+
 const STYLE_URL = "https://tiles.openfreemap.org/styles/positron";
+const SCRIPT_URL = "https://unpkg.com/maplibre-gl@6.6.0/dist/maplibre-gl.js";
+const CSS_URL = "https://unpkg.com/maplibre-gl@6.6.0/dist/maplibre-gl.css";
+
+function zoomForRadius(radiusMiles: number) {
+  return radiusMiles <= 0.5 ? 14.7 : radiusMiles <= 1 ? 13.8 : radiusMiles <= 3 ? 12.2 : 11.4;
+}
+
+function loadMapLibre(): Promise<MapLibreApi> {
+  if (typeof window === "undefined") return Promise.reject(new Error("Map is browser-only"));
+  if (window.maplibregl) return Promise.resolve(window.maplibregl);
+
+  return new Promise((resolve, reject) => {
+    if (!document.querySelector(`link[href="${CSS_URL}"]`)) {
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = CSS_URL;
+      document.head.appendChild(link);
+    }
+
+    const existing = document.querySelector<HTMLScriptElement>(`script[src="${SCRIPT_URL}"]`);
+    if (existing) {
+      existing.addEventListener("load", () => window.maplibregl ? resolve(window.maplibregl) : reject(new Error("MapLibre failed to initialise")), { once: true });
+      existing.addEventListener("error", () => reject(new Error("MapLibre failed to load")), { once: true });
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = SCRIPT_URL;
+    script.async = true;
+    script.onload = () => window.maplibregl ? resolve(window.maplibregl) : reject(new Error("MapLibre failed to initialise"));
+    script.onerror = () => reject(new Error("MapLibre failed to load"));
+    document.head.appendChild(script);
+  });
+}
 
 export default function LivePingMap({ center, radiusMiles, pings, selectedId, onSelect }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<MapLibreMap | null>(null);
-  const markersRef = useRef<MapLibreMarker[]>([]);
-  const userMarkerRef = useRef<MapLibreMarker | null>(null);
+  const mapRef = useRef<any>(null);
+  const markersRef = useRef<any[]>([]);
+  const userMarkerRef = useRef<any>(null);
 
   useEffect(() => {
     let disposed = false;
-
-    const initialise = async () => {
-      if (!containerRef.current || mapRef.current) return;
-      const maplibre = await import("maplibre-gl");
-      if (disposed || !containerRef.current) return;
-
+    loadMapLibre().then((maplibre) => {
+      if (disposed || !containerRef.current || mapRef.current) return;
       const map = new maplibre.Map({
         container: containerRef.current,
         style: STYLE_URL,
         center: [center.lng, center.lat],
-        zoom: radiusMiles <= 0.5 ? 14.7 : radiusMiles <= 1 ? 13.8 : radiusMiles <= 3 ? 12.2 : 11.4,
+        zoom: zoomForRadius(radiusMiles),
         attributionControl: true,
       });
-
       map.addControl(new maplibre.NavigationControl({ showCompass: false }), "top-right");
       mapRef.current = map;
 
       const userEl = document.createElement("div");
       userEl.className = "ping-user-marker";
       userEl.setAttribute("aria-label", "Your location");
-      userMarkerRef.current = new maplibre.Marker({ element: userEl })
-        .setLngLat([center.lng, center.lat])
-        .addTo(map);
-    };
+      userMarkerRef.current = new maplibre.Marker({ element: userEl }).setLngLat([center.lng, center.lat]).addTo(map);
+    }).catch(() => {});
 
-    initialise();
     return () => {
       disposed = true;
       markersRef.current.forEach((marker) => marker.remove());
@@ -72,22 +109,15 @@ export default function LivePingMap({ center, radiusMiles, pings, selectedId, on
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    map.easeTo({
-      center: [center.lng, center.lat],
-      zoom: radiusMiles <= 0.5 ? 14.7 : radiusMiles <= 1 ? 13.8 : radiusMiles <= 3 ? 12.2 : 11.4,
-      duration: 450,
-    });
+    map.easeTo({ center: [center.lng, center.lat], zoom: zoomForRadius(radiusMiles), duration: 450 });
     userMarkerRef.current?.setLngLat([center.lng, center.lat]);
   }, [center.lat, center.lng, radiusMiles]);
 
   useEffect(() => {
     let cancelled = false;
-    const renderMarkers = async () => {
+    loadMapLibre().then((maplibre) => {
       const map = mapRef.current;
-      if (!map) return;
-      const maplibre = await import("maplibre-gl");
-      if (cancelled || !mapRef.current) return;
-
+      if (cancelled || !map) return;
       markersRef.current.forEach((marker) => marker.remove());
       markersRef.current = pings.map((ping) => {
         const button = document.createElement("button");
@@ -96,12 +126,9 @@ export default function LivePingMap({ center, radiusMiles, pings, selectedId, on
         button.textContent = ping.emoji;
         button.setAttribute("aria-label", `${ping.category}: ${ping.title}`);
         button.addEventListener("click", () => onSelect(ping.id));
-        return new maplibre.Marker({ element: button, anchor: "bottom" })
-          .setLngLat([ping.lng, ping.lat])
-          .addTo(mapRef.current!);
+        return new maplibre.Marker({ element: button, anchor: "bottom" }).setLngLat([ping.lng, ping.lat]).addTo(map);
       });
-    };
-    renderMarkers();
+    }).catch(() => {});
     return () => { cancelled = true; };
   }, [pings, selectedId, onSelect]);
 
