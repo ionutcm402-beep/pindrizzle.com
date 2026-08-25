@@ -96,7 +96,7 @@ export default function ModerationPage() {
       const { error } = await createClient().rpc("moderate_report", {
         target_report_id: row.report_id,
         moderation_action: action,
-        moderation_notes: action === "remove" ? "Removed after moderator review" : "Dismissed after moderator review",
+        moderation_notes: action === "remove" ? "Ping removed after moderator review" : "Report dismissed after moderator review",
       });
       if (error) throw error;
       setMessage(action === "remove" ? "Ping removed. The report stays in moderation history." : "Report dismissed. The Ping remains live and the report stays in history.");
@@ -157,7 +157,7 @@ export default function ModerationPage() {
                       </div>
                     ) : (
                       <div className="moderation-reviewed">
-                        <strong>{row.review_status === "removed" ? "Action taken" : "No action taken"}</strong>
+                        <strong>{row.review_status === "removed" ? "Ping removed" : "Report dismissed"}</strong>
                         <span>{row.reviewed_at ? `Reviewed ${relativeTime(row.reviewed_at)}` : "Reviewed"}{row.reviewed_by_name ? ` by ${row.reviewed_by_name}` : ""}</span>
                         {row.review_notes && <small>{row.review_notes}</small>}
                       </div>
