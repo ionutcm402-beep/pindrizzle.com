@@ -27,6 +27,7 @@ type PingItem = {
 
 type NearbyRow = {
   id: string;
+  user_id: string;
   category: "alert" | "traffic" | "lost_found" | "free" | "help" | "local";
   title: string;
   body: string;
@@ -54,6 +55,15 @@ const databaseCategory: Record<NearbyRow["category"], Category> = {
   local: "Local",
 };
 
+const toDatabaseCategory: Record<Category, NearbyRow["category"]> = {
+  Alert: "alert",
+  Traffic: "traffic",
+  "Lost & Found": "lost_found",
+  Free: "free",
+  Help: "help",
+  Local: "local",
+};
+
 const seedPings: PingItem[] = [
   { id: "seed-1", category: "Traffic", emoji: "🚧", title: "One lane blocked near the roundabout", body: "A delivery van has stopped across the left lane. Traffic is moving, but slowly.", distanceMiles: 0.2, ageMinutes: 4, confirmations: 8, place: "Three Bridges", tone: "urgent" },
   { id: "seed-2", category: "Lost & Found", emoji: "🐕", title: "Has anyone seen Milo?", body: "Small brown spaniel, red collar. Last seen near the park entrance about 20 minutes ago.", distanceMiles: 0.5, ageMinutes: 18, confirmations: 3, place: "Maidenbower Park", tone: "warm" },
@@ -74,7 +84,7 @@ function minutesSince(value: string) {
   return Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 60000));
 }
 
-function mapNearbyRow(row: NearbyRow): PingItem {
+function mapNearbyRow(row: NearbyRow, currentUserId: string | null): PingItem {
   const category = databaseCategory[row.category];
   const meta = categoryMeta[category];
   return {
@@ -88,6 +98,7 @@ function mapNearbyRow(row: NearbyRow): PingItem {
     confirmations: row.confirmation_count,
     place: row.place_label || "Nearby",
     tone: meta.tone,
+    createdByMe: currentUserId === row.user_id,
     live: true,
   };
 }
@@ -187,11 +198,11 @@ function AlertsView({ myPingCount }: { myPingCount: number }) {
   return <div className="simple-screen"><header className="simple-header"><div><div className="brand small">ping<span>.</span></div><h1>Alerts</h1></div></header><div className="notice-card important"><span>🚨</span><div><strong>Traffic nearby</strong><p>One lane blocked 0.2 miles away · 4 min ago</p></div></div>{myPingCount > 0 && <div className="notice-card"><span>📍</span><div><strong>Your Ping is live</strong><p>People inside your radius can now see it.</p></div></div>}<div className="notice-card"><span>✓</span><div><strong>Your neighbourhood helped</strong><p>A lost pet Ping you followed was marked resolved.</p></div></div><div className="notification-rule"><strong>Useful notifications only.</strong><p>Ping won’t send “we miss you” messages. Alerts are reserved for things that actually matter near you.</p></div></div>;
 }
 
-function YouView({ radius, locationState, dataMode, onRadius, onRequestLocation }: { radius: Radius; locationState: LocationState; dataMode: DataMode; onRadius: (r: Radius) => void; onRequestLocation: () => void }) {
-  return <div className="simple-screen"><header className="simple-header"><div><div className="brand small">ping<span>.</span></div><h1>You</h1></div></header><div className="profile-card"><div className="avatar">IC</div><div><h2>Your local profile</h2><p>{dataMode === "live" ? "Connected to Ping community" : "Preview member"}</p></div></div><div className="trust-row"><div><strong>7</strong><span>Helpful Pings</span></div><div><strong>19</strong><span>Confirmations</span></div><div><strong>{radius} mi</strong><span>Your radius</span></div></div><div className="settings-list"><button onClick={onRequestLocation}><span>📍</span><div><strong>Location</strong><small>{locationState === "granted" ? "Location permission active" : "Tap to enable location"}</small></div><b>›</b></button><div className="radius-setting"><span>↔</span><div><strong>Nearby radius</strong><small>Control how local your feed feels</small></div><RadiusSelect radius={radius} onRadius={onRadius} /></div><button><span>🔔</span><div><strong>Notifications</strong><small>Important nearby activity only</small></div><b>›</b></button><button><span>🛡️</span><div><strong>Privacy & safety</strong><small>Blocked users, reports, location privacy</small></div><b>›</b></button></div></div>;
+function YouView({ radius, locationState, dataMode, userEmail, onRadius, onRequestLocation, onSignIn, onSignOut }: { radius: Radius; locationState: LocationState; dataMode: DataMode; userEmail: string | null; onRadius: (r: Radius) => void; onRequestLocation: () => void; onSignIn: () => void; onSignOut: () => void }) {
+  return <div className="simple-screen"><header className="simple-header"><div><div className="brand small">ping<span>.</span></div><h1>You</h1></div></header><div className="profile-card"><div className="avatar">{userEmail ? userEmail.slice(0, 2).toUpperCase() : "YOU"}</div><div><h2>{userEmail ? "Your Ping account" : "Join your local community"}</h2><p>{userEmail || (dataMode === "live" ? "Live nearby data active" : "Sign in to post and confirm Pings")}</p></div></div><div className="trust-row"><div><strong>7</strong><span>Helpful Pings</span></div><div><strong>19</strong><span>Confirmations</span></div><div><strong>{radius} mi</strong><span>Your radius</span></div></div><div className="settings-list">{!userEmail && <button onClick={onSignIn}><span>✉️</span><div><strong>Sign in</strong><small>Email magic link — no password needed</small></div><b>›</b></button>}<button onClick={onRequestLocation}><span>📍</span><div><strong>Location</strong><small>{locationState === "granted" ? "Location permission active" : "Tap to enable location"}</small></div><b>›</b></button><div className="radius-setting"><span>↔</span><div><strong>Nearby radius</strong><small>Control how local your feed feels</small></div><RadiusSelect radius={radius} onRadius={onRadius} /></div><button><span>🔔</span><div><strong>Notifications</strong><small>Important nearby activity only</small></div><b>›</b></button><button><span>🛡️</span><div><strong>Privacy & safety</strong><small>Blocked users, reports, location privacy</small></div><b>›</b></button>{userEmail && <button onClick={onSignOut}><span>↪</span><div><strong>Sign out</strong><small>Leave this account on this device</small></div><b>›</b></button>}</div></div>;
 }
 
-function Composer({ onClose, onPublish }: { onClose: () => void; onPublish: (draft: { category: Category; title: string; body: string }) => void }) {
+function Composer({ onClose, onPublish }: { onClose: () => void; onPublish: (draft: { category: Category; title: string; body: string }) => void | Promise<void> }) {
   const [category, setCategory] = useState<Category>("Alert");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -199,23 +210,51 @@ function Composer({ onClose, onPublish }: { onClose: () => void; onPublish: (dra
   return <div className="composer-backdrop" role="dialog" aria-modal="true" aria-label="Create a Ping"><div className="composer-sheet"><div className="sheet-handle" /><div className="composer-header"><button onClick={onClose}>Cancel</button><strong>New Ping</strong><span /></div><h2>What’s happening?</h2><div className="category-grid">{(Object.keys(categoryMeta) as Category[]).map((item) => <button key={item} className={category === item ? "selected" : ""} onClick={() => setCategory(item)}>{categoryMeta[item].emoji} {item}</button>)}</div><label className="composer-label">Short headline</label><input className="composer-input" placeholder="What should neighbours know?" maxLength={70} value={title} onChange={(e) => setTitle(e.target.value)} /><label className="composer-label">Useful detail</label><textarea placeholder="Keep it clear and useful…" maxLength={280} value={body} onChange={(e) => setBody(e.target.value)} /><div className="composer-options"><button>📷 Add photo</button><button>📍 Near your current location</button></div><div className="expiry-note">⏱ This Ping will disappear automatically after 24 hours.</div><button className="publish-button" disabled={!canPublish} onClick={() => canPublish && onPublish({ category, title: title.trim(), body: body.trim() })}>Ping it</button></div></div>;
 }
 
+function AuthSheet({ onClose, onSend, busy, message }: { onClose: () => void; onSend: (email: string) => void; busy: boolean; message: string }) {
+  const [email, setEmail] = useState("");
+  const valid = email.includes("@") && email.includes(".");
+  return <div className="composer-backdrop" role="dialog" aria-modal="true" aria-label="Sign in to Ping"><div className="composer-sheet"><div className="sheet-handle" /><div className="composer-header"><button onClick={onClose}>Cancel</button><strong>Join Ping</strong><span /></div><h2>Be part of your mile.</h2><p className="ping-body">Sign in to post useful local information and confirm what other people nearby are seeing. No password needed.</p><label className="composer-label">Email address</label><input className="composer-input" type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} /><div className="expiry-note">✉️ We’ll email you a secure sign-in link. Your email is not shown publicly.</div>{message && <div className="expiry-note">{message}</div>}<button className="publish-button" disabled={!valid || busy} onClick={() => valid && onSend(email.trim())}>{busy ? "Sending…" : "Email me a sign-in link"}</button></div></div>;
+}
+
 export default function Home() {
   const [tab, setTab] = useState<Tab>("feed");
   const [composerOpen, setComposerOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authMessage, setAuthMessage] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [pings, setPings] = useState<PingItem[]>(seedPings);
   const [radius, setRadius] = useState<Radius>(1);
   const [locationState, setLocationState] = useState<LocationState>("idle");
   const [coordinates, setCoordinates] = useState<Coordinates | null>(null);
   const [dataMode, setDataMode] = useState<DataMode>("demo");
   const [selectedMapPing, setSelectedMapPing] = useState<string | null>(seedPings[0].id);
+  const [refreshNonce, setRefreshNonce] = useState(0);
 
   useEffect(() => {
     try {
-      const storedPings = localStorage.getItem("ping-demo-pings");
       const storedRadius = localStorage.getItem("ping-radius");
-      if (storedPings) setPings([...JSON.parse(storedPings), ...seedPings]);
       if (storedRadius && [0.5, 1, 3, 5].includes(Number(storedRadius))) setRadius(Number(storedRadius) as Radius);
     } catch {}
+  }, []);
+
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+    try {
+      const supabase = createClient();
+      supabase.auth.getSession().then(({ data }) => {
+        setUserId(data.session?.user.id || null);
+        setUserEmail(data.session?.user.email || null);
+      });
+      const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+        setUserId(session?.user.id || null);
+        setUserEmail(session?.user.email || null);
+        if (session?.user) setAuthOpen(false);
+      });
+      unsubscribe = () => data.subscription.unsubscribe();
+    } catch {}
+    return () => unsubscribe?.();
   }, []);
 
   useEffect(() => {
@@ -233,25 +272,29 @@ export default function Home() {
         });
         if (cancelled) return;
         if (error) throw error;
-        const live = ((data || []) as NearbyRow[]).map(mapNearbyRow);
-        const local = pings.filter((ping) => ping.createdByMe);
+        const live = ((data || []) as NearbyRow[]).map((row) => mapNearbyRow(row, userId));
         if (live.length) {
-          setPings([...local, ...live]);
-          setSelectedMapPing(live[0]?.id || local[0]?.id || null);
+          setPings(live);
+          setSelectedMapPing(live[0]?.id || null);
           setDataMode("live");
         } else {
-          setPings([...local, ...seedPings]);
+          setPings(seedPings);
+          setSelectedMapPing(seedPings[0].id);
           setDataMode("demo");
         }
       } catch {
-        if (!cancelled) setDataMode("offline");
+        if (!cancelled) {
+          setPings(seedPings);
+          setDataMode("offline");
+        }
       }
     };
     loadNearby();
     return () => { cancelled = true; };
-  }, [coordinates, radius]);
+  }, [coordinates, radius, refreshNonce, userId]);
 
   const setAndStoreRadius = (next: Radius) => { setRadius(next); try { localStorage.setItem("ping-radius", String(next)); } catch {} };
+
   const requestLocation = () => {
     if (!navigator.geolocation) { setLocationState("unavailable"); return; }
     setLocationState("requesting");
@@ -260,15 +303,69 @@ export default function Home() {
       setLocationState("granted");
     }, (error) => setLocationState(error.code === 1 ? "denied" : "unavailable"), { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
   };
-  const confirmPing = (id: string) => setPings((current) => current.map((p) => p.id === id ? { ...p, confirmations: p.confirmations + 1 } : p));
-  const publishPing = (draft: { category: Category; title: string; body: string }) => {
-    const meta = categoryMeta[draft.category];
-    const newPing: PingItem = { id: `local-${Date.now()}`, category: draft.category, emoji: meta.emoji, title: draft.title, body: draft.body, distanceMiles: 0.1, ageMinutes: 0, confirmations: 0, place: "Near your current location", tone: meta.tone, createdByMe: true };
-    setPings((current) => [newPing, ...current]);
-    try { const existing = JSON.parse(localStorage.getItem("ping-demo-pings") || "[]"); localStorage.setItem("ping-demo-pings", JSON.stringify([newPing, ...existing].slice(0, 20))); } catch {}
-    setComposerOpen(false); setTab("feed");
+
+  const sendMagicLink = async (email: string) => {
+    setAuthBusy(true);
+    setAuthMessage("");
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin } });
+      if (error) throw error;
+      setAuthMessage("Check your email and tap the secure Ping sign-in link.");
+    } catch {
+      setAuthMessage("We couldn’t send the link yet. Please check the email and try again.");
+    } finally {
+      setAuthBusy(false);
+    }
   };
+
+  const signOut = async () => {
+    try { await createClient().auth.signOut(); } catch {}
+  };
+
+  const confirmPing = async (id: string) => {
+    const target = pings.find((p) => p.id === id);
+    if (!target?.live) {
+      setPings((current) => current.map((p) => p.id === id ? { ...p, confirmations: p.confirmations + 1 } : p));
+      return;
+    }
+    if (!userId) { setAuthMessage("Sign in to confirm real Pings near you."); setAuthOpen(true); return; }
+    try {
+      const { data, error } = await createClient().rpc("confirm_ping", { target_ping_id: id });
+      if (error) throw error;
+      setPings((current) => current.map((p) => p.id === id ? { ...p, confirmations: Number(data) } : p));
+    } catch {}
+  };
+
+  const openComposer = () => {
+    if (!userId) { setAuthMessage("Sign in once to post Pings that your neighbours can see."); setAuthOpen(true); return; }
+    if (locationState !== "granted" || !coordinates) { requestLocation(); return; }
+    setComposerOpen(true);
+  };
+
+  const publishPing = async (draft: { category: Category; title: string; body: string }) => {
+    if (!userId) { setComposerOpen(false); setAuthOpen(true); return; }
+    if (!coordinates) { setComposerOpen(false); requestLocation(); return; }
+    try {
+      const { error } = await createClient().rpc("create_ping", {
+        ping_category: toDatabaseCategory[draft.category],
+        ping_title: draft.title,
+        ping_body: draft.body,
+        ping_lat: coordinates.lat,
+        ping_lng: coordinates.lng,
+        ping_place_label: "Near your current location",
+        ping_precision: "approximate",
+      });
+      if (error) throw error;
+      setComposerOpen(false);
+      setTab("feed");
+      setRefreshNonce((n) => n + 1);
+    } catch {
+      window.alert("Ping couldn’t publish yet. Please try again.");
+    }
+  };
+
   const myPingCount = pings.filter((p) => p.createdByMe).length;
 
-  return <div className="page-shell"><div className="app-shell"><div className="screen-content">{tab === "feed" && <FeedView pings={pings} radius={radius} locationState={locationState} dataMode={dataMode} onRequestLocation={requestLocation} onRadius={setAndStoreRadius} onConfirm={confirmPing} />}{tab === "map" && <MapView pings={pings.filter((p) => p.distanceMiles <= radius)} selectedId={selectedMapPing} onSelect={setSelectedMapPing} />}{tab === "alerts" && <AlertsView myPingCount={myPingCount} />}{tab === "you" && <YouView radius={radius} locationState={locationState} dataMode={dataMode} onRadius={setAndStoreRadius} onRequestLocation={requestLocation} />}</div><nav className="bottom-nav" aria-label="Primary navigation"><button className={tab === "feed" ? "active" : ""} onClick={() => setTab("feed")}><span>⌂</span>Feed</button><button className={tab === "map" ? "active" : ""} onClick={() => setTab("map")}><span>⌖</span>Map</button><button className="compose-nav" onClick={() => setComposerOpen(true)} aria-label="Create a Ping"><span>+</span>Ping</button><button className={tab === "alerts" ? "active" : ""} onClick={() => setTab("alerts")}><span>♢</span>Alerts<i>{myPingCount ? 2 : 1}</i></button><button className={tab === "you" ? "active" : ""} onClick={() => setTab("you")}><span>○</span>You</button></nav></div>{composerOpen && <Composer onClose={() => setComposerOpen(false)} onPublish={publishPing} />}</div>;
+  return <div className="page-shell"><div className="app-shell"><div className="screen-content">{tab === "feed" && <FeedView pings={pings} radius={radius} locationState={locationState} dataMode={dataMode} onRequestLocation={requestLocation} onRadius={setAndStoreRadius} onConfirm={confirmPing} />}{tab === "map" && <MapView pings={pings.filter((p) => p.distanceMiles <= radius)} selectedId={selectedMapPing} onSelect={setSelectedMapPing} />}{tab === "alerts" && <AlertsView myPingCount={myPingCount} />}{tab === "you" && <YouView radius={radius} locationState={locationState} dataMode={dataMode} userEmail={userEmail} onRadius={setAndStoreRadius} onRequestLocation={requestLocation} onSignIn={() => { setAuthMessage(""); setAuthOpen(true); }} onSignOut={signOut} />}</div><nav className="bottom-nav" aria-label="Primary navigation"><button className={tab === "feed" ? "active" : ""} onClick={() => setTab("feed")}><span>⌂</span>Feed</button><button className={tab === "map" ? "active" : ""} onClick={() => setTab("map")}><span>⌖</span>Map</button><button className="compose-nav" onClick={openComposer} aria-label="Create a Ping"><span>+</span>Ping</button><button className={tab === "alerts" ? "active" : ""} onClick={() => setTab("alerts")}><span>♢</span>Alerts<i>{myPingCount ? 2 : 1}</i></button><button className={tab === "you" ? "active" : ""} onClick={() => setTab("you")}><span>○</span>You</button></nav></div>{composerOpen && <Composer onClose={() => setComposerOpen(false)} onPublish={publishPing} />}{authOpen && <AuthSheet onClose={() => setAuthOpen(false)} onSend={sendMagicLink} busy={authBusy} message={authMessage} />}</div>;
 }
