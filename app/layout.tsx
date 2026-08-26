@@ -15,9 +15,11 @@ import Phase15PlaceIntelligence from "@/components/Phase15PlaceIntelligence";
 import Phase16PushSafetyBridge from "@/components/Phase16PushSafetyBridge";
 import Phase19ProductAnalytics from "@/components/Phase19ProductAnalytics";
 import Phase21AccessibilityBridge from "@/components/Phase21AccessibilityBridge";
+import Phase22StorageChoice from "@/components/Phase22StorageChoice";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 import "./accessibility.css";
+import "./legal.css";
 
 export const metadata: Metadata = {
   title: "Ping — Know what's happening in your mile",
@@ -51,6 +53,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Phase15PlaceIntelligence />
         <Phase16PushSafetyBridge />
         <Phase19ProductAnalytics />
+        <Phase22StorageChoice />
         <Phase21AccessibilityBridge />
       </body>
     </html>
