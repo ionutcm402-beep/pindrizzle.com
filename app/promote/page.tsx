@@ -249,7 +249,7 @@ export default function PromotePage() {
                 <section className="phase9-quote">
                   <div><span>Total promotion price</span><strong>{money(quote)}</strong></div>
                   <p>{radiusLabel(radius)} radius · {duration} hours · clearly labelled Promoted</p>
-                  <small>Payment is not connected in this build. Submitting creates a request for review; no money is taken.</small>
+                  <small>Submitting creates a moderation request and takes no payment. Once approved, an unpaid request can be completed through secure Stripe Checkout.</small>
                 </section>
 
                 <button className="phase9-submit" type="button" disabled={!selectedPing || !sponsorName.trim() || !durationAvailable(duration) || submitting} onClick={() => void submit()}>{submitting ? "Submitting…" : "Submit for approval"}</button>
@@ -271,7 +271,7 @@ export default function PromotePage() {
 
         <nav className="bottom-nav" aria-label="Primary navigation">
           <a href="/"><span>⌂</span>Feed</a>
-          <a href="/#map"><span>⌖</span>Map</a>
+          <a href="/map"><span>⌖</span>Map</a>
           <a href="/#ping" className="compose-nav"><span>+</span>Ping</a>
           <a href="/alerts"><span>♢</span>Alerts</a>
           <a href="/you" className="active"><span>○</span>You</a>

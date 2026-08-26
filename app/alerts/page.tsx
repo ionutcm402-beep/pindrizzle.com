@@ -189,8 +189,8 @@ export default function AlertsPage() {
 
         <nav className="bottom-nav" aria-label="Primary navigation">
           <a href="/"><span>⌂</span>Feed</a>
-          <a href="/#map"><span>⌖</span>Map</a>
-          <a href="/" className="compose-nav"><span>+</span>Ping</a>
+          <a href="/map"><span>⌖</span>Map</a>
+          <a href="/#ping" className="compose-nav"><span>+</span>Ping</a>
           <a href="/alerts" className="active"><span>♢</span>Alerts{unread > 0 && <i>{unread > 99 ? "99+" : unread}</i>}</a>
           <a href="/you"><span>○</span>You</a>
         </nav>

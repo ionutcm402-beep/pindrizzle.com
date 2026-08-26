@@ -156,7 +156,7 @@ export default function YouPage() {
 
         <nav className="bottom-nav" aria-label="Primary navigation">
           <a href="/"><span>⌂</span>Feed</a>
-          <a href="/#map"><span>⌖</span>Map</a>
+          <a href="/map"><span>⌖</span>Map</a>
           <a href="/#ping" className="compose-nav"><span>+</span>Ping</a>
           <a href="/alerts"><span>♢</span>Alerts</a>
           <a href="/you" className="active"><span>○</span>You</a>
