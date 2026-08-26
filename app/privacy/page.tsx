@@ -1,5 +1,6 @@
 import LegalPageShell from "@/components/LegalPageShell";
 import ComplianceRequestPanel, { type RequestOption } from "@/components/ComplianceRequestPanel";
+import { getPublicOperatorConfig } from "@/lib/launchReadiness";
 
 const privacyOptions: RequestOption[] = [
   { value: "data_access", label: "Access a copy of my data" },
@@ -11,6 +12,9 @@ const privacyOptions: RequestOption[] = [
 ];
 
 export default function PrivacyPage() {
+  const operator = getPublicOperatorConfig();
+  const operatorPublished = Boolean(operator.operatorName && operator.operatorAddress && operator.privacyEmail);
+
   return (
     <LegalPageShell title="Privacy Notice" kicker="YOUR DATA" active="privacy">
       <section className="legal-intro">
@@ -18,10 +22,17 @@ export default function PrivacyPage() {
         <p>This notice explains the personal information Ping currently uses, why it uses it, how long it may be kept, and how to make a rights request.</p>
       </section>
 
-      <section className="legal-card legal-warning">
+      {!operatorPublished && <section className="legal-card legal-warning">
         <h2>Launch-status notice</h2>
-        <p>Ping is still being prepared for closed beta and public launch. The final legal entity/controller name, dedicated privacy contact, governing terms and provider-transfer details must be published before public launch. This page records the product’s current data practices; it is not a claim of completed legal certification.</p>
-      </section>
+        <p>Ping is still being prepared for public launch. The final operator/controller identity and dedicated privacy contact are deliberately not presented as complete until the reviewed production values are configured. This page records the product’s current data practices; it is not a claim of completed legal certification.</p>
+      </section>}
+
+      {operatorPublished && <section className="legal-card legal-callout">
+        <h2>Who operates Ping</h2>
+        <p><b>{operator.operatorName}</b> is the operator/controller contact published for Ping.</p>
+        <p>{operator.operatorAddress}</p>
+        <div className="legal-links"><a href={`mailto:${operator.privacyEmail}`}>Privacy: {operator.privacyEmail}</a>{operator.supportEmail && <a href={`mailto:${operator.supportEmail}`}>Support: {operator.supportEmail}</a>}</div>
+      </section>}
 
       <section className="legal-card">
         <h2>What Ping uses</h2>
@@ -68,8 +79,8 @@ export default function PrivacyPage() {
 
       <section className="legal-card">
         <h2>If you remain unhappy</h2>
-        <p>You can raise a data-protection complaint with Ping through the request form above. You also have the right to complain to the UK Information Commissioner’s Office.</p>
-        <div className="legal-links"><a href="https://ico.org.uk/make-a-complaint" target="_blank" rel="noreferrer">Open the ICO complaints service ↗</a></div>
+        <p>You can raise a data-protection complaint with Ping through the request form above{operator.privacyEmail ? ` or by emailing ${operator.privacyEmail}` : ""}. You also have the right to complain to the UK Information Commissioner’s Office.</p>
+        <div className="legal-links">{operator.privacyEmail && <a href={`mailto:${operator.privacyEmail}`}>Email Ping privacy</a>}<a href="https://ico.org.uk/make-a-complaint" target="_blank" rel="noreferrer">Open the ICO complaints service ↗</a></div>
       </section>
     </LegalPageShell>
   );
