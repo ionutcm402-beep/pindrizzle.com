@@ -4,7 +4,6 @@ import ComplianceRequestPanel, { type RequestOption } from "@/components/Complia
 const safetyOptions: RequestOption[] = [
   { value: "safety_complaint", label: "Safety / illegal-content complaint" },
   { value: "moderation_appeal", label: "Appeal a moderation decision" },
-  { value: "other", label: "Other service complaint" },
 ];
 
 export default function SafetyPage() {
