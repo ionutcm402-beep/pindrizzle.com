@@ -8,8 +8,9 @@ export default function Phase15PlaceIntelligence() {
 
   const applyLabel = useCallback((label: string) => {
     const safe = label && label !== "Nearby" ? label : "Your mile";
+    const nextText = `● ${safe}`;
     document.querySelectorAll<HTMLElement>(".location-pill").forEach((node) => {
-      node.textContent = `● ${safe}`;
+      if (node.textContent !== nextText) node.textContent = nextText;
       node.setAttribute("title", "Open your privacy-safe local area snapshot.");
       node.setAttribute("role", "button");
       node.setAttribute("tabindex", "0");
@@ -38,7 +39,10 @@ export default function Phase15PlaceIntelligence() {
   useEffect(() => {
     try {
       const cached = localStorage.getItem("ping-place-label");
-      if (cached) applyLabel(cached);
+      if (cached) {
+        applyLabel(cached);
+        setActive(true);
+      }
     } catch {}
 
     const observer = new MutationObserver(() => {
