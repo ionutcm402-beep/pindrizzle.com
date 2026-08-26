@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 type Mode = "signin" | "signup" | "recovery";
@@ -14,6 +14,10 @@ export default function PasswordAuthOverlay() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [contextMessage, setContextMessage] = useState("");
+  const sheetRef = useRef<HTMLElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const busyRef = useRef(false);
 
   const passwordValid = password.length >= 8;
   const emailValid = email.includes("@") && email.includes(".");
@@ -22,6 +26,8 @@ export default function PasswordAuthOverlay() {
     if (mode === "signup") return emailValid && passwordValid && password === confirmPassword;
     return emailValid && passwordValid;
   }, [mode, emailValid, passwordValid, password, confirmPassword]);
+
+  useEffect(() => { busyRef.current = busy; }, [busy]);
 
   useEffect(() => {
     const authNeeded = (event: Event) => {
@@ -55,13 +61,53 @@ export default function PasswordAuthOverlay() {
     };
   }, []);
 
-  const close = () => {
+  const close = useCallback(() => {
     setOpen(false);
     setMessage("");
     setContextMessage("");
     setPassword("");
     setConfirmPassword("");
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const focusTimer = window.setTimeout(() => emailRef.current?.focus(), 0);
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !busyRef.current) {
+        event.preventDefault();
+        close();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusable = Array.from(
+        sheetRef.current?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])',
+        ) || [],
+      ).filter((element) => element.offsetParent !== null);
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.clearTimeout(focusTimer);
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      previousFocusRef.current?.focus();
+    };
+  }, [open, close]);
 
   const submit = async () => {
     if (!canSubmit) return;
@@ -121,6 +167,7 @@ export default function PasswordAuthOverlay() {
     setMessage("");
     setPassword("");
     setConfirmPassword("");
+    window.setTimeout(() => emailRef.current?.focus(), 0);
   };
 
   if (!open) return null;
@@ -129,23 +176,23 @@ export default function PasswordAuthOverlay() {
 
   return (
     <>
-      <div className="password-auth-backdrop" role="dialog" aria-modal="true" aria-label="Ping account">
-        <section className="password-auth-sheet">
-          <div className="password-auth-handle" />
+      <div className="password-auth-backdrop" role="dialog" aria-modal="true" aria-labelledby="password-auth-title">
+        <section className="password-auth-sheet" ref={sheetRef}>
+          <div className="password-auth-handle" aria-hidden="true" />
           <div className="password-auth-header">
-            <button type="button" onClick={close}>Cancel</button>
+            <button type="button" onClick={close} disabled={busy}>Cancel</button>
             <strong>Ping</strong>
             <span />
           </div>
 
           {(mode === "signin" || mode === "signup") && (
-            <div className="password-auth-tabs">
-              <button type="button" className={mode === "signin" ? "active" : ""} onClick={() => switchMode("signin")}>Sign in</button>
-              <button type="button" className={mode === "signup" ? "active" : ""} onClick={() => switchMode("signup")}>Sign up</button>
+            <div className="password-auth-tabs" aria-label="Account mode">
+              <button type="button" aria-pressed={mode === "signin"} className={mode === "signin" ? "active" : ""} onClick={() => switchMode("signin")}>Sign in</button>
+              <button type="button" aria-pressed={mode === "signup"} className={mode === "signup" ? "active" : ""} onClick={() => switchMode("signup")}>Sign up</button>
             </div>
           )}
 
-          <h2>{heading}</h2>
+          <h2 id="password-auth-title">{heading}</h2>
           {contextMessage && mode === "signin" && <p className="password-auth-context">{contextMessage}</p>}
           <p className="password-auth-copy">
             {mode === "signup"
@@ -155,28 +202,28 @@ export default function PasswordAuthOverlay() {
                 : "Sign in with your email and password. Normal sign-in does not send an email."}
           </p>
 
-          <label>Email address</label>
-          <input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" />
+          <label htmlFor="password-auth-email">Email address</label>
+          <input ref={emailRef} id="password-auth-email" type="email" inputMode="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" />
 
           {mode !== "recovery" && (
             <>
-              <label>Password</label>
-              <input type="password" autoComplete={mode === "signup" ? "new-password" : "current-password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 8 characters" />
+              <label htmlFor="password-auth-password">Password</label>
+              <input id="password-auth-password" type="password" autoComplete={mode === "signup" ? "new-password" : "current-password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 8 characters" aria-invalid={password.length > 0 && !passwordValid} aria-describedby={password.length > 0 && !passwordValid ? "password-auth-password-hint" : undefined} />
             </>
           )}
 
           {mode === "signup" && (
             <>
-              <label>Confirm password</label>
-              <input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Repeat your password" />
+              <label htmlFor="password-auth-confirm">Confirm password</label>
+              <input id="password-auth-confirm" type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Repeat your password" aria-invalid={confirmPassword.length > 0 && password !== confirmPassword} aria-describedby={confirmPassword.length > 0 && password !== confirmPassword ? "password-auth-confirm-hint" : undefined} />
             </>
           )}
 
-          {password.length > 0 && password.length < 8 && mode !== "recovery" && <div className="password-auth-hint">Password must be at least 8 characters.</div>}
-          {confirmPassword.length > 0 && password !== confirmPassword && <div className="password-auth-hint error">Passwords do not match.</div>}
-          {message && <div className="password-auth-message">{message}</div>}
+          {password.length > 0 && password.length < 8 && mode !== "recovery" && <div id="password-auth-password-hint" className="password-auth-hint">Password must be at least 8 characters.</div>}
+          {confirmPassword.length > 0 && password !== confirmPassword && <div id="password-auth-confirm-hint" className="password-auth-hint error">Passwords do not match.</div>}
+          {message && <div className="password-auth-message" role="status" aria-live="polite">{message}</div>}
 
-          <button type="button" className="password-auth-primary" disabled={busy || !canSubmit} onClick={submit}>
+          <button type="button" className="password-auth-primary" disabled={busy || !canSubmit} onClick={submit} aria-busy={busy}>
             {busy ? "Please wait…" : mode === "signup" ? "Create account" : mode === "recovery" ? "Send password reset" : "Sign in"}
           </button>
 
