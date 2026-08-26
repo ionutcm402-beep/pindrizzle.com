@@ -7,12 +7,19 @@ export type PlaceLabel = {
   attribution?: string;
 };
 
+const PLACE_GRID = 0.004;
+
+function coarseCell(value: number) {
+  return Number((Math.floor(value / PLACE_GRID) * PLACE_GRID + PLACE_GRID / 2).toFixed(6));
+}
+
 export async function resolvePlaceLabel(lat: number, lng: number): Promise<PlaceLabel> {
   try {
     const response = await fetch("/api/location/place", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lat, lng }),
+      // Only a neighbourhood-scale cell centre leaves the browser for place lookup.
+      body: JSON.stringify({ lat: coarseCell(lat), lng: coarseCell(lng) }),
     });
     if (!response.ok) return { label: "Nearby" };
     const data = await response.json() as Partial<PlaceLabel>;
