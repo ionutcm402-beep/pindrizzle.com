@@ -1,5 +1,6 @@
 import LegalPageShell from "@/components/LegalPageShell";
 import ComplianceRequestPanel, { type RequestOption } from "@/components/ComplianceRequestPanel";
+import { getPublicOperatorConfig } from "@/lib/launchReadiness";
 
 const safetyOptions: RequestOption[] = [
   { value: "safety_complaint", label: "Safety / illegal-content complaint" },
@@ -7,6 +8,9 @@ const safetyOptions: RequestOption[] = [
 ];
 
 export default function SafetyPage() {
+  const operator = getPublicOperatorConfig();
+  const safetyReady = process.env.PING_ONLINE_SAFETY_REVIEW_COMPLETE === "true" && process.env.PING_LEGAL_REVIEW_COMPLETE === "true" && Boolean(operator.safetyEmail);
+
   return (
     <LegalPageShell title="Safety & Complaints" kicker="ONLINE SAFETY" active="safety">
       <section className="legal-intro">
@@ -23,6 +27,7 @@ export default function SafetyPage() {
         <h2>Report a Ping</h2>
         <p>Open the Ping, choose <b>Report</b>, select the reason and send it. A report hides the Ping from your own Feed and Map and routes the case into Ping’s moderation system. You can also block a user so their Pings no longer appear to you.</p>
         <p>Use the complaint form below when the issue is broader than one Ping, you believe illegal or seriously harmful content was not handled properly, or you want to appeal a moderation decision.</p>
+        {operator.safetyEmail && <div className="legal-links"><a href={`mailto:${operator.safetyEmail}`}>Safety contact: {operator.safetyEmail}</a></div>}
       </section>
 
       <section className="legal-card">
@@ -48,10 +53,13 @@ export default function SafetyPage() {
         options={safetyOptions}
       />
 
-      <section className="legal-card legal-warning">
+      {!safetyReady ? <section className="legal-card legal-warning">
         <h2>Pre-launch safety work still required</h2>
-        <p>Ping’s current safety controls are product safeguards, not a declaration of full Online Safety Act compliance. Before public launch, Ping still needs a formally maintained illegal-content risk assessment, children’s risk assessment, accountable safety owner/contact, escalation and evidence-retention procedures, complaint-service targets and final legal review.</p>
-      </section>
+        <p>Ping’s current safety controls are product safeguards, not a declaration of full Online Safety Act compliance. Before public launch, Ping still needs the formally maintained illegal-content and children’s risk assessments, accountable safety ownership/contact, escalation/evidence-retention procedures, complaint-service targets and final legal review recorded as complete.</p>
+      </section> : <section className="legal-card legal-callout">
+        <h2>Safety ownership published</h2>
+        <p>Ping’s production configuration records the required safety/legal review as complete. Safety complaints can be submitted through the tracked form above{operator.safetyEmail ? ` or by emailing ${operator.safetyEmail}` : ""}.</p>
+      </section>}
     </LegalPageShell>
   );
 }
