@@ -86,23 +86,25 @@ export default function Phase8FollowBridge() {
   useEffect(() => { void loadState(); }, [loadState]);
 
   useEffect(() => {
-    const ensureHost = () => {
+    if (!pingId) {
+      setHost(null);
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
       const actions = document.querySelector<HTMLElement>(".phase5-detail-sheet .phase5-detail-actions");
-      if (!actions || !pingId) {
-        if (host) host.classList.remove("phase8-follow-enabled");
+      if (!actions) {
         setHost(null);
         return;
       }
       actions.classList.add("phase8-follow-enabled");
       setHost(actions);
-    };
+    });
 
-    ensureHost();
-    const observer = new MutationObserver(ensureHost);
-    observer.observe(document.body, { childList: true, subtree: true });
     return () => {
-      observer.disconnect();
+      window.cancelAnimationFrame(frame);
       document.querySelector<HTMLElement>(".phase5-detail-actions.phase8-follow-enabled")?.classList.remove("phase8-follow-enabled");
+      setHost(null);
     };
   }, [pingId]);
 
