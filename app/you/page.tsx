@@ -145,6 +145,7 @@ export default function YouPage() {
               </select>
             </div>
             {email && <button type="button" onClick={() => window.location.assign("/following")}><span>★</span><div><strong>Followed Pings</strong><small>{followedCount ? `${followedCount} ${followedCount === 1 ? "Ping" : "Pings"} you’re following` : "Keep track of useful local outcomes"}</small></div><b>›</b></button>}
+            {email && <button type="button" onClick={() => window.location.assign("/promote")}><span>↗</span><div><strong>Promote a Ping</strong><small>Paid local reach for one of your live Pings</small></div><b>›</b></button>}
             <button type="button" onClick={() => window.location.assign("/notifications")}><span>🔔</span><div><strong>Notifications</strong><small>Replies, confirmations and Helpful</small></div><b>›</b></button>
             <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("ping:open-privacy"))}><span>🛡️</span><div><strong>Privacy & safety</strong><small>Blocked users, reports, location privacy</small></div><b>›</b></button>
             {moderator && <button type="button" onClick={() => window.location.assign("/moderation")}><span>🧭</span><div><strong>Moderation</strong><small>Review reported Pings</small></div><b>›</b></button>}
