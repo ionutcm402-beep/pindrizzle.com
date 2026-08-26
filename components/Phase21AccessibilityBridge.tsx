@@ -17,6 +17,7 @@ const routeNames: Record<string, string> = {
   "/moderation/promotions": "Promotion moderation",
   "/moderation/compliance": "Compliance moderation",
   "/moderation/beta": "Closed beta moderation",
+  "/moderation/launch": "Launch readiness",
   "/privacy": "Privacy Notice",
   "/cookies": "Browser Storage",
   "/terms": "Terms of Use",
