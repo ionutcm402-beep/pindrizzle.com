@@ -129,7 +129,7 @@ export default function ComplianceModerationPage() {
         <main className="legal-content">
           <section className="legal-card legal-callout">
             <h2>Privacy, safety and appeal requests</h2>
-            <p>Handle each request according to its substance, not just its label. Do not place unnecessary sensitive information in the response note. Completed/rejected cases receive a resolution timestamp.</p>
+            <p>Handle each request according to its substance, not just its label. The response note is visible to the requester, so do not place internal-only or unnecessary sensitive information there. Completed/rejected cases receive a resolution timestamp.</p>
           </section>
 
           <section className="legal-card">
@@ -153,8 +153,8 @@ export default function ComplianceModerationPage() {
               <p><b>Requester:</b> {profiles.get(selected.user_id) || selected.user_id.slice(0, 8)}</p>
               <p>{selected.details}</p>
               <div className="legal-form">
-                <label htmlFor="compliance-response-note">Response / internal outcome note</label>
-                <textarea id="compliance-response-note" value={note} maxLength={2000} onChange={(event) => setNote(event.target.value)} placeholder="Record the response or reason for the outcome." />
+                <label htmlFor="compliance-response-note">Response shown to requester / outcome note</label>
+                <textarea id="compliance-response-note" value={note} maxLength={2000} onChange={(event) => setNote(event.target.value)} placeholder="Record a clear response or reason for the outcome. The requester can read this note." />
                 <div className="legal-links">
                   <button type="button" className="legal-button" disabled={busy} onClick={() => update("in_review")}>Mark in review</button>
                   <button type="button" className="legal-button primary" disabled={busy} onClick={() => update("completed")}>Complete</button>
