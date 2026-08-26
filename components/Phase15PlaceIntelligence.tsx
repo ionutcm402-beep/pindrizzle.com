@@ -10,7 +10,17 @@ export default function Phase15PlaceIntelligence() {
     const safe = label && label !== "Nearby" ? label : "Your mile";
     document.querySelectorAll<HTMLElement>(".location-pill").forEach((node) => {
       node.textContent = `● ${safe}`;
-      node.setAttribute("title", "Approximate area only — exact coordinates are not shown publicly.");
+      node.setAttribute("title", "Open your privacy-safe local area snapshot.");
+      node.setAttribute("role", "button");
+      node.setAttribute("tabindex", "0");
+      node.style.cursor = "pointer";
+      node.onclick = () => window.location.assign("/place");
+      node.onkeydown = (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          window.location.assign("/place");
+        }
+      };
     });
   }, []);
 
