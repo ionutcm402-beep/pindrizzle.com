@@ -230,7 +230,7 @@ function AlertsView({ myPingCount }: { myPingCount: number }) {
 }
 
 function YouView({ radius, locationState, dataMode, userEmail, onRadius, onRequestLocation, onSignIn, onSignOut }: { radius: Radius; locationState: LocationState; dataMode: DataMode; userEmail: string | null; onRadius: (r: Radius) => void; onRequestLocation: () => void; onSignIn: () => void; onSignOut: () => void }) {
-  return <div className="simple-screen"><header className="simple-header"><div><div className="brand small">ping<span>.</span></div><h1>You</h1></div></header><div className="profile-card"><div className="avatar">{userEmail ? userEmail.slice(0, 2).toUpperCase() : "YOU"}</div><div><h2>{userEmail ? "Your Ping account" : "Join your local community"}</h2><p>{userEmail || (dataMode === "live" ? "Live nearby data active" : dataMode === "quiet" ? "Your area is quiet right now" : "Sign in to post and confirm Pings")}</p></div></div><div className="trust-row"><div><strong>7</strong><span>Helpful Pings</span></div><div><strong>19</strong><span>Confirmations</span></div><div><strong>{radius} mi</strong><span>Your radius</span></div></div><div className="settings-list">{!userEmail && <button onClick={onSignIn}><span>✉️</span><div><strong>Sign in</strong><small>Email magic link — no password needed</small></div><b>›</b></button>}<button onClick={onRequestLocation}><span>📍</span><div><strong>Location</strong><small>{locationState === "granted" ? "Location permission active" : "Tap to enable location"}</small></div><b>›</b></button><div className="radius-setting"><span>↔</span><div><strong>Nearby radius</strong><small>Control how local your feed feels</small></div><RadiusSelect radius={radius} onRadius={onRadius} /></div><button><span>🔔</span><div><strong>Notifications</strong><small>Important nearby activity only</small></div><b>›</b></button><button><span>🛡️</span><div><strong>Privacy & safety</strong><small>Blocked users, reports, location privacy</small></div><b>›</b></button>{userEmail && <button onClick={onSignOut}><span>↪</span><div><strong>Sign out</strong><small>Leave this account on this device</small></div><b>›</b></button>}</div></div>;
+  return <div className="simple-screen"><header className="simple-header"><div><div className="brand small">ping<span>.</span></div><h1>You</h1></div></header><div className="profile-card"><div className="avatar">{userEmail ? userEmail.slice(0, 2).toUpperCase() : "YOU"}</div><div><h2>{userEmail ? "Your Ping account" : "Join your local community"}</h2><p>{userEmail || (dataMode === "live" ? "Live nearby data active" : dataMode === "quiet" ? "Your area is quiet right now" : "Sign in to post and confirm Pings")}</p></div></div><div className="trust-row"><div><strong>7</strong><span>Helpful Pings</span></div><div><strong>19</strong><span>Confirmations</span></div><div><strong>{radius} mi</strong><span>Your radius</span></div></div><div className="settings-list">{!userEmail && <button onClick={onSignIn}><span>✉️</span><div><strong>Sign in</strong><small>Email + password</small></div><b>›</b></button>}<button onClick={onRequestLocation}><span>📍</span><div><strong>Location</strong><small>{locationState === "granted" ? "Location permission active" : "Tap to enable location"}</small></div><b>›</b></button><div className="radius-setting"><span>↔</span><div><strong>Nearby radius</strong><small>Control how local your feed feels</small></div><RadiusSelect radius={radius} onRadius={onRadius} /></div><button><span>🔔</span><div><strong>Notifications</strong><small>Important nearby activity only</small></div><b>›</b></button><button><span>🛡️</span><div><strong>Privacy & safety</strong><small>Blocked users, reports, location privacy</small></div><b>›</b></button>{userEmail && <button onClick={onSignOut}><span>↪</span><div><strong>Sign out</strong><small>Leave this account on this device</small></div><b>›</b></button>}</div></div>;
 }
 
 function Composer({ onClose, onPublish }: { onClose: () => void; onPublish: (draft: { category: Category; title: string; body: string }) => void | Promise<void> }) {
@@ -241,18 +241,9 @@ function Composer({ onClose, onPublish }: { onClose: () => void; onPublish: (dra
   return <div className="composer-backdrop" role="dialog" aria-modal="true" aria-label="Create a Ping"><div className="composer-sheet"><div className="sheet-handle" /><div className="composer-header"><button onClick={onClose}>Cancel</button><strong>New Ping</strong><span /></div><h2>What’s happening?</h2><div className="category-grid">{(Object.keys(categoryMeta) as Category[]).map((item) => <button key={item} className={category === item ? "selected" : ""} onClick={() => setCategory(item)}>{categoryMeta[item].emoji} {item}</button>)}</div><label className="composer-label">Short headline</label><input className="composer-input" placeholder="What should neighbours know?" maxLength={70} value={title} onChange={(e) => setTitle(e.target.value)} /><label className="composer-label">Useful detail</label><textarea placeholder="Keep it clear and useful…" maxLength={280} value={body} onChange={(e) => setBody(e.target.value)} /><div className="composer-options"><button>📷 Add photo</button><button>📍 Near your current location</button></div><div className="expiry-note">⏱ This Ping will disappear automatically after 24 hours.</div><button className="publish-button" disabled={!canPublish} onClick={() => canPublish && onPublish({ category, title: title.trim(), body: body.trim() })}>Ping it</button></div></div>;
 }
 
-function AuthSheet({ onClose, onSend, busy, message }: { onClose: () => void; onSend: (email: string) => void; busy: boolean; message: string }) {
-  const [email, setEmail] = useState("");
-  const valid = email.includes("@") && email.includes(".");
-  return <div className="composer-backdrop" role="dialog" aria-modal="true" aria-label="Sign in to Ping"><div className="composer-sheet"><div className="sheet-handle" /><div className="composer-header"><button onClick={onClose}>Cancel</button><strong>Join Ping</strong><span /></div><h2>Be part of your mile.</h2><p className="ping-body">Sign in to post useful local information and confirm what other people nearby are seeing. No password needed.</p><label className="composer-label">Email address</label><input className="composer-input" type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} /><div className="expiry-note">✉️ We’ll email you a secure sign-in link. Your email is not shown publicly.</div>{message && <div className="expiry-note">{message}</div>}<button className="publish-button" disabled={!valid || busy} onClick={() => valid && onSend(email.trim())}>{busy ? "Sending…" : "Email me a sign-in link"}</button></div></div>;
-}
-
 export default function Home() {
   const [tab, setTab] = useState<Tab>("feed");
   const [composerOpen, setComposerOpen] = useState(false);
-  const [authOpen, setAuthOpen] = useState(false);
-  const [authBusy, setAuthBusy] = useState(false);
-  const [authMessage, setAuthMessage] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [pings, setPings] = useState<PingItem[]>(seedPings);
@@ -281,21 +272,10 @@ export default function Home() {
       const { data } = supabase.auth.onAuthStateChange((_event, session) => {
         setUserId(session?.user.id || null);
         setUserEmail(session?.user.email || null);
-        if (session?.user) setAuthOpen(false);
       });
       unsubscribe = () => data.subscription.unsubscribe();
     } catch {}
     return () => unsubscribe?.();
-  }, []);
-
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const message = (event as CustomEvent<{ message?: string }>).detail?.message || "Sign in to continue.";
-      setAuthMessage(message);
-      setAuthOpen(true);
-    };
-    window.addEventListener("ping:auth-needed", handler as EventListener);
-    return () => window.removeEventListener("ping:auth-needed", handler as EventListener);
   }, []);
 
   useEffect(() => {
@@ -352,19 +332,8 @@ export default function Home() {
     }, (error) => setLocationState(error.code === 1 ? "denied" : "unavailable"), { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
   };
 
-  const sendMagicLink = async (email: string) => {
-    setAuthBusy(true);
-    setAuthMessage("");
-    try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin } });
-      if (error) throw error;
-      setAuthMessage("Check your email and tap the secure Ping sign-in link.");
-    } catch {
-      setAuthMessage("We couldn’t send the link yet. Please check the email and try again.");
-    } finally {
-      setAuthBusy(false);
-    }
+  const requestAuth = (message: string) => {
+    window.dispatchEvent(new CustomEvent("ping:auth-needed", { detail: { message } }));
   };
 
   const signOut = async () => {
@@ -377,7 +346,7 @@ export default function Home() {
       setPings((current) => current.map((p) => p.id === id ? { ...p, confirmations: p.confirmations + 1 } : p));
       return;
     }
-    if (!userId) { setAuthMessage("Sign in to confirm real Pings near you."); setAuthOpen(true); return; }
+    if (!userId) { requestAuth("Sign in to confirm real Pings near you."); return; }
     try {
       const { data, error } = await createClient().rpc("confirm_ping", { target_ping_id: id });
       if (error) throw error;
@@ -386,13 +355,13 @@ export default function Home() {
   };
 
   const openComposer = () => {
-    if (!userId) { setAuthMessage("Sign in once to post Pings that your neighbours can see."); setAuthOpen(true); return; }
+    if (!userId) { requestAuth("Sign in once to post Pings that your neighbours can see."); return; }
     if (locationState !== "granted" || !coordinates) { requestLocation(); return; }
     setComposerOpen(true);
   };
 
   const publishPing = async (draft: { category: Category; title: string; body: string }) => {
-    if (!userId) { setComposerOpen(false); setAuthOpen(true); return; }
+    if (!userId) { setComposerOpen(false); requestAuth("Sign in or create your Ping account to publish."); return; }
     if (!coordinates) { setComposerOpen(false); requestLocation(); return; }
     try {
       const { error } = await createClient().rpc("create_ping", {
@@ -419,5 +388,5 @@ export default function Home() {
 
   const myPingCount = pings.filter((p) => p.createdByMe).length;
 
-  return <div className="page-shell"><div className="app-shell"><div className="screen-content">{tab === "feed" && <FeedView pings={pings} radius={radius} locationState={locationState} dataMode={dataMode} onRequestLocation={requestLocation} onRadius={setAndStoreRadius} onConfirm={confirmPing} onOpen={openPingDetail} />}{tab === "map" && <MapView pings={pings.filter((p) => p.distanceMiles <= radius)} selectedId={selectedMapPing} onSelect={setSelectedMapPing} />}{tab === "alerts" && <AlertsView myPingCount={myPingCount} />}{tab === "you" && <YouView radius={radius} locationState={locationState} dataMode={dataMode} userEmail={userEmail} onRadius={setAndStoreRadius} onRequestLocation={requestLocation} onSignIn={() => { setAuthMessage(""); setAuthOpen(true); }} onSignOut={signOut} />}</div><nav className="bottom-nav" aria-label="Primary navigation"><button className={tab === "feed" ? "active" : ""} onClick={() => setTab("feed")}><span>⌂</span>Feed</button><button className={tab === "map" ? "active" : ""} onClick={() => setTab("map")}><span>⌖</span>Map</button><button className="compose-nav" onClick={openComposer} aria-label="Create a Ping"><span>+</span>Ping</button><button className={tab === "alerts" ? "active" : ""} onClick={() => setTab("alerts")}><span>♢</span>Alerts<i>{myPingCount ? 2 : 1}</i></button><button className={tab === "you" ? "active" : ""} onClick={() => setTab("you")}><span>○</span>You</button></nav></div>{composerOpen && <Composer onClose={() => setComposerOpen(false)} onPublish={publishPing} />}{authOpen && <AuthSheet onClose={() => setAuthOpen(false)} onSend={sendMagicLink} busy={authBusy} message={authMessage} />}</div>;
+  return <div className="page-shell"><div className="app-shell"><div className="screen-content">{tab === "feed" && <FeedView pings={pings} radius={radius} locationState={locationState} dataMode={dataMode} onRequestLocation={requestLocation} onRadius={setAndStoreRadius} onConfirm={confirmPing} onOpen={openPingDetail} />}{tab === "map" && <MapView pings={pings.filter((p) => p.distanceMiles <= radius)} selectedId={selectedMapPing} onSelect={setSelectedMapPing} />}{tab === "alerts" && <AlertsView myPingCount={myPingCount} />}{tab === "you" && <YouView radius={radius} locationState={locationState} dataMode={dataMode} userEmail={userEmail} onRadius={setAndStoreRadius} onRequestLocation={requestLocation} onSignIn={() => requestAuth("Sign in or create your Ping account.")} onSignOut={signOut} />}</div><nav className="bottom-nav" aria-label="Primary navigation"><button className={tab === "feed" ? "active" : ""} onClick={() => setTab("feed")}><span>⌂</span>Feed</button><button className={tab === "map" ? "active" : ""} onClick={() => setTab("map")}><span>⌖</span>Map</button><button className="compose-nav" onClick={openComposer} aria-label="Create a Ping"><span>+</span>Ping</button><button className={tab === "alerts" ? "active" : ""} onClick={() => setTab("alerts")}><span>♢</span>Alerts<i>{myPingCount ? 2 : 1}</i></button><button className={tab === "you" ? "active" : ""} onClick={() => setTab("you")}><span>○</span>You</button></nav></div>{composerOpen && <Composer onClose={() => setComposerOpen(false)} onPublish={publishPing} />}</div>;
 }
