@@ -1,45 +1,58 @@
 create or replace function public.my_pings()
 returns table (
   id uuid,
+  category public.ping_category,
   title text,
   body text,
-  category public.ping_category,
-  status public.ping_status,
   place_label text,
+  status public.ping_status,
   confirmation_count integer,
   comment_count integer,
   created_at timestamptz,
-  expires_at timestamptz
+  expires_at timestamptz,
+  updated_at timestamptz,
+  has_open_promotion boolean
 )
-language plpgsql
+language sql
 stable
 security definer
-set search_path = public
+set search_path = public, pg_temp
 as $$
-begin
-  if auth.uid() is null then
-    raise exception 'Authentication required';
-  end if;
-
-  return query
   select
     p.id,
+    p.category,
     p.title,
     p.body,
-    p.category,
+    p.place_label,
     case
       when p.status = 'active' and p.expires_at <= now() then 'expired'::public.ping_status
       else p.status
     end as status,
-    p.place_label,
     p.confirmation_count,
     p.comment_count,
     p.created_at,
-    p.expires_at
+    p.expires_at,
+    p.updated_at,
+    exists(
+      select 1
+      from public.promotions pr
+      where pr.ping_id = p.id
+        and pr.promoter_user_id = auth.uid()
+        and pr.status in ('pending', 'approved', 'active', 'paused')
+    ) as has_open_promotion
   from public.pings p
-  where p.user_id = auth.uid()
-  order by p.created_at desc;
-end;
+  where auth.uid() is not null
+    and p.user_id = auth.uid()
+  order by
+    case
+      when p.status = 'active' and p.expires_at <= now() then 2
+      when p.status = 'active' then 0
+      when p.status = 'resolved' then 1
+      when p.status = 'expired' then 2
+      when p.status = 'removed' then 3
+      else 4
+    end,
+    p.created_at desc;
 $$;
 
 revoke all on function public.my_pings() from public, anon, authenticated;
@@ -49,63 +62,45 @@ create or replace function public.remove_own_ping(target_ping_id uuid)
 returns boolean
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, pg_temp
 as $$
 declare
-  ping_owner uuid;
-  ping_state public.ping_status;
+  me uuid := auth.uid();
+  current_status public.ping_status;
 begin
-  if auth.uid() is null then
-    raise exception 'Authentication required';
+  if me is null then
+    raise exception 'Authentication required' using errcode = '42501';
   end if;
 
-  select p.user_id, p.status
-  into ping_owner, ping_state
+  select p.status
+  into current_status
   from public.pings p
   where p.id = target_ping_id
+    and p.user_id = me
   for update;
 
-  if not found or ping_owner <> auth.uid() then
-    raise exception 'Only your Ping can be removed';
+  if not found then
+    raise exception 'Ping not found' using errcode = 'P0002';
   end if;
 
-  if ping_state = 'removed' then
+  if current_status = 'removed' then
     return true;
   end if;
 
-  update public.promotions
-  set status = 'ended', updated_at = now()
-  where ping_id = target_ping_id
-    and status in ('active', 'paused')
-    and ends_at is not null
-    and ends_at <= now();
-
-  if exists (
+  if exists(
     select 1
     from public.promotions pr
     where pr.ping_id = target_ping_id
-      and pr.payment_status in ('paid', 'disputed')
-      and pr.status in ('active', 'paused')
-      and (pr.ends_at is null or pr.ends_at > now())
+      and pr.promoter_user_id = me
+      and pr.status in ('pending', 'approved', 'active', 'paused')
   ) then
-    raise exception 'This Ping has a paid promotion still in progress';
+    raise exception 'This Ping has a promotion in progress. Finish the promotion before deleting it.' using errcode = '55000';
   end if;
-
-  update public.promotions
-  set status = 'ended',
-      pending_checkout_session_id = null,
-      pending_checkout_expires_at = null,
-      checkout_claim_token = null,
-      checkout_claim_expires_at = null,
-      updated_at = now()
-  where ping_id = target_ping_id
-    and payment_status not in ('paid', 'disputed')
-    and status in ('draft', 'pending', 'approved', 'active', 'paused');
 
   update public.pings
   set status = 'removed', updated_at = now()
   where id = target_ping_id
-    and user_id = auth.uid();
+    and user_id = me;
 
   return true;
 end;

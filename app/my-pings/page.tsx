@@ -18,6 +18,8 @@ type MyPing = {
   comment_count: number;
   created_at: string;
   expires_at: string;
+  updated_at: string;
+  has_open_promotion: boolean;
 };
 
 const tabs: Array<{ value: PingStatus; label: string }> = [
@@ -66,6 +68,14 @@ function emptyCopy(status: PingStatus) {
   if (status === "resolved") return "When you mark a situation resolved, it will be kept here as part of your history.";
   if (status === "expired") return "Pings that reach their expiry time will be kept here for you.";
   return "Removed Pings stay in your private history so moderation and audit records remain intact.";
+}
+
+function errorText(value: unknown) {
+  if (value instanceof Error) return value.message;
+  if (value && typeof value === "object" && "message" in value) {
+    return String((value as { message?: unknown }).message || "");
+  }
+  return "";
 }
 
 export default function MyPingsPage() {
@@ -139,13 +149,13 @@ export default function MyPingsPage() {
     try {
       const { error } = await createClient().rpc("remove_own_ping", { target_ping_id: id });
       if (error) throw error;
-      setItems((current) => current.map((item) => item.id === id ? { ...item, status: "removed" } : item));
+      setItems((current) => current.map((item) => item.id === id ? { ...item, status: "removed", has_open_promotion: false } : item));
       setConfirmRemoveId(null);
       setMessage("Ping removed from community views. Its audit history is preserved.");
     } catch (error) {
       console.error("Remove Ping failed", error);
-      const text = error instanceof Error ? error.message : "";
-      setMessage(text.includes("promotion") ? "This Ping has a paid promotion still in progress. Finish that campaign before removing it." : "That Ping could not be removed right now.");
+      const text = errorText(error).toLowerCase();
+      setMessage(text.includes("promotion") ? "This Ping has a promotion in progress. Finish that promotion before removing it." : "That Ping could not be removed right now.");
     } finally {
       setBusyId(null);
     }
@@ -193,15 +203,16 @@ export default function MyPingsPage() {
                           <span><PingIcon name="replies" size={14} />{item.comment_count}</span>
                         </div>
                         <div className={styles.timeRow}><span>Posted {relativeTime(item.created_at)}</span><span>{expiryLabel(item)}</span></div>
+                        {item.has_open_promotion && <div className={styles.promotionNote}><PingIcon name="promote" size={14} /><span>Promotion in progress — removal is unavailable until it finishes.</span></div>}
 
                         <div className={styles.actions}>
                           <button type="button" onClick={() => setExpandedId(expanded ? null : item.id)}>{expanded ? "Less" : "Details"}</button>
                           {item.status === "active" && <button type="button" onClick={() => openLivePing(item.id)}>Open Ping</button>}
                           {item.status === "active" && <button type="button" className={styles.resolve} onClick={() => void resolvePing(item.id)} disabled={busyId === item.id}><PingIcon name="check" size={15} />{busyId === item.id ? "Working…" : "Resolve"}</button>}
-                          {item.status !== "removed" && <button type="button" className={styles.remove} onClick={() => setConfirmRemoveId(confirming ? null : item.id)} disabled={busyId === item.id}><PingIcon name="remove" size={15} />Remove</button>}
+                          {item.status !== "removed" && <button type="button" className={styles.remove} onClick={() => setConfirmRemoveId(confirming ? null : item.id)} disabled={busyId === item.id || item.has_open_promotion} aria-disabled={item.has_open_promotion}><PingIcon name="remove" size={15} />Remove</button>}
                         </div>
 
-                        {confirming && (
+                        {confirming && !item.has_open_promotion && (
                           <div className={styles.confirmRemove} role="alert">
                             <div><strong>Remove this Ping?</strong><p>It disappears from normal community views, but replies, reports and audit history are preserved.</p></div>
                             <div><button type="button" onClick={() => setConfirmRemoveId(null)}>Keep</button><button type="button" onClick={() => void removePing(item.id)} disabled={busyId === item.id}>{busyId === item.id ? "Removing…" : "Remove"}</button></div>
