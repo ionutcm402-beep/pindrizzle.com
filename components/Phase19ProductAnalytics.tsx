@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { ANALYTICS_CHOICE_KEY, readAnalyticsChoice, type AnalyticsChoice } from "@/components/Phase22StorageChoice";
 
 type ProductEvent =
   | "session_start"
@@ -33,7 +34,12 @@ const routeEvents: Record<string, ProductEvent> = {
   "/business": "business_view",
 };
 
+function analyticsAllowed() {
+  try { return window.localStorage.getItem(ANALYTICS_CHOICE_KEY) === "allow"; } catch { return false; }
+}
+
 function browserSessionId() {
+  if (!analyticsAllowed()) return null;
   try {
     const existing = window.sessionStorage.getItem(SESSION_KEY);
     if (existing && uuidPattern.test(existing)) return existing;
@@ -51,8 +57,20 @@ function seenKey(session: string, eventType: ProductEvent) {
 
 export default function Phase19ProductAnalytics() {
   const pathname = usePathname();
+  const [enabled, setEnabled] = useState(false);
+
+  useEffect(() => {
+    setEnabled(readAnalyticsChoice() === "allow");
+    const onChoice = (event: Event) => {
+      const choice = (event as CustomEvent<{ choice?: AnalyticsChoice }>).detail?.choice;
+      setEnabled(choice === "allow");
+    };
+    window.addEventListener("ping:analytics-choice", onChoice as EventListener);
+    return () => window.removeEventListener("ping:analytics-choice", onChoice as EventListener);
+  }, []);
 
   const record = useCallback(async (eventType: ProductEvent) => {
+    if (!analyticsAllowed()) return;
     const session = browserSessionId();
     if (!session) return;
 
@@ -69,17 +87,19 @@ export default function Phase19ProductAnalytics() {
       if (error) return;
       try { window.sessionStorage.setItem(key, "1"); } catch {}
     } catch {
-      // Analytics must never interrupt the product experience.
+      // Optional analytics must never interrupt the product experience.
     }
   }, []);
 
   useEffect(() => {
+    if (!enabled) return;
     void record("session_start");
     const routeEvent = routeEvents[pathname];
     if (routeEvent) void record(routeEvent);
-  }, [pathname, record]);
+  }, [pathname, record, enabled]);
 
   useEffect(() => {
+    if (!enabled) return;
     const onPingOpen = () => void record("ping_open");
     const onProductEvent = (event: Event) => {
       const eventType = (event as CustomEvent<{ eventType?: ProductEvent }>).detail?.eventType;
@@ -92,7 +112,7 @@ export default function Phase19ProductAnalytics() {
       window.removeEventListener("ping:open-detail", onPingOpen);
       window.removeEventListener("ping:product-event", onProductEvent as EventListener);
     };
-  }, [record]);
+  }, [record, enabled]);
 
   return null;
 }
