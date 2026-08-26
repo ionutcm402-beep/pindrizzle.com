@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 
@@ -48,6 +48,10 @@ function radiusMeters() {
   return 1609;
 }
 
+function locationIsActive() {
+  return Boolean(document.querySelector(".location-status.good"));
+}
+
 async function getCoords() {
   if (!navigator.geolocation) throw new Error("Location unavailable");
   return await new Promise<GeolocationCoordinates>((resolve, reject) => {
@@ -62,16 +66,14 @@ async function getCoords() {
 export default function Phase9PromotedLocal() {
   const [host, setHost] = useState<HTMLElement | null>(null);
   const [item, setItem] = useState<PromotedPing | null>(null);
+  const locationActiveRef = useRef(false);
 
   const load = useCallback(async () => {
+    if (!locationIsActive()) {
+      setItem(null);
+      return;
+    }
     try {
-      if (navigator.permissions) {
-        const permission = await navigator.permissions.query({ name: "geolocation" });
-        if (permission.state !== "granted") {
-          setItem(null);
-          return;
-        }
-      }
       const coords = await getCoords();
       const { data, error } = await createClient().rpc("nearby_promoted_pings", {
         viewer_lat: coords.latitude,
@@ -119,18 +121,54 @@ export default function Phase9PromotedLocal() {
   }, []);
 
   useEffect(() => {
-    void load();
-    const timer = window.setInterval(() => void load(), 120000);
+    const syncLocation = () => {
+      const active = locationIsActive();
+      if (active && !locationActiveRef.current) {
+        locationActiveRef.current = true;
+        void load();
+      } else if (!active) {
+        locationActiveRef.current = false;
+        setItem(null);
+      }
+    };
+
+    syncLocation();
+    const locationObserver = new MutationObserver(syncLocation);
+    locationObserver.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    const timer = window.setInterval(() => {
+      if (locationIsActive()) void load();
+    }, 120000);
+
     const onChange = (event: Event) => {
       const target = event.target as HTMLElement | null;
       if (target?.matches?.(".location-status select")) setTimeout(() => void load(), 50);
     };
+
+    const onClick = (event: Event) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest?.(".location-status button")) {
+        window.setTimeout(syncLocation, 500);
+        window.setTimeout(syncLocation, 2000);
+        window.setTimeout(syncLocation, 5000);
+      }
+    };
+
     const supabase = createClient();
     const { data } = supabase.auth.onAuthStateChange(() => setTimeout(() => void load(), 0));
     document.addEventListener("change", onChange);
+    document.addEventListener("click", onClick, true);
+
     return () => {
+      locationObserver.disconnect();
       window.clearInterval(timer);
       document.removeEventListener("change", onChange);
+      document.removeEventListener("click", onClick, true);
       data.subscription.unsubscribe();
     };
   }, [load]);
