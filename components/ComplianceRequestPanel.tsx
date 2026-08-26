@@ -98,18 +98,19 @@ export default function ComplianceRequestPanel({
     setBusy(true);
     setMessage("");
     try {
-      const { error } = await createClient().from("compliance_requests").insert({
-        user_id: userId,
-        request_type: type,
-        details: text,
-        status: "open",
+      const { error } = await createClient().rpc("submit_compliance_request", {
+        request_kind: type,
+        request_details: text,
       });
       if (error) throw error;
       setDetails("");
       setMessage("Request submitted. You can track its status below.");
       await load();
-    } catch {
-      setMessage("This request could not be submitted right now.");
+    } catch (error) {
+      const textMessage = error instanceof Error ? error.message : "";
+      setMessage(/too many requests/i.test(textMessage)
+        ? "You’ve submitted several requests recently. Please use an existing request or try again later."
+        : "This request could not be submitted right now.");
     } finally {
       setBusy(false);
     }
