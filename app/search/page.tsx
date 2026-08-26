@@ -74,6 +74,7 @@ export default function SearchPage() {
   const [items, setItems] = useState<SearchItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [refreshNonce, setRefreshNonce] = useState(0);
 
   useEffect(() => {
     try {
@@ -140,16 +141,14 @@ export default function SearchPage() {
     };
     void load();
     return () => { cancelled = true; };
-  }, [coordinates, debouncedQuery, category, radius]);
+  }, [coordinates, debouncedQuery, category, radius, refreshNonce]);
 
   useEffect(() => {
     if (!coordinates) return;
     const supabase = createClient();
     const channel = supabase
       .channel("phase14-search-live")
-      .on("postgres_changes", { event: "*", schema: "public", table: "pings" }, () => {
-        setDebouncedQuery((current) => `${current} `.trim());
-      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "pings" }, () => setRefreshNonce((value) => value + 1))
       .subscribe();
     return () => { void supabase.removeChannel(channel); };
   }, [coordinates]);
