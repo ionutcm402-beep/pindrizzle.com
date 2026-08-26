@@ -15,6 +15,11 @@ const routeNames: Record<string, string> = {
   "/business": "Promoter dashboard",
   "/moderation": "Moderation",
   "/moderation/promotions": "Promotion moderation",
+  "/moderation/compliance": "Compliance moderation",
+  "/privacy": "Privacy Notice",
+  "/cookies": "Browser Storage",
+  "/terms": "Terms of Use",
+  "/safety": "Safety and Complaints",
   "/ops": "Operations",
 };
 
