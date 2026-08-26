@@ -24,6 +24,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 import "./accessibility.css";
 import "./legal.css";
+import "./ping-design-system.css";
 
 export const metadata: Metadata = {
   title: "Ping — Know what's happening in your mile",
@@ -43,7 +44,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#f7f7f2",
+  themeColor: "#f4f5f2",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
