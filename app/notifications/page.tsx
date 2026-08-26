@@ -137,7 +137,7 @@ export default function NotificationSettingsPage() {
 
               <section className="notification-settings-note">
                 <strong>What Ping will not do</strong>
-                <p>No “we miss you” spam, follower alerts or engagement bait. Phase 6 notifications are tied to real community actions.</p>
+                <p>No “we miss you” spam, follower alerts or engagement bait. Ping notifications are tied to real community actions.</p>
               </section>
 
               {email && <div className="notification-settings-account">Settings for <strong>{email}</strong></div>}
