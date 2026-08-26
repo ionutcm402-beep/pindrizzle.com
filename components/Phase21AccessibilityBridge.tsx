@@ -20,6 +20,8 @@ const routeNames: Record<string, string> = {
   "/cookies": "Browser Storage",
   "/terms": "Terms of Use",
   "/safety": "Safety and Complaints",
+  "/install": "Install Ping",
+  "/offline": "Offline",
   "/ops": "Operations",
 };
 
