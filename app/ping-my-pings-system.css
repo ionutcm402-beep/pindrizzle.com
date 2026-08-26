@@ -1,0 +1,299 @@
+/* Ping Design System — My Pings */
+
+.my-pings-screen{
+  min-height:100%;
+  padding:0 14px 104px;
+  background:var(--ping-canvas);
+}
+.my-pings-header{
+  display:flex;
+  gap:14px;
+  align-items:flex-start;
+  padding:24px 4px 18px;
+}
+.my-pings-header h1{
+  margin:14px 0 0;
+  color:var(--ping-ink);
+  font-size:30px;
+  line-height:1;
+  font-weight:770;
+  letter-spacing:-.05em;
+}
+.my-pings-back{
+  position:relative;
+  width:44px;
+  height:44px;
+  min-width:44px;
+  min-height:44px;
+  display:grid;
+  place-items:center;
+  border:1px solid var(--ping-line);
+  border-radius:14px;
+  background:rgba(255,255,255,.86);
+  color:var(--ping-ink);
+  text-decoration:none;
+  font-size:0;
+}
+.my-pings-back:before{
+  content:"";
+  position:absolute;
+  inset:12px;
+  background:currentColor;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m15 18-6-6 6-6'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m15 18-6-6 6-6'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+
+.my-pings-summary{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:1px;
+  overflow:hidden;
+  margin-bottom:12px;
+  border:1px solid var(--ping-line);
+  border-radius:18px;
+  background:var(--ping-line);
+}
+.my-pings-summary>div{
+  min-width:0;
+  padding:14px 8px;
+  background:var(--ping-surface);
+  text-align:center;
+}
+.my-pings-summary strong{
+  display:block;
+  color:var(--ping-ink);
+  font-size:17px;
+  font-weight:730;
+  letter-spacing:-.03em;
+}
+.my-pings-summary span{
+  display:block;
+  margin-top:3px;
+  color:var(--ping-muted);
+  font-size:9px;
+  font-weight:620;
+}
+
+.my-pings-filters{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:3px;
+  margin-bottom:12px;
+  padding:3px;
+  border:1px solid var(--ping-line);
+  border-radius:14px;
+  background:rgba(16,19,17,.035);
+}
+.my-pings-filters button{
+  min-height:38px;
+  border:0;
+  border-radius:10px;
+  background:transparent;
+  color:var(--ping-muted);
+  font-size:10.5px;
+  font-weight:680;
+}
+.my-pings-filters button.active{
+  background:var(--ping-surface);
+  color:var(--ping-ink);
+  box-shadow:0 1px 2px rgba(16,19,17,.06);
+}
+
+.my-pings-list{display:grid;gap:10px}
+.my-ping-card{
+  overflow:hidden;
+  border:1px solid var(--ping-line);
+  border-radius:20px;
+  background:var(--ping-surface);
+}
+.my-ping-card.resolved{background:#fbfcfa}
+.my-ping-card.expired{background:#f8f8f5}
+.my-ping-card-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:14px 15px 0;
+}
+.my-ping-category{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  min-width:0;
+  color:var(--ping-ink-2);
+  font-size:9.5px;
+  font-weight:690;
+}
+.my-ping-category i{
+  width:8px;
+  height:8px;
+  flex:0 0 8px;
+  border-radius:50%;
+  background:var(--ping-location);
+}
+.my-ping-category.alert i,.my-ping-category.traffic i{background:var(--ping-danger)}
+.my-ping-category.free i,.my-ping-category.help i{background:var(--ping-accent)}
+.my-ping-category.lost_found i{background:#d66a9f}
+.my-ping-status{
+  flex:0 0 auto;
+  padding:5px 8px;
+  border-radius:999px;
+  background:rgba(70,214,111,.1);
+  color:var(--ping-accent-ink);
+  font-size:8.5px;
+  font-weight:700;
+}
+.my-ping-status.resolved{background:rgba(60,131,246,.09);color:#285fae}
+.my-ping-status.expired{background:rgba(16,19,17,.055);color:var(--ping-muted)}
+
+.my-ping-content{
+  width:100%;
+  padding:10px 15px 13px;
+  border:0;
+  background:transparent;
+  color:inherit;
+  text-align:left;
+}
+.my-ping-content:disabled{cursor:default}
+.my-ping-content h2{
+  margin:0;
+  color:var(--ping-ink);
+  font-size:17px;
+  line-height:1.25;
+  font-weight:730;
+  letter-spacing:-.03em;
+  overflow-wrap:anywhere;
+}
+.my-ping-content p{
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:3;
+  overflow:hidden;
+  margin:6px 0 0;
+  color:var(--ping-muted);
+  font-size:10.5px;
+  line-height:1.48;
+  overflow-wrap:anywhere;
+}
+.my-ping-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px 12px;
+  margin-top:10px;
+  color:var(--ping-muted-2);
+  font-size:9px;
+}
+.my-ping-content small{
+  display:block;
+  margin-top:8px;
+  color:var(--ping-muted-2);
+  font-size:8.5px;
+}
+.my-ping-promotion-note{
+  margin:0 15px 10px;
+  padding:8px 10px;
+  border-radius:10px;
+  background:rgba(60,131,246,.07);
+  color:#315f9c;
+  font-size:9px;
+  font-weight:650;
+}
+.my-ping-actions{
+  display:flex;
+  gap:7px;
+  padding:10px 15px 14px;
+  border-top:1px solid var(--ping-line);
+}
+.my-ping-actions button,.my-ping-delete-confirm button{
+  min-height:38px;
+  padding:0 12px;
+  border:1px solid var(--ping-line);
+  border-radius:11px;
+  background:var(--ping-surface-soft);
+  color:var(--ping-ink-2);
+  font-size:9.5px;
+  font-weight:680;
+}
+.my-ping-actions button:first-child{background:var(--ping-ink);border-color:var(--ping-ink);color:#fff}
+.my-ping-actions button.danger,.my-ping-delete-confirm button.danger{
+  margin-left:auto;
+  border-color:rgba(232,85,79,.16);
+  background:rgba(232,85,79,.07);
+  color:#b6413d;
+}
+.my-ping-actions button:disabled,.my-ping-delete-confirm button:disabled{opacity:.45}
+
+.my-ping-delete-confirm{
+  display:grid;
+  gap:10px;
+  padding:13px 15px 14px;
+  border-top:1px solid rgba(232,85,79,.14);
+  background:rgba(232,85,79,.035);
+}
+.my-ping-delete-confirm>div:first-child strong,.my-ping-delete-confirm>div:first-child span{display:block}
+.my-ping-delete-confirm>div:first-child strong{color:var(--ping-ink);font-size:11px;font-weight:720}
+.my-ping-delete-confirm>div:first-child span{margin-top:3px;color:var(--ping-muted);font-size:9px;line-height:1.4}
+.my-ping-delete-confirm>div:last-child{display:flex;gap:8px;justify-content:flex-end}
+.my-ping-delete-confirm button.danger{margin-left:0}
+
+.my-pings-empty{
+  padding:32px 20px;
+  border:1px solid var(--ping-line);
+  border-radius:20px;
+  background:var(--ping-surface);
+  text-align:center;
+}
+.my-pings-empty-icon{
+  position:relative;
+  width:44px;
+  height:44px;
+  margin:0 auto 10px;
+  border-radius:14px;
+  background:var(--ping-surface-soft);
+}
+.my-pings-empty-icon:before{
+  content:"";
+  position:absolute;
+  inset:11px;
+  background:var(--ping-ink-2);
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2h8l4 4v16H4V2h4Z'/%3E%3Cpath d='M8 11h8M8 15h6M14 2v5h5'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2h8l4 4v16H4V2h4Z'/%3E%3Cpath d='M8 11h8M8 15h6M14 2v5h5'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+.my-pings-empty h2{margin:0;color:var(--ping-ink);font-size:17px;font-weight:730;letter-spacing:-.025em}
+.my-pings-empty p{max-width:310px;margin:7px auto 0;color:var(--ping-muted);font-size:10.5px;line-height:1.5}
+.my-pings-empty button,.my-pings-empty a{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:42px;
+  margin-top:14px;
+  padding:0 15px;
+  border:0;
+  border-radius:12px;
+  background:var(--ping-ink);
+  color:#fff;
+  text-decoration:none;
+  font-size:10.5px;
+  font-weight:700;
+}
+.my-pings-message{
+  margin-top:10px;
+  padding:10px 12px;
+  border:1px solid rgba(232,85,79,.12);
+  border-radius:12px;
+  background:rgba(232,85,79,.045);
+  color:#9f4642;
+  font-size:9.5px;
+  line-height:1.4;
+  text-align:center;
+}
+
+@media(max-width:520px){
+  .my-pings-screen{padding-top:env(safe-area-inset-top);padding-bottom:calc(90px + env(safe-area-inset-bottom))}
+}
+@media(max-width:340px){
+  .my-ping-actions{flex-wrap:wrap}
+  .my-ping-actions button{flex:1 1 auto}
+  .my-ping-actions button.danger{margin-left:0}
+  .my-ping-delete-confirm>div:last-child{flex-wrap:wrap}
+}
