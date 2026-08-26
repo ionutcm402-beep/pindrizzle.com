@@ -17,6 +17,8 @@ import Phase19ProductAnalytics from "@/components/Phase19ProductAnalytics";
 import Phase21AccessibilityBridge from "@/components/Phase21AccessibilityBridge";
 import Phase22StorageChoice from "@/components/Phase22StorageChoice";
 import Phase22LegalSettingsEntry from "@/components/Phase22LegalSettingsEntry";
+import Phase23PwaBridge from "@/components/Phase23PwaBridge";
+import Phase23InstallEntry from "@/components/Phase23InstallEntry";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 import "./accessibility.css";
@@ -25,6 +27,15 @@ import "./legal.css";
 export const metadata: Metadata = {
   title: "Ping — Know what's happening in your mile",
   description: "Real-time, useful local updates from people near you.",
+  applicationName: "Ping",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/pwa-icon-192", type: "image/png", sizes: "192x192" },
+      { url: "/pwa-icon-512", type: "image/png", sizes: "512x512" },
+    ],
+    apple: [{ url: "/pwa-icon-192", type: "image/png", sizes: "192x192" }],
+  },
 };
 
 export const viewport: Viewport = {
@@ -56,6 +67,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Phase19ProductAnalytics />
         <Phase22StorageChoice />
         <Phase22LegalSettingsEntry />
+        <Phase23PwaBridge />
+        <Phase23InstallEntry />
         <Phase21AccessibilityBridge />
       </body>
     </html>

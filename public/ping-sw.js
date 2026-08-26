@@ -1,3 +1,41 @@
+const OFFLINE_CACHE = "ping-offline-v1";
+const OFFLINE_URL = "/offline";
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(OFFLINE_CACHE).then((cache) => cache.add(new Request(OFFLINE_URL, { cache: "reload" }))),
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(
+      keys
+        .filter((key) => key.startsWith("ping-offline-") && key !== OFFLINE_CACHE)
+        .map((key) => caches.delete(key)),
+    );
+    await self.clients.claim();
+  })());
+});
+
+self.addEventListener("fetch", (event) => {
+  const request = event.request;
+  if (request.method !== "GET" || request.mode !== "navigate") return;
+
+  event.respondWith((async () => {
+    try {
+      return await fetch(request);
+    } catch {
+      return (await caches.match(OFFLINE_URL)) || new Response("Ping is offline.", {
+        status: 503,
+        headers: { "Content-Type": "text/plain; charset=utf-8" },
+      });
+    }
+  })());
+});
+
 self.addEventListener("push", (event) => {
   let payload = {};
   try {
@@ -9,6 +47,8 @@ self.addEventListener("push", (event) => {
   const title = payload.title || "Ping";
   const options = {
     body: payload.body || "You have a new local update.",
+    icon: "/pwa-icon-192",
+    badge: "/pwa-icon-192",
     tag: payload.notificationId ? `ping-${payload.notificationId}` : "ping-update",
     data: { url: payload.url || "/alerts" },
     renotify: false,
