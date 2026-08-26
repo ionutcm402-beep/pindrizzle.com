@@ -33,6 +33,7 @@ import "./ping-you-system.css";
 import "./ping-business-system.css";
 import "./ping-onboarding-system.css";
 import "./ping-utility-system.css";
+import "./ping-internal-system.css";
 
 export const metadata: Metadata = {
   title: "Ping — Know what's happening in your mile",
