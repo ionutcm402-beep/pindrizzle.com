@@ -74,7 +74,9 @@ export default function Phase9CheckoutPanel() {
       setSuccess("Payment confirmed. Your promotion is now active.");
       await load();
       window.dispatchEvent(new CustomEvent("ping:visibility-changed"));
-      window.location.replace("/promote?payment=confirmed");
+      window.dispatchEvent(new CustomEvent("ping:promotion-updated"));
+      window.sessionStorage.setItem("ping:payment-confirmed", "1");
+      window.location.replace("/promote");
     } catch (error) {
       setSuccess("");
       setMessage(error instanceof Error ? error.message : "Payment could not be verified right now.");
@@ -94,13 +96,15 @@ export default function Phase9CheckoutPanel() {
     const params = new URLSearchParams(window.location.search);
     const checkout = params.get("checkout");
     const sessionId = params.get("session_id");
-    const payment = params.get("payment");
     if (checkout === "success" && sessionId) void verifyReturnedPayment(sessionId);
     else if (checkout === "success") setMessage("Stripe returned without a checkout session. Please refresh and try again.");
     if (checkout === "cancelled") setMessage("Checkout was cancelled. No payment was taken.");
-    if (payment === "confirmed") {
+
+    const confirmed = window.sessionStorage.getItem("ping:payment-confirmed");
+    if (confirmed === "1") {
+      window.sessionStorage.removeItem("ping:payment-confirmed");
       setSuccess("Payment confirmed. Your promotion is now active.");
-      window.history.replaceState({}, "", "/promote");
+      window.dispatchEvent(new CustomEvent("ping:promotion-updated"));
     }
 
     void load();
