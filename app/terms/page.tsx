@@ -1,17 +1,28 @@
 import LegalPageShell from "@/components/LegalPageShell";
+import { getPublicOperatorConfig } from "@/lib/launchReadiness";
 
 export default function TermsPage() {
+  const operator = getPublicOperatorConfig();
+  const operatorPublished = Boolean(operator.operatorName && operator.operatorAddress && operator.supportEmail && operator.governingLaw);
+  const livePayments = process.env.PING_LIVE_PAYMENTS_ENABLED === "true" && process.env.STRIPE_SECRET_KEY?.startsWith("sk_live_");
+
   return (
     <LegalPageShell title="Terms of Use" kicker="COMMUNITY RULES" active="terms">
       <section className="legal-intro">
         <h2>Use Ping for useful, lawful local information.</h2>
-        <p>These terms describe the product rules being prepared for closed beta. Final operator identity, governing-law and launch payment details must be completed before public launch.</p>
+        <p>These terms describe the rules for using Ping, including local content, safety controls and promoted placements.</p>
       </section>
 
-      <section className="legal-card legal-warning">
+      {!operatorPublished && <section className="legal-card legal-warning">
         <h2>Important launch status</h2>
-        <p>These are operational beta terms, not a substitute for final legal review. Ping is still in pre-launch development and Stripe remains in test mode.</p>
-      </section>
+        <p>Ping is still in pre-launch/closed-beta operation. Final reviewed operator identity, contact address and governing-law wording are deliberately not presented as complete until the production configuration is supplied.</p>
+      </section>}
+
+      {operatorPublished && <section className="legal-card legal-callout">
+        <h2>Who provides Ping</h2>
+        <p><b>{operator.operatorName}</b> · {operator.operatorAddress}</p>
+        <div className="legal-links"><a href={`mailto:${operator.supportEmail}`}>{operator.supportEmail}</a>{operator.publicUrl && <a href={operator.publicUrl}>{operator.publicUrl}</a>}</div>
+      </section>}
 
       <section className="legal-card">
         <h2>1. Eligibility and accounts</h2>
@@ -50,8 +61,11 @@ export default function TermsPage() {
       </section>
 
       <section className="legal-card">
-        <h2>6. Promoted Pings</h2>
-        <p>Promoted Pings are labelled paid local placement and remain subject to moderation. Payment does not guarantee views, clicks, replies or business results. Prices and checkout terms must be shown before payment. The final refund/cancellation policy must be finalised before live payments are enabled.</p>
+        <h2>6. Promoted Pings and payments</h2>
+        <p>Promoted Pings are labelled paid local placement and remain subject to moderation. Payment does not guarantee views, clicks, replies, sales or other business results. The price, radius and duration are shown before Checkout.</p>
+        <p>You can abandon Checkout before payment without charge. Once a paid placement has started, poor performance or a change of mind does not by itself create a refund entitlement. If Ping receives payment but cannot safely activate the promised placement, the payment flow is designed to request a Stripe refund. Other refunds or corrections may be made where required by law or where Ping determines the paid service was not supplied as agreed.</p>
+        <p>Nothing in these terms excludes rights or remedies that cannot lawfully be excluded.</p>
+        {!livePayments && <p><b>Current status:</b> real-money promotion payments remain disabled during the launch-readiness stage.</p>}
       </section>
 
       <section className="legal-card">
@@ -62,6 +76,11 @@ export default function TermsPage() {
       <section className="legal-card legal-callout">
         <h2>8. Emergencies</h2>
         <p><b>Ping is not an emergency service.</b> If someone is in immediate danger or urgent emergency help is needed, contact the appropriate emergency service directly — in the UK, call 999 or 112.</p>
+      </section>
+
+      <section className="legal-card">
+        <h2>9. Contact and governing terms</h2>
+        {operatorPublished ? <><p>Questions about these terms can be sent to <a href={`mailto:${operator.supportEmail}`}>{operator.supportEmail}</a>.</p><p>These terms use the governing-law wording reviewed for production: <b>{operator.governingLaw}</b>. Mandatory legal rights and jurisdiction rules continue to apply where they cannot be varied by contract.</p></> : <p>The final operator contact and governing-law wording must be configured and reviewed before Ping opens public access.</p>}
       </section>
     </LegalPageShell>
   );
