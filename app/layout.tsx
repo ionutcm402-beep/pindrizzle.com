@@ -25,6 +25,7 @@ import Phase26BetaPulse from "@/components/Phase26BetaPulse";
 import Phase26FirstRunHandoff from "@/components/Phase26FirstRunHandoff";
 import Phase26BetaValidationSignals from "@/components/Phase26BetaValidationSignals";
 import Phase26BetaValidationOps from "@/components/Phase26BetaValidationOps";
+import Phase26ToastHost from "@/components/Phase26ToastHost";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 import "./accessibility.css";
@@ -41,6 +42,7 @@ import "./ping-utility-system.css";
 import "./ping-internal-system.css";
 import "./ping-polish-system.css";
 import "./phase26-experience.css";
+import "./phase26-toast.css";
 
 export const metadata: Metadata = {
   title: "Ping — Know what's happening in your mile",
@@ -93,6 +95,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Phase26QuietFeedGuide />
         <Phase26BetaPulse />
         <Phase26BetaValidationOps />
+        <Phase26ToastHost />
         <Phase21AccessibilityBridge />
       </body>
     </html>
