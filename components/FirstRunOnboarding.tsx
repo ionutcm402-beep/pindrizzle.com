@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 
 type Radius = 0.5 | 1 | 3 | 5;
 
@@ -202,6 +202,20 @@ export default function FirstRunOnboarding() {
   const [visible, setVisible] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
   const [radius, setRadius] = useState<Radius>(1);
+  const sheetRef = useRef<HTMLElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const finishRef = useRef<(reload: boolean) => void>(() => {});
+
+  const finish = useCallback((reload: boolean) => {
+    try {
+      localStorage.setItem("ping-onboarding-v1", "complete");
+      localStorage.setItem("ping-radius", String(radius));
+    } catch {}
+    setVisible(false);
+    if (reload) window.location.reload();
+  }, [radius]);
+  finishRef.current = finish;
 
   useEffect(() => {
     if (window.location.pathname !== "/") return;
@@ -215,57 +229,83 @@ export default function FirstRunOnboarding() {
 
   useEffect(() => {
     if (!visible) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") finish(false);
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [visible, radius]);
+    previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
 
-  const finish = (reload: boolean) => {
-    try {
-      localStorage.setItem("ping-onboarding-v1", "complete");
-      localStorage.setItem("ping-radius", String(radius));
-    } catch {}
-    setVisible(false);
-    if (reload) window.location.reload();
-  };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        finishRef.current(false);
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusable = Array.from(
+        sheetRef.current?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])',
+        ) || [],
+      ).filter((element) => element.offsetParent !== null);
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      previousFocusRef.current?.focus();
+    };
+  }, [visible]);
+
+  useEffect(() => {
+    if (!visible) return;
+    const timer = window.setTimeout(() => headingRef.current?.focus(), 0);
+    return () => window.clearTimeout(timer);
+  }, [visible, step]);
 
   if (!visible) return null;
 
   return (
-    <div style={styles.backdrop} role="dialog" aria-modal="true" aria-label="Welcome to Ping">
-      <section style={styles.sheet}>
-        <div style={styles.handle} />
+    <div className="first-run-backdrop" style={styles.backdrop} role="dialog" aria-modal="true" aria-labelledby="ping-onboarding-title">
+      <section className="first-run-sheet" style={styles.sheet} ref={sheetRef}>
+        <div style={styles.handle} aria-hidden="true" />
         <div style={styles.top}>
-          <div style={styles.brand}>ping<span style={{ color: "#55d84d" }}>.</span></div>
+          <div style={styles.brand} aria-label="Ping">ping<span style={{ color: "#55d84d" }} aria-hidden="true">.</span></div>
           <button type="button" style={styles.skip} onClick={() => finish(false)}>Not now</button>
         </div>
 
         {step === 1 ? (
           <>
             <div style={styles.kicker}>● REAL LOCAL ACTIVITY</div>
-            <h1 style={styles.title}>Know what matters around you.</h1>
+            <h1 id="ping-onboarding-title" ref={headingRef} tabIndex={-1} style={styles.title}>Know what matters around you.</h1>
             <p style={styles.copy}>Ping is a live neighbourhood feed for useful things happening nearby—not a social network full of filler.</p>
 
             <div style={styles.featureGrid}>
               <div style={styles.feature}>
-                <span style={styles.featureIcon}>📍</span>
+                <span style={styles.featureIcon} aria-hidden="true">📍</span>
                 <strong style={styles.featureTitle}>Nearby first</strong>
                 <small style={styles.featureCopy}>See real Pings inside the area you choose.</small>
               </div>
               <div style={styles.feature}>
-                <span style={styles.featureIcon}>⚡</span>
+                <span style={styles.featureIcon} aria-hidden="true">⚡</span>
                 <strong style={styles.featureTitle}>Useful now</strong>
                 <small style={styles.featureCopy}>Alerts, traffic, lost & found, help and local updates.</small>
               </div>
               <div style={styles.feature}>
-                <span style={styles.featureIcon}>✓</span>
+                <span style={styles.featureIcon} aria-hidden="true">✓</span>
                 <strong style={styles.featureTitle}>Community checked</strong>
                 <small style={styles.featureCopy}>People nearby can confirm, reply and report bad information.</small>
               </div>
               <div style={styles.feature}>
-                <span style={styles.featureIcon}>○</span>
+                <span style={styles.featureIcon} aria-hidden="true">○</span>
                 <strong style={styles.featureTitle}>Browse freely</strong>
                 <small style={styles.featureCopy}>No account wall just to look around your local Feed.</small>
               </div>
@@ -276,10 +316,10 @@ export default function FirstRunOnboarding() {
         ) : (
           <>
             <div style={styles.kicker}>📍 YOUR AREA</div>
-            <h1 style={styles.title}>How local should Ping feel?</h1>
+            <h1 id="ping-onboarding-title" ref={headingRef} tabIndex={-1} style={styles.title}>How local should Ping feel?</h1>
             <p style={styles.copy}>Start small. You can change this radius at any time from the Feed or your profile.</p>
 
-            <div style={styles.radiusGrid} aria-label="Choose nearby radius">
+            <div style={styles.radiusGrid} role="group" aria-label="Choose nearby radius">
               {RADII.map((option) => (
                 <button
                   type="button"
@@ -295,7 +335,7 @@ export default function FirstRunOnboarding() {
             </div>
 
             <div style={styles.privacy}>
-              <span style={{ fontSize: 18 }}>🔒</span>
+              <span style={{ fontSize: 18 }} aria-hidden="true">🔒</span>
               <div><strong style={{ color: "#354038" }}>Your exact public position stays private.</strong><br />Ping asks for device location only when you enable it. Public Ping locations are approximate, not your exact browser coordinates.</div>
             </div>
 
