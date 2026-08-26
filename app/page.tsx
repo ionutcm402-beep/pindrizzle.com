@@ -3,12 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-type Tab = "feed" | "map";
 type Category = "Alert" | "Traffic" | "Lost & Found" | "Free" | "Help" | "Local";
 type Radius = 0.5 | 1 | 3 | 5;
 type LocationState = "idle" | "requesting" | "granted" | "denied" | "unavailable";
 type Coordinates = { lat: number; lng: number };
-type DataMode = "demo" | "loading" | "live" | "quiet" | "offline";
+type DataMode = "idle" | "loading" | "live" | "quiet" | "offline";
 
 type PingItem = {
   id: string;
@@ -22,7 +21,7 @@ type PingItem = {
   place: string;
   tone: "urgent" | "warm" | "neutral" | "helpful";
   createdByMe?: boolean;
-  live?: boolean;
+  live: true;
 };
 
 type NearbyRow = {
@@ -64,14 +63,6 @@ const toDatabaseCategory: Record<Category, NearbyRow["category"]> = {
   Local: "local",
 };
 
-const seedPings: PingItem[] = [
-  { id: "seed-1", category: "Traffic", emoji: "🚧", title: "One lane blocked near the roundabout", body: "A delivery van has stopped across the left lane. Traffic is moving, but slowly.", distanceMiles: 0.2, ageMinutes: 4, confirmations: 8, place: "Three Bridges", tone: "urgent" },
-  { id: "seed-2", category: "Lost & Found", emoji: "🐕", title: "Has anyone seen Milo?", body: "Small brown spaniel, red collar. Last seen near the park entrance about 20 minutes ago.", distanceMiles: 0.5, ageMinutes: 18, confirmations: 3, place: "Maidenbower Park", tone: "warm" },
-  { id: "seed-3", category: "Free", emoji: "🎁", title: "Free toddler bike — collection today", body: "Still works well, just outgrown. Happy for it to go to someone nearby who can use it.", distanceMiles: 0.7, ageMinutes: 31, confirmations: 5, place: "Worth Road", tone: "helpful" },
-  { id: "seed-4", category: "Local", emoji: "☕", title: "Quiet tables available right now", body: "The café by the station is unusually quiet if anyone needs somewhere to work for an hour.", distanceMiles: 0.4, ageMinutes: 42, confirmations: 2, place: "Three Bridges Station", tone: "neutral" },
-  { id: "seed-5", category: "Help", emoji: "🙋", title: "Anyone got a jump lead nearby?", body: "Battery is flat outside the parade of shops. I only need a quick jump if someone is close.", distanceMiles: 0.9, ageMinutes: 11, confirmations: 1, place: "Maidenbower", tone: "helpful" },
-];
-
 const filters = ["All", "Alerts", "Traffic", "Lost & Found", "Free", "Help"] as const;
 
 function ageLabel(minutes: number) {
@@ -105,7 +96,7 @@ function mapNearbyRow(row: NearbyRow, currentUserId: string | null): PingItem {
 function FeedCard({ ping, onConfirm, onOpen }: { ping: PingItem; onConfirm: (id: string) => void; onOpen: (ping: PingItem) => void }) {
   const sharePing = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    const url = `${window.location.origin}${window.location.pathname}#ping=${encodeURIComponent(ping.id)}`;
+    const url = `${window.location.origin}/#ping=${encodeURIComponent(ping.id)}`;
     const text = `${ping.title} — ${ping.distanceMiles.toFixed(1)} mi away`;
     try {
       if (navigator.share) await navigator.share({ title: ping.title, text, url });
@@ -130,7 +121,7 @@ function FeedCard({ ping, onConfirm, onOpen }: { ping: PingItem; onConfirm: (id:
     >
       <div className="ping-card-topline">
         <div className="category-badge"><span>{ping.emoji}</span>{ping.category}</div>
-        {ping.createdByMe ? <span className="mine-badge">Your Ping</span> : ping.live ? <span className="mine-badge">Live</span> : <button className="icon-button" aria-label="More options" onClick={(event) => event.stopPropagation()}>•••</button>}
+        <span className="mine-badge">{ping.createdByMe ? "Your Ping" : "Live"}</span>
       </div>
       <h2>{ping.title}</h2>
       <p className="ping-body">{ping.body}</p>
@@ -184,7 +175,7 @@ function LocationBanner({ state, radius, dataMode, onRequest, onRadius }: { stat
       <span>📍</span>
       <div>
         <strong>{state === "denied" ? "Location blocked" : "Use your real location"}</strong>
-        <small>{state === "denied" ? "Enable location in your browser to unlock true nearby results." : "Ping works best when it knows what is actually near you."}</small>
+        <small>{state === "denied" ? "Enable location in your browser to see nearby Pings." : "Ping uses your location to show real activity around you."}</small>
       </div>
       <button onClick={onRequest} disabled={state === "requesting"}>{state === "requesting" ? "Checking…" : "Enable"}</button>
       <RadiusSelect radius={radius} onRadius={onRadius} />
@@ -201,14 +192,24 @@ function FeedView({ pings, radius, locationState, dataMode, onRequestLocation, o
     return ping.category === filter;
   }), [filter, pings, radius]);
 
+  const emptyTitle = locationState !== "granted"
+    ? "Enable location to see your real local feed."
+    : dataMode === "offline"
+      ? "We couldn’t load nearby Pings."
+      : "Quiet around here.";
+  const emptyCopy = locationState !== "granted"
+    ? "Ping does not show sample activity. Once location is enabled, this feed contains only real nearby Pings."
+    : dataMode === "offline"
+      ? "Your location is active, but live community data is temporarily unavailable."
+      : "Nothing active has been reported in this category inside your current radius.";
+
   return (
     <>
       <header className="app-header">
         <div>
           <div className="brand">ping<span>.</span></div>
-          <button className="location-pill">● Your mile <span>⌄</span></button>
+          <div className="location-pill">● Your mile</div>
         </div>
-        <button className="round-action" aria-label="Search">⌕</button>
       </header>
       <section className="hero-strip"><div><span className="live-dot" /><strong>{visible.length} active nearby</strong></div><p>What matters around you, right now.</p></section>
       <LocationBanner state={locationState} radius={radius} dataMode={dataMode} onRequest={onRequestLocation} onRadius={onRadius} />
@@ -216,23 +217,9 @@ function FeedView({ pings, radius, locationState, dataMode, onRequestLocation, o
       <main className="feed-list">
         {visible.length
           ? visible.map((ping) => <FeedCard key={ping.id} ping={ping} onConfirm={onConfirm} onOpen={onOpen} />)
-          : <div className="quiet-card"><div className="quiet-icon">☀️</div><h2>Quiet around here.</h2><p>Nothing important has been reported in this category inside your current radius. That’s usually good news.</p></div>}
+          : <div className="quiet-card"><div className="quiet-icon">{locationState === "granted" ? "✓" : "📍"}</div><h2>{emptyTitle}</h2><p>{emptyCopy}</p></div>}
       </main>
     </>
-  );
-}
-
-function MapView({ pings, selectedId, onSelect }: { pings: PingItem[]; selectedId: string | null; onSelect: (id: string) => void }) {
-  const selected = pings.find((ping) => ping.id === selectedId) ?? pings[0];
-  return (
-    <div className="map-view">
-      <header className="floating-map-header"><div><div className="brand small">ping<span>.</span></div><div className="map-location">Your mile</div></div><button className="round-action">⌕</button></header>
-      <div className="map-canvas" aria-label="Interactive map preview">
-        <div className="road road-one" /><div className="road road-two" /><div className="road road-three" /><div className="park">PARK</div><div className="radius-ring" /><div className="you-dot"><span>YOU</span></div>
-        {pings.slice(0, 5).map((ping, index) => <button key={ping.id} className={`map-pin pin-${index + 1} ${selected?.id === ping.id ? "selected" : ""}`} onClick={() => onSelect(ping.id)} aria-label={ping.title}>{ping.emoji}</button>)}
-      </div>
-      {selected && <div className="map-bottom-card"><div className="category-badge"><span>{selected.emoji}</span>{selected.category}</div><h2>{selected.title}</h2><p><strong>{selected.distanceMiles.toFixed(1)} mi</strong> away · {ageLabel(selected.ageMinutes)} ago · {selected.confirmations} confirmed</p></div>}
-    </div>
   );
 }
 
@@ -253,7 +240,7 @@ function Composer({ onClose, onPublish }: { onClose: () => void; onPublish: (dra
         <input className="composer-input" placeholder="What should neighbours know?" maxLength={70} value={title} onChange={(event) => setTitle(event.target.value)} />
         <label className="composer-label">Useful detail</label>
         <textarea placeholder="Keep it clear and useful…" maxLength={280} value={body} onChange={(event) => setBody(event.target.value)} />
-        <div className="composer-options"><button type="button">📷 Add photo</button><button type="button">📍 Near your current location</button></div>
+        <div className="expiry-note">📍 Posted near your current location · exact coordinates are not shown publicly.</div>
         <div className="expiry-note">⏱ This Ping will disappear automatically after 24 hours.</div>
         <button className="publish-button" disabled={!canPublish} onClick={() => canPublish && onPublish({ category, title: title.trim(), body: body.trim() })}>Ping it</button>
       </div>
@@ -266,15 +253,15 @@ function requestAuth(message: string) {
 }
 
 export default function Home() {
-  const [tab, setTab] = useState<Tab>("feed");
   const [composerOpen, setComposerOpen] = useState(false);
+  const [pendingCompose, setPendingCompose] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [pings, setPings] = useState<PingItem[]>(seedPings);
+  const [pings, setPings] = useState<PingItem[]>([]);
   const [radius, setRadius] = useState<Radius>(1);
   const [locationState, setLocationState] = useState<LocationState>("idle");
   const [coordinates, setCoordinates] = useState<Coordinates | null>(null);
-  const [dataMode, setDataMode] = useState<DataMode>("demo");
-  const [selectedMapPing, setSelectedMapPing] = useState<string | null>(seedPings[0].id);
+  const [dataMode, setDataMode] = useState<DataMode>("idle");
   const [refreshNonce, setRefreshNonce] = useState(0);
 
   useEffect(() => {
@@ -286,8 +273,14 @@ export default function Home() {
 
   useEffect(() => {
     const supabase = createClient();
-    void supabase.auth.getSession().then(({ data }) => setUserId(data.session?.user.id || null));
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => setUserId(session?.user.id || null));
+    void supabase.auth.getSession().then(({ data }) => {
+      setUserId(data.session?.user.id || null);
+      setAuthReady(true);
+    });
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserId(session?.user.id || null);
+      setAuthReady(true);
+    });
     return () => data.subscription.unsubscribe();
   }, []);
 
@@ -297,8 +290,7 @@ export default function Home() {
     const loadNearby = async () => {
       setDataMode("loading");
       try {
-        const supabase = createClient();
-        const { data, error } = await supabase.rpc("nearby_pings", {
+        const { data, error } = await createClient().rpc("nearby_pings", {
           viewer_lat: coordinates.lat,
           viewer_lng: coordinates.lng,
           radius_meters: Math.round(radius * 1609.344),
@@ -308,12 +300,10 @@ export default function Home() {
         if (error) throw error;
         const live = ((data || []) as NearbyRow[]).map((row) => mapNearbyRow(row, userId));
         setPings(live);
-        setSelectedMapPing(live[0]?.id || null);
         setDataMode(live.length ? "live" : "quiet");
       } catch {
         if (!cancelled) {
           setPings([]);
-          setSelectedMapPing(null);
           setDataMode("offline");
         }
       }
@@ -353,12 +343,35 @@ export default function Home() {
     );
   };
 
-  const confirmPing = async (id: string) => {
-    const target = pings.find((ping) => ping.id === id);
-    if (!target?.live) {
-      setPings((current) => current.map((ping) => ping.id === id ? { ...ping, confirmations: ping.confirmations + 1 } : ping));
+  const beginCompose = () => {
+    setPendingCompose(true);
+    if (!authReady) return;
+    if (!userId) {
+      requestAuth("Sign in once to post Pings that your neighbours can see.");
       return;
     }
+    if (locationState !== "granted" || !coordinates) requestLocation();
+  };
+
+  useEffect(() => {
+    if (!authReady || window.location.hash !== "#ping") return;
+    window.history.replaceState({}, "", "/");
+    beginCompose();
+  }, [authReady]);
+
+  useEffect(() => {
+    if (!pendingCompose || !userId) return;
+    if (locationState === "idle" || locationState === "unavailable") {
+      requestLocation();
+      return;
+    }
+    if (locationState === "granted" && coordinates) {
+      setComposerOpen(true);
+      setPendingCompose(false);
+    }
+  }, [pendingCompose, userId, locationState, coordinates]);
+
+  const confirmPing = async (id: string) => {
     if (!userId) {
       requestAuth("Sign in to confirm real Pings near you.");
       return;
@@ -370,18 +383,6 @@ export default function Home() {
     } catch {}
   };
 
-  const openComposer = () => {
-    if (!userId) {
-      requestAuth("Sign in once to post Pings that your neighbours can see.");
-      return;
-    }
-    if (locationState !== "granted" || !coordinates) {
-      requestLocation();
-      return;
-    }
-    setComposerOpen(true);
-  };
-
   const publishPing = async (draft: { category: Category; title: string; body: string }) => {
     if (!userId) {
       setComposerOpen(false);
@@ -390,6 +391,7 @@ export default function Home() {
     }
     if (!coordinates) {
       setComposerOpen(false);
+      setPendingCompose(true);
       requestLocation();
       return;
     }
@@ -405,7 +407,6 @@ export default function Home() {
       });
       if (error) throw error;
       setComposerOpen(false);
-      setTab("feed");
       setRefreshNonce((value) => value + 1);
     } catch {
       window.alert("Ping couldn’t publish yet. Please try again.");
@@ -420,18 +421,17 @@ export default function Home() {
     <div className="page-shell">
       <div className="app-shell">
         <div className="screen-content">
-          {tab === "feed" && <FeedView pings={pings} radius={radius} locationState={locationState} dataMode={dataMode} onRequestLocation={requestLocation} onRadius={setAndStoreRadius} onConfirm={confirmPing} onOpen={openPingDetail} />}
-          {tab === "map" && <MapView pings={pings.filter((ping) => ping.distanceMiles <= radius)} selectedId={selectedMapPing} onSelect={setSelectedMapPing} />}
+          <FeedView pings={pings} radius={radius} locationState={locationState} dataMode={dataMode} onRequestLocation={requestLocation} onRadius={setAndStoreRadius} onConfirm={confirmPing} onOpen={openPingDetail} />
         </div>
         <nav className="bottom-nav" aria-label="Primary navigation">
-          <button className={tab === "feed" ? "active" : ""} onClick={() => setTab("feed")}><span>⌂</span>Feed</button>
-          <button className={tab === "map" ? "active" : ""} onClick={() => setTab("map")}><span>⌖</span>Map</button>
-          <button className="compose-nav" onClick={openComposer} aria-label="Create a Ping"><span>+</span>Ping</button>
+          <button className="active"><span>⌂</span>Feed</button>
+          <button onClick={() => window.location.assign("/map")}><span>⌖</span>Map</button>
+          <button className="compose-nav" onClick={beginCompose} aria-label="Create a Ping"><span>+</span>Ping</button>
           <button onClick={() => window.location.assign("/alerts")}><span>♢</span>Alerts</button>
           <button onClick={() => window.location.assign("/you")}><span>○</span>You</button>
         </nav>
       </div>
-      {composerOpen && <Composer onClose={() => setComposerOpen(false)} onPublish={publishPing} />}
+      {composerOpen && <Composer onClose={() => { setComposerOpen(false); setPendingCompose(false); }} onPublish={publishPing} />}
     </div>
   );
 }
