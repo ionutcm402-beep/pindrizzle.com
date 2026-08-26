@@ -17,7 +17,13 @@ type ProductEvent =
   | "business_view"
   | "ping_open"
   | "onboarding_complete"
-  | "onboarding_skip";
+  | "onboarding_skip"
+  | "return_visit"
+  | "location_enabled"
+  | "quiet_feed_seen"
+  | "quiet_expand_radius"
+  | "quiet_open_map"
+  | "quiet_create_ping";
 
 const SESSION_KEY = "ping-product-session-v1";
 const SEEN_PREFIX = "ping-product-seen-v1:";
@@ -33,6 +39,17 @@ const routeEvents: Record<string, ProductEvent> = {
   "/promote": "promote_view",
   "/business": "business_view",
 };
+
+const acceptedProductEvents = new Set<ProductEvent>([
+  "onboarding_complete",
+  "onboarding_skip",
+  "return_visit",
+  "location_enabled",
+  "quiet_feed_seen",
+  "quiet_expand_radius",
+  "quiet_open_map",
+  "quiet_create_ping",
+]);
 
 function analyticsAllowed() {
   try { return window.localStorage.getItem(ANALYTICS_CHOICE_KEY) === "allow"; } catch { return false; }
@@ -103,7 +120,7 @@ export default function Phase19ProductAnalytics() {
     const onPingOpen = () => void record("ping_open");
     const onProductEvent = (event: Event) => {
       const eventType = (event as CustomEvent<{ eventType?: ProductEvent }>).detail?.eventType;
-      if (eventType === "onboarding_complete" || eventType === "onboarding_skip") void record(eventType);
+      if (eventType && acceptedProductEvents.has(eventType)) void record(eventType);
     };
 
     window.addEventListener("ping:open-detail", onPingOpen);
