@@ -51,6 +51,36 @@ export default function Phase9CheckoutPanel() {
     setRequests(((data || []) as PromotionRequest[]).filter((item) => item.status === "approved" && item.payment_status === "unpaid"));
   }, []);
 
+  const verifyReturnedPayment = useCallback(async (sessionId: string) => {
+    setSuccess("Payment received. Verifying with Stripe…");
+    setMessage("");
+    try {
+      const supabase = createClient();
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) throw new Error("Please sign in again so Ping can verify the payment.");
+
+      const response = await fetch("/api/stripe/verify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ sessionId }),
+      });
+      const result = await response.json().catch(() => ({})) as { ok?: boolean; error?: string };
+      if (!response.ok || !result.ok) throw new Error(result.error || "Payment could not be verified.");
+
+      setSuccess("Payment confirmed. Your promotion is now active.");
+      await load();
+      window.history.replaceState({}, "", "/promote");
+      window.dispatchEvent(new CustomEvent("ping:visibility-changed"));
+    } catch (error) {
+      setSuccess("");
+      setMessage(error instanceof Error ? error.message : "Payment could not be verified right now.");
+    }
+  }, [load]);
+
   useEffect(() => {
     if (window.location.pathname !== "/promote") return;
     const findHost = () => {
@@ -62,8 +92,11 @@ export default function Phase9CheckoutPanel() {
     observer.observe(document.body, { childList: true, subtree: true });
 
     const params = new URLSearchParams(window.location.search);
-    if (params.get("checkout") === "success") setSuccess("Payment received. We’re confirming your promotion now.");
-    if (params.get("checkout") === "cancelled") setMessage("Checkout was cancelled. No payment was taken.");
+    const checkout = params.get("checkout");
+    const sessionId = params.get("session_id");
+    if (checkout === "success" && sessionId) void verifyReturnedPayment(sessionId);
+    else if (checkout === "success") setMessage("Stripe returned without a checkout session. Please refresh and try again.");
+    if (checkout === "cancelled") setMessage("Checkout was cancelled. No payment was taken.");
 
     void load();
     const timer = window.setInterval(() => void load(), 5000);
@@ -71,7 +104,7 @@ export default function Phase9CheckoutPanel() {
       observer.disconnect();
       window.clearInterval(timer);
     };
-  }, [load]);
+  }, [load, verifyReturnedPayment]);
 
   const pay = async (promotionId: string) => {
     setLoadingId(promotionId);
