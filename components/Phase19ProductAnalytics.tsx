@@ -19,6 +19,7 @@ type ProductEvent =
   | "onboarding_skip";
 
 const SESSION_KEY = "ping-product-session-v1";
+const SEEN_PREFIX = "ping-product-seen-v1:";
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const routeEvents: Record<string, ProductEvent> = {
@@ -44,17 +45,29 @@ function browserSessionId() {
   }
 }
 
+function seenKey(session: string, eventType: ProductEvent) {
+  return `${SEEN_PREFIX}${session}:${eventType}`;
+}
+
 export default function Phase19ProductAnalytics() {
   const pathname = usePathname();
 
   const record = useCallback(async (eventType: ProductEvent) => {
     const session = browserSessionId();
     if (!session) return;
+
+    const key = seenKey(session, eventType);
     try {
-      await createClient().rpc("record_product_event", {
+      if (window.sessionStorage.getItem(key) === "1") return;
+    } catch {}
+
+    try {
+      const { error } = await createClient().rpc("record_product_event", {
         target_event_type: eventType,
         browser_session: session,
       });
+      if (error) return;
+      try { window.sessionStorage.setItem(key, "1"); } catch {}
     } catch {
       // Analytics must never interrupt the product experience.
     }

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 
 const GRID = 0.004;
 const CACHE_MS = 30 * 24 * 60 * 60 * 1000;
+let adminClient: SupabaseClient | null | undefined;
 
 type PlaceRequest = { lat?: number; lng?: number };
 type NominatimAddress = Record<string, string | undefined>;
@@ -38,6 +39,21 @@ function makeLabel(address: NominatimAddress, displayName?: string) {
   return { locality: "", town: "", label: fallback };
 }
 
+function getAdminClient() {
+  if (adminClient !== undefined) return adminClient;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceRoleKey) {
+    adminClient = null;
+    return adminClient;
+  }
+
+  adminClient = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  return adminClient;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null) as PlaceRequest | null;
@@ -47,9 +63,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Valid coordinates are required." }, { status: 400 });
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!supabaseUrl || !serviceRoleKey) {
+    const admin = getAdminClient();
+    if (!admin) {
       return NextResponse.json({ label: "Nearby", source: "fallback" });
     }
 
@@ -57,10 +72,6 @@ export async function POST(request: NextRequest) {
     const centerLat = Number(coarseCell(lat).toFixed(6));
     const centerLng = Number(coarseCell(lng).toFixed(6));
     const gridKey = `${centerLat.toFixed(3)}:${centerLng.toFixed(3)}`;
-
-    const admin = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
 
     const cached = await admin
       .from("place_cells")

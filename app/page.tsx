@@ -397,11 +397,37 @@ export default function Home() {
   useEffect(() => {
     if (!coordinates) return;
     const supabase = createClient();
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let dirtyWhileHidden = false;
+
+    const scheduleRefresh = () => {
+      if (document.visibilityState !== "visible") {
+        dirtyWhileHidden = true;
+        return;
+      }
+      dirtyWhileHidden = false;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        timer = null;
+        setRefreshNonce((value) => value + 1);
+      }, 500);
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible" && dirtyWhileHidden) scheduleRefresh();
+    };
+
     const channel = supabase
       .channel("ping-feed-live")
-      .on("postgres_changes", { event: "*", schema: "public", table: "pings" }, () => setRefreshNonce((value) => value + 1))
+      .on("postgres_changes", { event: "*", schema: "public", table: "pings" }, scheduleRefresh)
       .subscribe();
-    return () => { void supabase.removeChannel(channel); };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      if (timer) clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      void supabase.removeChannel(channel);
+    };
   }, [coordinates]);
 
   const setAndStoreRadius = (next: Radius) => {
