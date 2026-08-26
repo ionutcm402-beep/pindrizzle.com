@@ -29,9 +29,14 @@ export default function Phase22LegalSettingsEntry() {
         <span>⚖️</span><div><strong>Privacy, legal & data</strong><small>Analytics choice, data rights, Terms and Safety</small></div><b>›</b>
       </button>
       {moderator && (
-        <button type="button" onClick={() => window.location.assign("/moderation/compliance")}>
-          <span>📋</span><div><strong>Compliance requests</strong><small>Privacy, safety complaints and appeals</small></div><b>›</b>
-        </button>
+        <>
+          <button type="button" onClick={() => window.location.assign("/moderation/compliance")}>
+            <span>📋</span><div><strong>Compliance requests</strong><small>Privacy, safety complaints and appeals</small></div><b>›</b>
+          </button>
+          <button type="button" onClick={() => window.location.assign("/moderation/launch")}>
+            <span>🚦</span><div><strong>Launch readiness</strong><small>Production gates, Stripe, SMTP and legal status</small></div><b>›</b>
+          </button>
+        </>
       )}
     </>,
     target,
