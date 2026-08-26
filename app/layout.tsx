@@ -24,6 +24,17 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 import "./accessibility.css";
 import "./legal.css";
+import "./ping-design-system.css";
+import "./ping-detail-system.css";
+import "./ping-map-system.css";
+import "./ping-search-system.css";
+import "./ping-alerts-system.css";
+import "./ping-you-system.css";
+import "./ping-business-system.css";
+import "./ping-onboarding-system.css";
+import "./ping-utility-system.css";
+import "./ping-internal-system.css";
+import "./ping-polish-system.css";
 
 export const metadata: Metadata = {
   title: "Ping — Know what's happening in your mile",
@@ -43,7 +54,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#f7f7f2",
+  themeColor: "#f4f5f2",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
