@@ -40,6 +40,7 @@ export default function Phase22StorageChoice() {
 
   useEffect(() => {
     if (readAnalyticsChoice()) return;
+    clearAnalyticsSessionStorage();
     const timer = window.setTimeout(() => setVisible(true), 1200);
     return () => window.clearTimeout(timer);
   }, []);
