@@ -26,11 +26,11 @@ export default function PrivacyPage() {
       <section className="legal-card">
         <h2>What Ping uses</h2>
         <ul>
-          <li><b>Account data:</b> your email address, authentication identifiers and account-security records.</li>
+          <li><b>Account data:</b> your email address, authentication identifiers, account-security records, your 13+ signup declaration and the versions of the Terms/Privacy Notice accepted at signup.</li>
           <li><b>Public profile data:</b> display name, account age and activity-based reputation signals. Your email is not shown publicly.</li>
           <li><b>Community content:</b> Pings, replies, photos, confirmations and Helpful signals you choose to submit.</li>
           <li><b>Location:</b> device coordinates are used to find nearby activity and create Pings. Public Ping locations are deliberately approximate; exact browser coordinates are not displayed publicly.</li>
-          <li><b>Safety records:</b> reports, blocks, hidden content and moderation decisions needed to operate community safety controls.</li>
+          <li><b>Safety and rights records:</b> reports, blocks, hidden content, moderation decisions, privacy-rights requests, safety complaints and moderation appeals needed to operate safety and compliance controls.</li>
           <li><b>Notifications:</b> notification preferences and, if enabled, browser push subscription details needed to deliver push messages.</li>
           <li><b>Promotions and payments:</b> promotion requests and payment-status metadata. Payment processing is handled through Stripe; Ping does not need your full card number.</li>
           <li><b>Optional product analytics:</b> only after you choose Allow analytics, Ping records a random browser-session identifier and coarse events such as Feed, Map or Search use. It does not record search text or exact location in the product analytics table.</li>
