@@ -36,7 +36,6 @@ export default function Phase9CheckoutPanel() {
   const [success, setSuccess] = useState("");
 
   const load = useCallback(async () => {
-    if (window.location.pathname !== "/promote") return;
     const supabase = createClient();
     const { data: sessionData } = await supabase.auth.getSession();
     if (!sessionData.session) {
@@ -84,14 +83,10 @@ export default function Phase9CheckoutPanel() {
   }, [load]);
 
   useEffect(() => {
-    if (window.location.pathname !== "/promote") return;
-    const findHost = () => {
-      const next = document.querySelector(".phase9-request-history");
-      if (next) setHost(next);
-    };
-    findHost();
-    const observer = new MutationObserver(findHost);
-    observer.observe(document.body, { childList: true, subtree: true });
+    // This component is mounted by /promote/layout.tsx, so the route content is
+    // already present when effects run. Target the explicit payment/history slot
+    // once instead of globally observing and rescanning the document.
+    setHost(document.querySelector(".phase9-request-history"));
 
     const params = new URLSearchParams(window.location.search);
     const checkout = params.get("checkout");
@@ -109,10 +104,7 @@ export default function Phase9CheckoutPanel() {
 
     void load();
     const timer = window.setInterval(() => void load(), 5000);
-    return () => {
-      observer.disconnect();
-      window.clearInterval(timer);
-    };
+    return () => window.clearInterval(timer);
   }, [load, verifyReturnedPayment]);
 
   const pay = async (promotionId: string) => {
