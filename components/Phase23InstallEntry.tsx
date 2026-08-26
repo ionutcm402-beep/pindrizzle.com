@@ -22,15 +22,15 @@ export default function Phase23InstallEntry() {
       setTarget(null);
       return;
     }
-    const timer = window.setTimeout(() => setTarget(document.querySelector(".settings-list")), 0);
+    const timer = window.setTimeout(() => setTarget(document.querySelector("#you-privacy-settings")), 0);
     return () => window.clearTimeout(timer);
   }, [pathname]);
 
   if (!target) return null;
 
   return createPortal(
-    <button type="button" onClick={() => window.location.assign("/install")}>
-      <span>▣</span><div><strong>{installed ? "Ping is installed" : "Install Ping"}</strong><small>{installed ? "See installed-app details" : "Add Ping to your home screen or desktop"}</small></div><b>›</b>
+    <button type="button" className="you-install-entry" onClick={() => window.location.assign("/install")}>
+      <span className="you-row-icon install"/><div><strong>{installed ? "Ping is installed" : "Install Ping"}</strong><small>{installed ? "See installed-app details" : "Add Ping to your home screen or desktop"}</small></div><b>›</b>
     </button>,
     target,
   );
