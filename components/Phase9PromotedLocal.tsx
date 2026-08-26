@@ -173,6 +173,36 @@ export default function Phase9PromotedLocal() {
     };
   }, [load]);
 
+  useEffect(() => {
+    const promotedPingId = item?.ping_id;
+
+    const restoreHiddenCard = () => {
+      document.querySelectorAll<HTMLElement>('[data-phase9-promo-duplicate="true"]').forEach((card) => {
+        card.style.removeProperty("display");
+        delete card.dataset.phase9PromoDuplicate;
+      });
+    };
+
+    restoreHiddenCard();
+    if (!promotedPingId) return;
+
+    const suppressDuplicate = () => {
+      document.querySelectorAll<HTMLElement>(`.feed-list [data-ping-id="${promotedPingId}"]`).forEach((card) => {
+        card.dataset.phase9PromoDuplicate = "true";
+        card.style.display = "none";
+      });
+    };
+
+    suppressDuplicate();
+    const observer = new MutationObserver(suppressDuplicate);
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      observer.disconnect();
+      restoreHiddenCard();
+    };
+  }, [item?.ping_id]);
+
   if (!host || !item) return null;
 
   const meta = categoryMeta[item.category];
