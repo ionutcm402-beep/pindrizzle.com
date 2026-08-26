@@ -1,10 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { resolvePlaceLabel } from "@/lib/place";
+
+const PLACE_REFRESH_MS = 15 * 60 * 1000;
+const PLACE_LABEL_KEY = "ping-place-label";
+const PLACE_LABEL_AT_KEY = "ping-place-label-at";
 
 export default function Phase15PlaceIntelligence() {
   const [active, setActive] = useState(false);
+  const lastResolvedAt = useRef(0);
+  const resolving = useRef(false);
 
   const applyLabel = useCallback((label: string) => {
     const safe = label && label !== "Nearby" ? label : "Your mile";
@@ -25,50 +31,73 @@ export default function Phase15PlaceIntelligence() {
     });
   }, []);
 
-  const resolveGrantedLocation = useCallback(() => {
-    if (!navigator.geolocation) return;
+  const resolveGrantedLocation = useCallback((force = false) => {
+    if (!navigator.geolocation || resolving.current) return;
+    const now = Date.now();
+    if (!force && now - lastResolvedAt.current < PLACE_REFRESH_MS) return;
+
+    resolving.current = true;
     navigator.geolocation.getCurrentPosition(async (position) => {
-      const place = await resolvePlaceLabel(position.coords.latitude, position.coords.longitude);
-      try { localStorage.setItem("ping-place-label", place.label); } catch {}
-      applyLabel(place.label);
-      setActive(Boolean(place.attribution || (place.label && place.label !== "Nearby")));
-      window.dispatchEvent(new CustomEvent("ping:place-resolved", { detail: place }));
-    }, () => {}, { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 });
+      try {
+        const place = await resolvePlaceLabel(position.coords.latitude, position.coords.longitude);
+        const resolvedAt = Date.now();
+        lastResolvedAt.current = resolvedAt;
+        try {
+          localStorage.setItem(PLACE_LABEL_KEY, place.label);
+          localStorage.setItem(PLACE_LABEL_AT_KEY, String(resolvedAt));
+        } catch {}
+        applyLabel(place.label);
+        setActive(Boolean(place.attribution || (place.label && place.label !== "Nearby")));
+        window.dispatchEvent(new CustomEvent("ping:place-resolved", { detail: place }));
+      } finally {
+        resolving.current = false;
+      }
+    }, () => {
+      resolving.current = false;
+    }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 });
   }, [applyLabel]);
 
   useEffect(() => {
+    // This bridge only enhances the Feed. Other routes resolve place data only
+    // when they explicitly need it, avoiding background geolocation work.
+    if (window.location.pathname !== "/") return;
+
     try {
-      const cached = localStorage.getItem("ping-place-label");
+      const cached = localStorage.getItem(PLACE_LABEL_KEY);
+      const cachedAt = Number(localStorage.getItem(PLACE_LABEL_AT_KEY) || 0);
       if (cached) {
         applyLabel(cached);
         setActive(true);
       }
+      if (Number.isFinite(cachedAt) && cachedAt > 0) lastResolvedAt.current = cachedAt;
     } catch {}
 
-    const observer = new MutationObserver(() => {
+    let permissionStatus: PermissionStatus | null = null;
+    let disposed = false;
+    const onPermissionChange = () => {
+      if (!disposed && permissionStatus?.state === "granted") resolveGrantedLocation(true);
+    };
+
+    const setupPermission = async () => {
+      if (!navigator.permissions?.query) return;
       try {
-        const cached = localStorage.getItem("ping-place-label");
-        if (cached) applyLabel(cached);
+        permissionStatus = await navigator.permissions.query({ name: "geolocation" });
+        if (disposed) return;
+        permissionStatus.addEventListener("change", onPermissionChange);
+        if (permissionStatus.state === "granted") resolveGrantedLocation();
       } catch {}
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
+    };
+    void setupPermission();
 
-    if (navigator.permissions?.query) {
-      void navigator.permissions.query({ name: "geolocation" }).then((permission) => {
-        if (permission.state === "granted") resolveGrantedLocation();
-        permission.addEventListener("change", () => {
-          if (permission.state === "granted") resolveGrantedLocation();
-        });
-      }).catch(() => {});
-    }
-
-    const visible = () => {
+    const onVisibilityChange = () => {
       if (document.visibilityState === "visible") resolveGrantedLocation();
     };
-    document.addEventListener("visibilitychange", visible);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
     return () => {
-      observer.disconnect();
-      document.removeEventListener("visibilitychange", visible);
+      disposed = true;
+      permissionStatus?.removeEventListener("change", onPermissionChange);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [applyLabel, resolveGrantedLocation]);
 
