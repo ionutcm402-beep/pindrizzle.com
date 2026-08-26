@@ -16,12 +16,14 @@ const routeNames: Record<string, string> = {
   "/moderation": "Moderation",
   "/moderation/promotions": "Promotion moderation",
   "/moderation/compliance": "Compliance moderation",
+  "/moderation/beta": "Closed beta moderation",
   "/privacy": "Privacy Notice",
   "/cookies": "Browser Storage",
   "/terms": "Terms of Use",
   "/safety": "Safety and Complaints",
   "/install": "Install Ping",
   "/offline": "Offline",
+  "/beta": "Closed Beta",
   "/ops": "Operations",
 };
 
