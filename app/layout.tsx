@@ -16,6 +16,7 @@ import Phase16PushSafetyBridge from "@/components/Phase16PushSafetyBridge";
 import Phase19ProductAnalytics from "@/components/Phase19ProductAnalytics";
 import Phase21AccessibilityBridge from "@/components/Phase21AccessibilityBridge";
 import Phase22StorageChoice from "@/components/Phase22StorageChoice";
+import Phase22LegalSettingsEntry from "@/components/Phase22LegalSettingsEntry";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 import "./accessibility.css";
@@ -54,6 +55,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Phase16PushSafetyBridge />
         <Phase19ProductAnalytics />
         <Phase22StorageChoice />
+        <Phase22LegalSettingsEntry />
         <Phase21AccessibilityBridge />
       </body>
     </html>
