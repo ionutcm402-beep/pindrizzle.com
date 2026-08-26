@@ -20,6 +20,8 @@ import Phase22LegalSettingsEntry from "@/components/Phase22LegalSettingsEntry";
 import Phase23PwaBridge from "@/components/Phase23PwaBridge";
 import Phase23InstallEntry from "@/components/Phase23InstallEntry";
 import Phase24BetaBridge from "@/components/Phase24BetaBridge";
+import Phase26QuietFeedGuide from "@/components/Phase26QuietFeedGuide";
+import Phase26BetaPulse from "@/components/Phase26BetaPulse";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 import "./accessibility.css";
@@ -35,6 +37,7 @@ import "./ping-onboarding-system.css";
 import "./ping-utility-system.css";
 import "./ping-internal-system.css";
 import "./ping-polish-system.css";
+import "./phase26-experience.css";
 
 export const metadata: Metadata = {
   title: "Ping — Know what's happening in your mile",
@@ -82,6 +85,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Phase23PwaBridge />
         <Phase23InstallEntry />
         <Phase24BetaBridge />
+        <Phase26QuietFeedGuide />
+        <Phase26BetaPulse />
         <Phase21AccessibilityBridge />
       </body>
     </html>
