@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import FirstRunOnboarding from "@/components/FirstRunOnboarding";
 import PasswordAuthOverlay from "@/components/PasswordAuthOverlay";
 import Phase5PingDetail from "@/components/Phase5PingDetail";
 import PrivacySafetyCenter from "@/components/PrivacySafetyCenter";
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en">
       <body>
         {children}
+        <FirstRunOnboarding />
         <Phase5PingDetail />
         <PrivacySafetyCenter />
         <PasswordAuthOverlay />
