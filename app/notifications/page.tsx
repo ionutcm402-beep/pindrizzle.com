@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Phase16PushSettings from "@/components/Phase16PushSettings";
 import { createClient } from "@/lib/supabase/client";
 
 type Preferences = {
@@ -119,8 +120,10 @@ export default function NotificationSettingsPage() {
             <>
               <section className="notification-settings-intro">
                 <strong>Useful activity only.</strong>
-                <p>These controls affect Ping’s in-app Alerts and live badges. Security emails such as password resets are always kept separate.</p>
+                <p>These controls affect Ping’s in-app Alerts, live badges and any push notifications you enable. Security emails such as password resets are always kept separate.</p>
               </section>
+
+              <Phase16PushSettings userId={userId} authLoading={loading} />
 
               <section className="notification-settings-list" aria-label="Notification preferences">
                 {rows.map((row) => {
