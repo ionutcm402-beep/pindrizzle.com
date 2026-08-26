@@ -366,15 +366,15 @@ export default function Phase5PingDetail() {
     }
     setReportBusy(true);
     try {
-      const { error } = await createClient().from("reports").insert({
-        ping_id: detail.id,
-        reporter_id: currentUserId,
-        reason: reportReason,
-        details: "Reported from Ping detail sheet",
+      const { error } = await createClient().rpc("report_ping", {
+        target_ping_id: detail.id,
+        report_reason: reportReason,
+        report_details: "Reported from Ping detail sheet",
       });
       if (error) throw error;
       setReportOpen(false);
-      setActionMessage("Report sent. Thank you for helping keep Ping useful.");
+      setActionMessage("Report sent. This Ping is now hidden from your Feed and Map.");
+      window.dispatchEvent(new CustomEvent("ping:community-changed", { detail: { kind: "safety" } }));
     } catch (error) {
       console.error("Report failed", error);
       setActionMessage("This report could not be sent yet.");
