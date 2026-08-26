@@ -4,10 +4,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 type Mode = "signin" | "signup" | "recovery";
+type ReleaseStage = "closed_beta" | "public";
 
 export default function PasswordAuthOverlay() {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<Mode>("signin");
+  const [releaseStage, setReleaseStage] = useState<ReleaseStage>("closed_beta");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -22,15 +24,16 @@ export default function PasswordAuthOverlay() {
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const busyRef = useRef(false);
 
+  const isClosedBeta = releaseStage !== "public";
   const passwordValid = password.length >= 8;
   const emailValid = email.includes("@") && email.includes(".");
   const normalizedInvite = inviteCode.trim().toUpperCase();
   const inviteValid = /^PING-[A-Z0-9]{10,32}$/.test(normalizedInvite);
   const canSubmit = useMemo(() => {
     if (mode === "recovery") return emailValid;
-    if (mode === "signup") return emailValid && passwordValid && password === confirmPassword && inviteValid && ageConfirmed && termsConfirmed;
+    if (mode === "signup") return emailValid && passwordValid && password === confirmPassword && (!isClosedBeta || inviteValid) && ageConfirmed && termsConfirmed;
     return emailValid && passwordValid;
-  }, [mode, emailValid, passwordValid, password, confirmPassword, inviteValid, ageConfirmed, termsConfirmed]);
+  }, [mode, emailValid, passwordValid, password, confirmPassword, isClosedBeta, inviteValid, ageConfirmed, termsConfirmed]);
 
   useEffect(() => { busyRef.current = busy; }, [busy]);
 
@@ -67,6 +70,18 @@ export default function PasswordAuthOverlay() {
       data.subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    let active = true;
+    const supabase = createClient();
+    void supabase.rpc("public_release_stage").then((result) => {
+      if (!active) return;
+      const value = Array.isArray(result.data) ? result.data[0] : result.data;
+      setReleaseStage(!result.error && value === "public" ? "public" : "closed_beta");
+    });
+    return () => { active = false; };
+  }, [open]);
 
   const close = useCallback(() => {
     setOpen(false);
@@ -123,7 +138,12 @@ export default function PasswordAuthOverlay() {
         if (error) throw error;
         setOpen(false);
       } else if (mode === "signup") {
-        try { localStorage.setItem("ping-beta-pending-invite", normalizedInvite); } catch {}
+        if (isClosedBeta) {
+          try { localStorage.setItem("ping-beta-pending-invite", normalizedInvite); } catch {}
+        } else {
+          try { localStorage.removeItem("ping-beta-pending-invite"); } catch {}
+        }
+
         const { data, error } = await supabase.auth.signUp({
           email: normalizedEmail,
           password,
@@ -133,19 +153,24 @@ export default function PasswordAuthOverlay() {
               age_13_plus_declared: true,
               ping_terms_version: "2026-08-26",
               ping_privacy_notice_version: "2026-08-26",
-              ping_closed_beta_signup: true,
+              ping_closed_beta_signup: isClosedBeta,
+              ping_release_stage: releaseStage,
             },
           },
         });
         if (error) throw error;
 
         if (data.session) {
-          const redeem = await supabase.rpc("redeem_beta_invite", { invite_code: normalizedInvite });
-          if (redeem.error) {
-            setMessage("Your account was created, but that beta invite could not be activated. Open Closed beta from You to try another invite.");
+          if (isClosedBeta) {
+            const redeem = await supabase.rpc("redeem_beta_invite", { invite_code: normalizedInvite });
+            if (redeem.error) {
+              setMessage("Your account was created, but that beta invite could not be activated. Open Closed beta from You to try another invite.");
+            } else {
+              try { localStorage.removeItem("ping-beta-pending-invite"); } catch {}
+              window.dispatchEvent(new Event("ping:beta-refresh"));
+              setOpen(false);
+            }
           } else {
-            try { localStorage.removeItem("ping-beta-pending-invite"); } catch {}
-            window.dispatchEvent(new Event("ping:beta-refresh"));
             setOpen(false);
           }
         } else {
@@ -153,8 +178,10 @@ export default function PasswordAuthOverlay() {
           if (Array.isArray(identities) && identities.length === 0) {
             try { localStorage.removeItem("ping-beta-pending-invite"); } catch {}
             setMessage("This email already has a Ping account. Choose Sign in and use your password.");
-          } else {
+          } else if (isClosedBeta) {
             setMessage("Check your email to confirm your new Ping account. Your beta invite will activate when you return and sign in on this browser.");
+          } else {
+            setMessage("Check your email to confirm your new Ping account, then return here to sign in.");
           }
         }
       } else {
@@ -185,7 +212,10 @@ export default function PasswordAuthOverlay() {
   };
 
   if (!open) return null;
-  const heading = mode === "signup" ? "Join the Ping closed beta." : mode === "recovery" ? "Reset your password." : "Welcome back.";
+  const heading = mode === "signup" ? (isClosedBeta ? "Join the Ping closed beta." : "Create your Ping account.") : mode === "recovery" ? "Reset your password." : "Welcome back.";
+  const signupCopy = isClosedBeta
+    ? "New accounts currently need a beta invite. Ping accounts are for people aged 13 or over, and your email is never shown publicly."
+    : "Create an account to post, confirm, reply and follow useful local updates. Ping accounts are for people aged 13 or over, and your email is never shown publicly.";
 
   return (
     <>
@@ -197,7 +227,7 @@ export default function PasswordAuthOverlay() {
 
           <h2 id="password-auth-title">{heading}</h2>
           {contextMessage && mode === "signin" && <p className="password-auth-context">{contextMessage}</p>}
-          <p className="password-auth-copy">{mode === "signup" ? "New accounts currently need a beta invite. Ping accounts are for people aged 13 or over, and your email is never shown publicly." : mode === "recovery" ? "Enter your email and we’ll send a secure password reset link." : "Sign in with your email and password. Existing testers do not need to enter their invite again."}</p>
+          <p className="password-auth-copy">{mode === "signup" ? signupCopy : mode === "recovery" ? "Enter your email and we’ll send a secure password reset link." : "Sign in with your email and password."}</p>
 
           <label htmlFor="password-auth-email">Email address</label>
           <input ref={emailRef} id="password-auth-email" type="email" inputMode="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" />
@@ -207,19 +237,21 @@ export default function PasswordAuthOverlay() {
           {mode === "signup" && <>
             <label htmlFor="password-auth-confirm">Confirm password</label>
             <input id="password-auth-confirm" type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Repeat your password" aria-invalid={confirmPassword.length > 0 && password !== confirmPassword} aria-describedby={confirmPassword.length > 0 && password !== confirmPassword ? "password-auth-confirm-hint" : undefined} />
-            <label htmlFor="password-auth-invite">Beta invite code</label>
-            <input id="password-auth-invite" value={inviteCode} onChange={(event) => setInviteCode(event.target.value.toUpperCase())} placeholder="PING-…" autoCapitalize="characters" autoCorrect="off" aria-invalid={inviteCode.length > 0 && !inviteValid} aria-describedby={inviteCode.length > 0 && !inviteValid ? "password-auth-invite-hint" : undefined} />
-            {inviteCode.length > 0 && !inviteValid && <div id="password-auth-invite-hint" className="password-auth-hint error">Enter the full beta invite code.</div>}
+            {isClosedBeta && <>
+              <label htmlFor="password-auth-invite">Beta invite code</label>
+              <input id="password-auth-invite" value={inviteCode} onChange={(event) => setInviteCode(event.target.value.toUpperCase())} placeholder="PING-…" autoCapitalize="characters" autoCorrect="off" aria-invalid={inviteCode.length > 0 && !inviteValid} aria-describedby={inviteCode.length > 0 && !inviteValid ? "password-auth-invite-hint" : undefined} />
+              {inviteCode.length > 0 && !inviteValid && <div id="password-auth-invite-hint" className="password-auth-hint error">Enter the full beta invite code.</div>}
+            </>}
             <div className="password-auth-declarations"><label className="password-auth-check" htmlFor="password-auth-age"><input id="password-auth-age" type="checkbox" checked={ageConfirmed} onChange={(event) => setAgeConfirmed(event.target.checked)} /><span>I confirm I am 13 or older.</span></label><label className="password-auth-check" htmlFor="password-auth-terms"><input id="password-auth-terms" type="checkbox" checked={termsConfirmed} onChange={(event) => setTermsConfirmed(event.target.checked)} /><span>I agree to the <a href="/terms" target="_blank" rel="noreferrer">Terms</a> and have read the <a href="/privacy" target="_blank" rel="noreferrer">Privacy Notice</a>.</span></label></div>
           </>}
 
           {password.length > 0 && password.length < 8 && mode !== "recovery" && <div id="password-auth-password-hint" className="password-auth-hint">Password must be at least 8 characters.</div>}
           {confirmPassword.length > 0 && password !== confirmPassword && <div id="password-auth-confirm-hint" className="password-auth-hint error">Passwords do not match.</div>}
           {message && <div className="password-auth-message" role="status" aria-live="polite">{message}</div>}
-          <button type="button" className="password-auth-primary" disabled={busy || !canSubmit} onClick={submit} aria-busy={busy}>{busy ? "Please wait…" : mode === "signup" ? "Create beta account" : mode === "recovery" ? "Send password reset" : "Sign in"}</button>
+          <button type="button" className="password-auth-primary" disabled={busy || !canSubmit} onClick={submit} aria-busy={busy}>{busy ? "Please wait…" : mode === "signup" ? (isClosedBeta ? "Create beta account" : "Create account") : mode === "recovery" ? "Send password reset" : "Sign in"}</button>
           {mode === "signin" && <button type="button" className="password-auth-link" onClick={() => switchMode("recovery")}>Forgot password?</button>}
           {mode === "recovery" && <button type="button" className="password-auth-link" onClick={() => switchMode("signin")}>Back to Sign in</button>}
-          <div className="password-auth-note">Closed beta · public browsing remains open.</div>
+          <div className="password-auth-note">{isClosedBeta ? "Closed beta · public browsing remains open." : "Public access · local participation is open."}</div>
         </section>
       </div>
       <style jsx global>{`
