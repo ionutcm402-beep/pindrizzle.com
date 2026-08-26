@@ -1,0 +1,29 @@
+.phase26-toast{
+  position:fixed;
+  z-index:1200;
+  left:50%;
+  bottom:max(92px,calc(env(safe-area-inset-bottom) + 78px));
+  transform:translateX(-50%);
+  width:min(calc(100vw - 28px),430px);
+  min-height:54px;
+  display:grid;
+  grid-template-columns:30px 1fr 30px;
+  align-items:center;
+  gap:10px;
+  padding:10px 11px;
+  border:1px solid var(--ping-line-strong);
+  border-radius:var(--ping-r-control);
+  background:rgba(255,255,255,.97);
+  color:var(--ping-ink);
+  box-shadow:var(--ping-shadow-float);
+  backdrop-filter:blur(18px);
+  animation:phase26ToastIn .22s ease-out;
+}
+.phase26-toast>span{width:30px;height:30px;display:grid;place-items:center;border-radius:50%;background:var(--ping-surface-soft);color:var(--ping-ink-2);font-size:12px;font-weight:850}
+.phase26-toast-success>span{background:var(--ping-accent-soft);color:#26713d}
+.phase26-toast-warning>span{background:#fff1ed;color:#a7463e}
+.phase26-toast p{margin:0;font-size:11px;font-weight:650;line-height:1.4;color:var(--ping-ink-2)}
+.phase26-toast button{width:30px;height:30px;border:0;border-radius:50%;background:transparent;color:var(--ping-muted);font-size:20px;line-height:1;cursor:pointer}
+@keyframes phase26ToastIn{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
+@media(max-width:360px){.phase26-toast{width:calc(100vw - 20px);grid-template-columns:28px 1fr 28px;padding:9px}.phase26-toast>span,.phase26-toast button{width:28px;height:28px}}
+@media(prefers-reduced-motion:reduce){.phase26-toast{animation:none;backdrop-filter:none}}
