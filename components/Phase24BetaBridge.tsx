@@ -67,13 +67,13 @@ export default function Phase24BetaBridge() {
       setTarget(null);
       return;
     }
-    const timer = window.setTimeout(() => setTarget(document.querySelector(".settings-list")), 0);
+    const timer = window.setTimeout(() => setTarget(document.querySelector("#you-internal-settings")), 0);
     return () => window.clearTimeout(timer);
   }, [pathname, releaseStage]);
 
   const entry = target && releaseStage === "closed_beta" ? createPortal(
-    <button type="button" onClick={() => window.location.assign("/beta?from=/you")}>
-      <span>β</span><div><strong>Closed beta</strong><small>{state?.has_access ? "Access active · send feedback" : signedIn ? "Invite required to participate" : "Tester access & feedback"}</small></div><b>›</b>
+    <button type="button" className="you-beta-entry" onClick={() => window.location.assign("/beta?from=/you")}>
+      <span className="you-row-icon beta"/><div><strong>Closed beta</strong><small>{state?.has_access ? "Access active · send feedback" : signedIn ? "Invite required to participate" : "Tester access & feedback"}</small></div><b>›</b>
     </button>,
     target,
   ) : null;
