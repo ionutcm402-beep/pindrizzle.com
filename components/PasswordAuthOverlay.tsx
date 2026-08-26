@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-type Mode = "signin" | "signup" | "recovery" | "new-password";
+type Mode = "signin" | "signup" | "recovery";
 
 export default function PasswordAuthOverlay() {
   const [open, setOpen] = useState(false);
@@ -19,29 +19,11 @@ export default function PasswordAuthOverlay() {
   const emailValid = email.includes("@") && email.includes(".");
   const canSubmit = useMemo(() => {
     if (mode === "recovery") return emailValid;
-    if (mode === "new-password") return passwordValid && password === confirmPassword;
     if (mode === "signup") return emailValid && passwordValid && password === confirmPassword;
     return emailValid && passwordValid;
   }, [mode, emailValid, passwordValid, password, confirmPassword]);
 
   useEffect(() => {
-    const patchLegacyCopy = () => {
-      const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>(".settings-list button"));
-      const signIn = buttons.find((button) => button.querySelector("strong")?.textContent?.trim() === "Sign in");
-      const small = signIn?.querySelector("small");
-      if (small) small.textContent = "Email + password";
-    };
-
-    const detectLegacySheet = () => {
-      patchLegacyCopy();
-      const legacy = document.querySelector<HTMLElement>('.composer-backdrop[aria-label="Sign in to Ping"]');
-      if (legacy) setOpen(true);
-    };
-
-    detectLegacySheet();
-    const observer = new MutationObserver(detectLegacySheet);
-    observer.observe(document.body, { childList: true, subtree: true });
-
     const authNeeded = (event: Event) => {
       const detail = (event as CustomEvent<{ message?: string }>).detail;
       setContextMessage(detail?.message || "Sign in to continue.");
@@ -63,23 +45,17 @@ export default function PasswordAuthOverlay() {
         setOpen(false);
         setPassword("");
         setConfirmPassword("");
+        setContextMessage("");
       }
     });
 
     return () => {
-      observer.disconnect();
       window.removeEventListener("ping:auth-needed", authNeeded as EventListener);
       data.subscription.unsubscribe();
     };
   }, []);
 
-  const closeLegacy = () => {
-    const legacy = document.querySelector<HTMLElement>('.composer-backdrop[aria-label="Sign in to Ping"]');
-    legacy?.querySelector<HTMLButtonElement>(".composer-header button")?.click();
-  };
-
   const close = () => {
-    closeLegacy();
     setOpen(false);
     setMessage("");
     setContextMessage("");
@@ -98,8 +74,6 @@ export default function PasswordAuthOverlay() {
       if (mode === "signin") {
         const { error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
         if (error) throw error;
-        setMessage("Signed in.");
-        closeLegacy();
         setOpen(false);
       } else if (mode === "signup") {
         const { data, error } = await supabase.auth.signUp({
@@ -110,39 +84,30 @@ export default function PasswordAuthOverlay() {
         if (error) throw error;
 
         if (data.session) {
-          setMessage("Account created. You are signed in.");
-          closeLegacy();
           setOpen(false);
         } else {
           const identities = data.user?.identities;
           if (Array.isArray(identities) && identities.length === 0) {
-            setMessage("This email already has a Ping account. No second account was created. Choose Sign in and use your password.");
+            setMessage("This email already has a Ping account. Choose Sign in and use your password.");
           } else {
-            setMessage("If this email is new, Ping has requested a confirmation email. If you already have an account with this email, no duplicate account is created — use Sign in instead.");
+            setMessage("Check your email to confirm your new Ping account, then return and sign in.");
           }
         }
-      } else if (mode === "recovery") {
+      } else {
         const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
           redirectTo: `${window.location.origin}/reset-password`,
         });
         if (error) throw error;
-        setMessage("Password reset email sent. Open the newest email; its link will take you directly to Ping’s password reset page.");
-      } else {
-        const { error } = await supabase.auth.updateUser({ password });
-        if (error) throw error;
-        setMessage("Password updated. You can now use normal Sign in.");
-        setMode("signin");
-        setPassword("");
-        setConfirmPassword("");
+        setMessage("Password reset email sent. Open the newest email to choose a new password.");
       }
     } catch (error) {
       const text = error instanceof Error ? error.message : "Authentication failed.";
       if (/invalid login credentials/i.test(text)) {
-        setMessage("Email or password is incorrect. Use Forgot password? only if you have forgotten the password.");
+        setMessage("Email or password is incorrect. Use Forgot password? if you need to reset it.");
       } else if (/already registered|already exists/i.test(text)) {
-        setMessage("This email already has a Ping account. No second account was created. Choose Sign in instead.");
+        setMessage("This email already has a Ping account. Choose Sign in instead.");
       } else if (/rate limit|too many requests|429/i.test(text)) {
-        setMessage("Supabase's test email service is temporarily rate-limited. This is separate from your database usage quota. Normal password sign-in does not send an email.");
+        setMessage("Email delivery is temporarily rate-limited. Normal password sign-in still works without sending an email.");
       } else {
         setMessage(text);
       }
@@ -158,13 +123,12 @@ export default function PasswordAuthOverlay() {
     setConfirmPassword("");
   };
 
-  if (!open) return <style jsx global>{`.composer-backdrop[aria-label="Sign in to Ping"]{display:none!important}`}</style>;
+  if (!open) return null;
 
-  const heading = mode === "signup" ? "Create your Ping account." : mode === "recovery" ? "Reset your password." : mode === "new-password" ? "Choose your new password." : "Welcome back.";
+  const heading = mode === "signup" ? "Create your Ping account." : mode === "recovery" ? "Reset your password." : "Welcome back.";
 
   return (
     <>
-      <style jsx global>{`.composer-backdrop[aria-label="Sign in to Ping"]{display:none!important}`}</style>
       <div className="password-auth-backdrop" role="dialog" aria-modal="true" aria-label="Ping account">
         <section className="password-auth-sheet">
           <div className="password-auth-handle" />
@@ -185,29 +149,23 @@ export default function PasswordAuthOverlay() {
           {contextMessage && mode === "signin" && <p className="password-auth-context">{contextMessage}</p>}
           <p className="password-auth-copy">
             {mode === "signup"
-              ? "Create one account per email. If the email already belongs to Ping, a duplicate account will not be created."
+              ? "Create one account per email. Your email is never shown publicly."
               : mode === "recovery"
-                ? "Enter your email once. The reset link will open a dedicated page where you can choose a new password."
-                : mode === "new-password"
-                  ? "Use at least 8 characters. After this, normal password sign-in will work."
-                  : "Sign in with your email and password. Normal sign-in does not send an email."}
+                ? "Enter your email and we’ll send a secure password reset link."
+                : "Sign in with your email and password. Normal sign-in does not send an email."}
           </p>
 
-          {mode !== "new-password" && (
-            <>
-              <label>Email address</label>
-              <input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" />
-            </>
-          )}
+          <label>Email address</label>
+          <input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" />
 
           {mode !== "recovery" && (
             <>
               <label>Password</label>
-              <input type="password" autoComplete={mode === "signup" || mode === "new-password" ? "new-password" : "current-password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 8 characters" />
+              <input type="password" autoComplete={mode === "signup" ? "new-password" : "current-password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 8 characters" />
             </>
           )}
 
-          {(mode === "signup" || mode === "new-password") && (
+          {mode === "signup" && (
             <>
               <label>Confirm password</label>
               <input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Repeat your password" />
@@ -219,7 +177,7 @@ export default function PasswordAuthOverlay() {
           {message && <div className="password-auth-message">{message}</div>}
 
           <button type="button" className="password-auth-primary" disabled={busy || !canSubmit} onClick={submit}>
-            {busy ? "Please wait…" : mode === "signup" ? "Create account" : mode === "recovery" ? "Send password reset" : mode === "new-password" ? "Save new password" : "Sign in"}
+            {busy ? "Please wait…" : mode === "signup" ? "Create account" : mode === "recovery" ? "Send password reset" : "Sign in"}
           </button>
 
           {mode === "signin" && <button type="button" className="password-auth-link" onClick={() => switchMode("recovery")}>Forgot password?</button>}
