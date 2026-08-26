@@ -27,6 +27,10 @@ function zoomForRadius(radiusMiles: number) {
   return radiusMiles <= 0.5 ? 14.7 : radiusMiles <= 1 ? 13.8 : radiusMiles <= 3 ? 12.2 : 11.4;
 }
 
+function markerCategory(category: string) {
+  return category.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+}
+
 export default function LivePingMap({ center, radiusMiles, pings, selectedId, onSelect }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const maplibreRef = useRef<any>(null);
@@ -130,12 +134,12 @@ export default function LivePingMap({ center, radiusMiles, pings, selectedId, on
     markersRef.current = pings.map((ping) => {
       const button = document.createElement("button");
       button.type = "button";
-      button.className = `ping-map-marker${selectedId === ping.id ? " selected" : ""}`;
-      button.textContent = ping.emoji;
+      button.className = `ping-map-marker ping-map-${markerCategory(ping.category)}${selectedId === ping.id ? " selected" : ""}`;
       button.setAttribute("aria-label", `${ping.category}: ${ping.title}`);
+      button.title = ping.title;
       button.addEventListener("click", () => onSelect(ping.id));
 
-      return new maplibre.Marker({ element: button, anchor: "bottom" })
+      return new maplibre.Marker({ element: button, anchor: "center" })
         .setLngLat([ping.lng, ping.lat])
         .addTo(map);
     });
@@ -159,14 +163,16 @@ export default function LivePingMap({ center, radiusMiles, pings, selectedId, on
         </div>
       )}
       <style jsx global>{`
-        .live-ping-map { position:absolute; inset:0; width:100%; height:100%; overflow:hidden; background:#e9efe8; }
-        .live-map-starting { position:absolute; z-index:35; left:18px; top:72px; padding:10px 13px; border-radius:999px; background:rgba(255,255,255,.96); color:#26352b; font-size:12px; font-weight:800; box-shadow:0 8px 24px rgba(18,36,23,.12); }
-        .live-map-error { position:absolute; z-index:40; left:18px; right:18px; top:72px; padding:14px 16px; border-radius:16px; background:rgba(255,255,255,.96); color:#26352b; box-shadow:0 10px 30px rgba(18,36,23,.16); display:grid; gap:4px; }
-        .live-map-error strong { font-size:14px; }
-        .live-map-error span { font-size:11px; color:#69746d; line-height:1.4; }
-        .ping-user-marker { width:18px; height:18px; border:4px solid white; border-radius:50%; background:#52db42; box-shadow:0 0 0 7px rgba(82,219,66,.2), 0 4px 16px rgba(24,76,27,.3); }
-        .ping-map-marker { width:44px; height:44px; border:3px solid white; border-radius:16px 16px 16px 5px; background:#183924; display:grid; place-items:center; font-size:20px; box-shadow:0 8px 24px rgba(16,48,26,.24); cursor:pointer; transform:rotate(-8deg); transition:transform .18s ease, box-shadow .18s ease; }
-        .ping-map-marker.selected { transform:translateY(-5px) rotate(-8deg) scale(1.15); box-shadow:0 12px 32px rgba(16,48,26,.34), 0 0 0 4px rgba(82,219,66,.25); }
+        .live-ping-map{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;background:#e9ece7}
+        .live-map-starting{position:absolute;z-index:35;left:14px;top:126px;padding:8px 11px;border:1px solid rgba(16,19,17,.09);border-radius:999px;background:rgba(255,255,255,.9);color:#555b57;font-size:10.5px;font-weight:650;box-shadow:0 8px 24px rgba(17,22,18,.06);backdrop-filter:blur(16px)}
+        .live-map-error{position:absolute;z-index:40;left:14px;right:14px;top:126px;padding:14px 15px;border:1px solid rgba(16,19,17,.10);border-radius:16px;background:rgba(255,255,255,.94);color:#101311;box-shadow:0 12px 34px rgba(17,22,18,.08);display:grid;gap:4px;backdrop-filter:blur(18px)}
+        .live-map-error strong{font-size:13px;font-weight:720}.live-map-error span{font-size:10.5px;color:#727873;line-height:1.45}
+        .ping-user-marker{width:15px;height:15px;border:3px solid #fff;border-radius:50%;background:#3c83f6;box-shadow:0 0 0 6px rgba(60,131,246,.16),0 3px 10px rgba(42,86,158,.22)}
+        .ping-map-marker{--marker:#46d66f;position:relative;width:34px;height:34px;min-width:34px!important;min-height:34px!important;border:1px solid rgba(16,19,17,.12);border-radius:50%;background:rgba(255,255,255,.96);box-shadow:0 6px 16px rgba(17,22,18,.13);cursor:pointer;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+        .ping-map-marker:before{content:"";position:absolute;left:50%;top:50%;width:11px;height:11px;border-radius:50%;background:var(--marker);transform:translate(-50%,-50%)}
+        .ping-map-marker.ping-map-alert,.ping-map-marker.ping-map-traffic{--marker:#e8554f}.ping-map-marker.ping-map-lost-found{--marker:#d889b3}.ping-map-marker.ping-map-free,.ping-map-marker.ping-map-help{--marker:#46d66f}.ping-map-marker.ping-map-local{--marker:#3c83f6}
+        .ping-map-marker.selected{transform:scale(1.18);border-color:rgba(16,19,17,.22);box-shadow:0 9px 24px rgba(17,22,18,.18),0 0 0 4px rgba(255,255,255,.72)}
+        .ping-map-marker:focus-visible{outline:3px solid #1769d2!important;outline-offset:3px!important}
       `}</style>
     </>
   );
