@@ -27,6 +27,7 @@ import "./legal.css";
 import "./ping-design-system.css";
 import "./ping-detail-system.css";
 import "./ping-map-system.css";
+import "./ping-search-system.css";
 
 export const metadata: Metadata = {
   title: "Ping — Know what's happening in your mile",
