@@ -13,6 +13,7 @@ import Phase9PromotedLocal from "@/components/Phase9PromotedLocal";
 import Phase14SearchEntry from "@/components/Phase14SearchEntry";
 import Phase15PlaceIntelligence from "@/components/Phase15PlaceIntelligence";
 import Phase16PushSafetyBridge from "@/components/Phase16PushSafetyBridge";
+import Phase19ProductAnalytics from "@/components/Phase19ProductAnalytics";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Phase14SearchEntry />
         <Phase15PlaceIntelligence />
         <Phase16PushSafetyBridge />
+        <Phase19ProductAnalytics />
       </body>
     </html>
   );
