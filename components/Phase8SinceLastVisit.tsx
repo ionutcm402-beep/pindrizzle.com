@@ -25,9 +25,6 @@ function firstRow<T>(value: unknown): T | null {
 }
 
 function radiusMeters() {
-  const visibleSelect = document.querySelector<HTMLSelectElement>(".location-status select");
-  const fromPage = Number(visibleSelect?.value || 0);
-  if ([0.5, 1, 3, 5].includes(fromPage)) return Math.round(fromPage * 1609.344);
   try {
     const stored = Number(localStorage.getItem("ping-radius") || 1);
     if ([0.5, 1, 3, 5].includes(stored)) return Math.round(stored * 1609.344);
@@ -171,11 +168,9 @@ export default function Phase8SinceLastVisit() {
   }, [refreshing]);
 
   useEffect(() => {
-    const attach = () => {
-      if (window.location.pathname !== "/") {
-        setHost(null);
-        return;
-      }
+    if (window.location.pathname !== "/") return;
+    let createdNode: HTMLElement | null = null;
+    const frame = window.requestAnimationFrame(() => {
       const filter = document.querySelector<HTMLElement>(".filter-row");
       const parent = filter?.parentElement;
       if (!filter || !parent) return;
@@ -185,19 +180,15 @@ export default function Phase8SinceLastVisit() {
         node = document.createElement("div");
         node.dataset.phase8ReturnHost = "true";
         parent.insertBefore(node, filter);
+        createdNode = node;
       }
       setHost(node);
-    };
+    });
 
-    attach();
-    const observer = new MutationObserver(attach);
-    observer.observe(document.body, { childList: true, subtree: true });
-    window.addEventListener("popstate", attach);
-    window.addEventListener("hashchange", attach);
     return () => {
-      observer.disconnect();
-      window.removeEventListener("popstate", attach);
-      window.removeEventListener("hashchange", attach);
+      window.cancelAnimationFrame(frame);
+      createdNode?.remove();
+      setHost(null);
     };
   }, []);
 
