@@ -30,6 +30,7 @@ import "./ping-map-system.css";
 import "./ping-search-system.css";
 import "./ping-alerts-system.css";
 import "./ping-you-system.css";
+import "./ping-my-pings-system.css";
 import "./ping-business-system.css";
 import "./ping-onboarding-system.css";
 import "./ping-utility-system.css";
