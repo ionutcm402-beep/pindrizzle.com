@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import PasswordAuthOverlay from "@/components/PasswordAuthOverlay";
-import Phase4RealtimeBridge from "@/components/Phase4RealtimeBridge";
 import Phase5PingDetail from "@/components/Phase5PingDetail";
 import Phase5CommunityBridge from "@/components/Phase5CommunityBridge";
 import Phase6NotificationBadge from "@/components/Phase6NotificationBadge";
@@ -32,7 +31,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         {children}
         <Phase5PingDetail />
-        <Phase4RealtimeBridge />
         <Phase5CommunityBridge />
         <PasswordAuthOverlay />
         <Phase6NotificationBadge />

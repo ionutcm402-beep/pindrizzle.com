@@ -132,6 +132,24 @@ export default function MapPage() {
     return () => { cancelled = true; };
   }, [center, radius, refreshKey]);
 
+  useEffect(() => {
+    if (!center) return;
+    const supabase = createClient();
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const channel = supabase
+      .channel("ping-map-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "pings" }, () => {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => setRefreshKey((value) => value + 1), 300);
+      })
+      .subscribe();
+
+    return () => {
+      if (timer) clearTimeout(timer);
+      void supabase.removeChannel(channel);
+    };
+  }, [center]);
+
   const selected = useMemo(() => pings.find((ping) => ping.id === selectedId) || pings[0], [pings, selectedId]);
 
   return (
