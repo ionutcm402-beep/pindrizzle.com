@@ -22,6 +22,7 @@ import Phase23InstallEntry from "@/components/Phase23InstallEntry";
 import Phase24BetaBridge from "@/components/Phase24BetaBridge";
 import Phase26QuietFeedGuide from "@/components/Phase26QuietFeedGuide";
 import Phase26BetaPulse from "@/components/Phase26BetaPulse";
+import Phase26FirstRunHandoff from "@/components/Phase26FirstRunHandoff";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 import "./accessibility.css";
@@ -66,6 +67,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         {children}
         <FirstRunOnboarding />
+        <Phase26FirstRunHandoff />
         <Phase5PingDetail />
         <PrivacySafetyCenter />
         <PasswordAuthOverlay />
