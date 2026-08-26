@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import PingIcon from "@/components/PingIcon";
 
 type BetaState = { has_access: boolean; access_source: string | null; granted_at: string | null };
 type ReleaseStage = "closed_beta" | "public";
@@ -67,13 +68,13 @@ export default function Phase24BetaBridge() {
       setTarget(null);
       return;
     }
-    const timer = window.setTimeout(() => setTarget(document.querySelector(".settings-list")), 0);
+    const timer = window.setTimeout(() => setTarget(document.querySelector("#you-admin-settings") || document.querySelector(".settings-list")), 0);
     return () => window.clearTimeout(timer);
   }, [pathname, releaseStage]);
 
   const entry = target && releaseStage === "closed_beta" ? createPortal(
     <button type="button" onClick={() => window.location.assign("/beta?from=/you")}>
-      <span>β</span><div><strong>Closed beta</strong><small>{state?.has_access ? "Access active · send feedback" : signedIn ? "Invite required to participate" : "Tester access & feedback"}</small></div><b>›</b>
+      <span><PingIcon name="beta" /></span><div><strong>Closed beta</strong><small>{state?.has_access ? "Access active · send feedback" : signedIn ? "Invite required to participate" : "Tester access & feedback"}</small></div><b><PingIcon name="chevron" size={16} /></b>
     </button>,
     target,
   ) : null;

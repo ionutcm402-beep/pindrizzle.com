@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
+import PingIcon from "@/components/PingIcon";
 
 function installedStandalone() {
   if (typeof window === "undefined") return false;
@@ -22,7 +23,7 @@ export default function Phase23InstallEntry() {
       setTarget(null);
       return;
     }
-    const timer = window.setTimeout(() => setTarget(document.querySelector(".settings-list")), 0);
+    const timer = window.setTimeout(() => setTarget(document.querySelector("#you-account-settings") || document.querySelector(".settings-list")), 0);
     return () => window.clearTimeout(timer);
   }, [pathname]);
 
@@ -30,7 +31,7 @@ export default function Phase23InstallEntry() {
 
   return createPortal(
     <button type="button" onClick={() => window.location.assign("/install")}>
-      <span>▣</span><div><strong>{installed ? "Ping is installed" : "Install Ping"}</strong><small>{installed ? "See installed-app details" : "Add Ping to your home screen or desktop"}</small></div><b>›</b>
+      <span><PingIcon name="install" /></span><div><strong>{installed ? "Ping is installed" : "Install Ping"}</strong><small>{installed ? "See installed-app details" : "Add Ping to your home screen or desktop"}</small></div><b><PingIcon name="chevron" size={16} /></b>
     </button>,
     target,
   );
