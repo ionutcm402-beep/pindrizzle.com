@@ -6,18 +6,32 @@ import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 type BetaState = { has_access: boolean; access_source: string | null; granted_at: string | null };
+type ReleaseStage = "closed_beta" | "public";
 
 export default function Phase24BetaBridge() {
   const pathname = usePathname();
+  const [releaseStage, setReleaseStage] = useState<ReleaseStage>("closed_beta");
   const [signedIn, setSignedIn] = useState(false);
   const [state, setState] = useState<BetaState | null>(null);
   const [target, setTarget] = useState<Element | null>(null);
 
   const refresh = useCallback(async () => {
     const supabase = createClient();
+    const stageResult = await supabase.rpc("public_release_stage");
+    const rawStage = Array.isArray(stageResult.data) ? stageResult.data[0] : stageResult.data;
+    const currentStage: ReleaseStage = !stageResult.error && rawStage === "public" ? "public" : "closed_beta";
+    setReleaseStage(currentStage);
+
     const { data: auth } = await supabase.auth.getSession();
     const user = auth.session?.user || null;
     setSignedIn(Boolean(user));
+
+    if (currentStage === "public") {
+      try { localStorage.removeItem("ping-beta-pending-invite"); } catch {}
+      setState(null);
+      return;
+    }
+
     if (!user) {
       setState(null);
       return;
@@ -49,15 +63,15 @@ export default function Phase24BetaBridge() {
   }, [refresh]);
 
   useEffect(() => {
-    if (pathname !== "/you") {
+    if (pathname !== "/you" || releaseStage !== "closed_beta") {
       setTarget(null);
       return;
     }
     const timer = window.setTimeout(() => setTarget(document.querySelector(".settings-list")), 0);
     return () => window.clearTimeout(timer);
-  }, [pathname]);
+  }, [pathname, releaseStage]);
 
-  const entry = target ? createPortal(
+  const entry = target && releaseStage === "closed_beta" ? createPortal(
     <button type="button" onClick={() => window.location.assign("/beta?from=/you")}>
       <span>β</span><div><strong>Closed beta</strong><small>{state?.has_access ? "Access active · send feedback" : signedIn ? "Invite required to participate" : "Tester access & feedback"}</small></div><b>›</b>
     </button>,
@@ -67,7 +81,7 @@ export default function Phase24BetaBridge() {
   return (
     <>
       {entry}
-      {signedIn && state && !state.has_access && pathname !== "/beta" && (
+      {releaseStage === "closed_beta" && signedIn && state && !state.has_access && pathname !== "/beta" && (
         <div className="phase24-beta-banner" role="status">
           <div><strong>Ping is in closed beta.</strong><span>Your account can browse, but participation needs an invite.</span></div>
           <a href={`/beta?from=${encodeURIComponent(pathname)}`}>Enter invite</a>
