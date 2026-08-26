@@ -15,6 +15,7 @@ type OpenPingDetail = {
   ageMinutes?: number;
   live?: boolean;
   createdByMe?: boolean;
+  mediaUrl?: string;
 };
 
 type PingRow = {
@@ -119,7 +120,7 @@ export default function Phase5PingDetail() {
     setActionMessage("");
     try {
       const supabase = createClient();
-      const [authResult, pingResult, commentsResult, communityResult] = await Promise.all([
+      const [authResult, pingResult, commentsResult, communityResult, mediaResult] = await Promise.all([
         supabase.auth.getSession(),
         supabase
           .from("pings")
@@ -132,6 +133,7 @@ export default function Phase5PingDetail() {
           .eq("ping_id", summary.id)
           .order("created_at", { ascending: true }),
         supabase.rpc("ping_community_state", { target_ping_id: summary.id }),
+        supabase.from("ping_media").select("storage_path").eq("ping_id", summary.id).maybeSingle(),
       ]);
 
       if (pingResult.error) throw pingResult.error;
@@ -172,9 +174,17 @@ export default function Phase5PingDetail() {
           expiresAt: typed.expires_at,
           live: true,
           createdByMe: false,
+          mediaUrl: undefined,
         });
         setComments([]);
         return;
+      }
+
+      let mediaUrl = summary.mediaUrl;
+      const storagePath = !mediaResult.error ? (mediaResult.data as { storage_path?: string } | null)?.storage_path : undefined;
+      if (storagePath) {
+        const signed = await supabase.storage.from("ping-media").createSignedUrl(storagePath, 900);
+        if (!signed.error && signed.data?.signedUrl) mediaUrl = signed.data.signedUrl;
       }
 
       setDetail({
@@ -192,6 +202,7 @@ export default function Phase5PingDetail() {
         expiresAt: typed.expires_at,
         live: true,
         createdByMe: userId === typed.user_id,
+        mediaUrl,
       });
       setComments((commentsResult.data || []) as CommentRow[]);
     } catch (error) {
@@ -448,6 +459,7 @@ export default function Phase5PingDetail() {
         <div className="phase5-detail-category">{detail.emoji || "📍"} {detail.category || "Local"}</div>
         <h1>{detail.title || (loading ? "Loading Ping…" : "Local Ping")}</h1>
         <p className="phase5-detail-body">{detail.body || (loading ? "Getting the latest details…" : "Open this Ping from the nearby feed for the full description.")}</p>
+        {detail.mediaUrl && <img className="phase13-detail-photo" src={detail.mediaUrl} alt={`Photo attached to ${detail.title || "this Ping"}`} />}
 
         <div className="phase5-detail-meta">
           <span>📍 {detail.place || "Nearby"}</span>
@@ -527,7 +539,7 @@ function CommunityStyles() {
     .phase5-detail-backdrop{position:fixed;inset:0;z-index:95;background:rgba(17,25,18,.54);backdrop-filter:blur(8px);display:flex;align-items:flex-end;justify-content:center;padding:14px}
     .phase5-detail-sheet{width:min(100%,440px);max-height:95vh;overflow:auto;background:#fbfbf7;border-radius:30px 30px 22px 22px;padding:10px 18px 24px;box-shadow:0 -24px 70px rgba(17,25,18,.30);color:#172019}.phase5-detail-sheet.compact{padding-bottom:28px;text-align:center}
     .phase5-detail-handle{width:44px;height:5px;border-radius:999px;background:#d6ddd3;margin:2px auto 12px}.phase5-detail-header{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center}.phase5-detail-header strong{text-align:center}.phase5-detail-header button{border:0;background:transparent;color:#5d6c61;font-weight:750;padding:8px 0}.phase5-detail-header button:last-child{justify-self:end;color:#2b6334}
-    .phase5-detail-category{display:inline-flex;margin-top:20px;padding:8px 11px;border-radius:999px;background:#eef5ea;color:#3d5843;font-size:11px;font-weight:900}.phase5-detail-sheet h1{font-size:27px;line-height:1.08;letter-spacing:-.8px;margin:13px 0 10px}.phase5-detail-body{color:#59665d;font-size:14px;line-height:1.55;margin:0 0 15px}
+    .phase5-detail-category{display:inline-flex;margin-top:20px;padding:8px 11px;border-radius:999px;background:#eef5ea;color:#3d5843;font-size:11px;font-weight:900}.phase5-detail-sheet h1{font-size:27px;line-height:1.08;letter-spacing:-.8px;margin:13px 0 10px}.phase5-detail-body{color:#59665d;font-size:14px;line-height:1.55;margin:0 0 15px}.phase13-detail-photo{display:block;width:100%;max-height:360px;object-fit:cover;border-radius:18px;margin:0 0 15px;background:#eef1eb;border:1px solid #e2e7df}
     .phase5-detail-meta{display:flex;flex-wrap:wrap;gap:7px 12px;padding:12px 0;border-top:1px solid #e7ebe4;border-bottom:1px solid #e7ebe4;color:#78837b;font-size:10px;font-weight:700}
     .phase5-detail-trust{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}.phase5-detail-trust div{background:#eff4ec;border-radius:16px;padding:12px 7px;text-align:center}.phase5-detail-trust strong{display:block;font-size:17px}.phase5-detail-trust span{font-size:9px;color:#718076}
     .phase5-detail-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.phase5-detail-actions button{border:1px solid #dfe6dc;background:#fff;border-radius:14px;padding:11px 5px;color:#526058;font-weight:850;font-size:10px}.phase5-detail-actions button.primary{background:#183924;border-color:#183924;color:#fff}.phase5-detail-actions button.selected{background:#e8f7e4;border-color:#b9e7b2;color:#2f6934}.phase5-detail-actions button:disabled{opacity:.42;cursor:not-allowed}
