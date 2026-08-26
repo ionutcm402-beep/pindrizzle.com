@@ -8,6 +8,7 @@ type Radius = 0.5 | 1 | 3 | 5;
 type LocationState = "idle" | "requesting" | "granted" | "denied" | "unavailable";
 type Coordinates = { lat: number; lng: number };
 type DataMode = "idle" | "loading" | "live" | "quiet" | "offline";
+type PingDraft = { category: Category; title: string; body: string; photo: File | null };
 
 type PingItem = {
   id: string;
@@ -21,6 +22,7 @@ type PingItem = {
   place: string;
   tone: "urgent" | "warm" | "neutral" | "helpful";
   createdByMe?: boolean;
+  mediaUrl?: string;
   live: true;
 };
 
@@ -35,6 +37,8 @@ type NearbyRow = {
   created_at: string;
   distance_meters: number;
 };
+
+type PingMediaRow = { ping_id: string; storage_path: string; mime_type: string };
 
 const categoryMeta: Record<Category, { emoji: string; tone: PingItem["tone"] }> = {
   Alert: { emoji: "🚨", tone: "urgent" },
@@ -64,6 +68,8 @@ const toDatabaseCategory: Record<Category, NearbyRow["category"]> = {
 };
 
 const filters = ["All", "Alerts", "Traffic", "Lost & Found", "Free", "Help"] as const;
+const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const PHOTO_MAX_BYTES = 6 * 1024 * 1024;
 
 function ageLabel(minutes: number) {
   if (minutes < 60) return `${minutes} min`;
@@ -91,6 +97,28 @@ function mapNearbyRow(row: NearbyRow, currentUserId: string | null): PingItem {
     createdByMe: currentUserId === row.user_id,
     live: true,
   };
+}
+
+async function addSignedMediaUrls(items: PingItem[]) {
+  if (!items.length) return items;
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("ping_media")
+    .select("ping_id,storage_path,mime_type")
+    .in("ping_id", items.map((item) => item.id));
+  if (error || !data?.length) return items;
+
+  const mediaRows = data as PingMediaRow[];
+  const paths = mediaRows.map((row) => row.storage_path);
+  const signed = await supabase.storage.from("ping-media").createSignedUrls(paths, 900);
+  if (signed.error || !signed.data) return items;
+
+  const urlByPing = new Map<string, string>();
+  mediaRows.forEach((row, index) => {
+    const entry = signed.data?.[index];
+    if (entry?.signedUrl) urlByPing.set(row.ping_id, entry.signedUrl);
+  });
+  return items.map((item) => ({ ...item, mediaUrl: urlByPing.get(item.id) }));
 }
 
 function FeedCard({ ping, onConfirm, onOpen }: { ping: PingItem; onConfirm: (id: string) => void; onOpen: (ping: PingItem) => void }) {
@@ -125,6 +153,7 @@ function FeedCard({ ping, onConfirm, onOpen }: { ping: PingItem; onConfirm: (id:
       </div>
       <h2>{ping.title}</h2>
       <p className="ping-body">{ping.body}</p>
+      {ping.mediaUrl && <img className="ping-photo" src={ping.mediaUrl} alt={`Photo attached to ${ping.title}`} loading="lazy" />}
       <div className="ping-place">📍 {ping.place}</div>
       <div className="ping-meta">
         <span><strong>{ping.distanceMiles.toFixed(1)} mi</strong> away</span>
@@ -223,26 +252,76 @@ function FeedView({ pings, radius, locationState, dataMode, onRequestLocation, o
   );
 }
 
-function Composer({ onClose, onPublish }: { onClose: () => void; onPublish: (draft: { category: Category; title: string; body: string }) => void | Promise<void> }) {
+function Composer({ onClose, onPublish }: { onClose: () => void; onPublish: (draft: PingDraft) => void | Promise<void> }) {
   const [category, setCategory] = useState<Category>("Alert");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const canPublish = title.trim().length >= 4 && body.trim().length >= 6;
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoError, setPhotoError] = useState("");
+  const [publishing, setPublishing] = useState(false);
+  const photoPreview = useMemo(() => photo ? URL.createObjectURL(photo) : "", [photo]);
+  const canPublish = title.trim().length >= 4 && body.trim().length >= 6 && !publishing;
+
+  useEffect(() => () => { if (photoPreview) URL.revokeObjectURL(photoPreview); }, [photoPreview]);
+
+  const choosePhoto = (file: File | null) => {
+    setPhotoError("");
+    if (!file) {
+      setPhoto(null);
+      return;
+    }
+    if (!PHOTO_TYPES.includes(file.type)) {
+      setPhoto(null);
+      setPhotoError("Use a JPEG, PNG or WebP image.");
+      return;
+    }
+    if (file.size > PHOTO_MAX_BYTES) {
+      setPhoto(null);
+      setPhotoError("Photo must be 6 MB or smaller.");
+      return;
+    }
+    setPhoto(file);
+  };
+
+  const publish = async () => {
+    if (!canPublish) return;
+    setPublishing(true);
+    try {
+      await onPublish({ category, title: title.trim(), body: body.trim(), photo });
+    } finally {
+      setPublishing(false);
+    }
+  };
 
   return (
     <div className="composer-backdrop" role="dialog" aria-modal="true" aria-label="Create a Ping">
       <div className="composer-sheet">
         <div className="sheet-handle" />
-        <div className="composer-header"><button onClick={onClose}>Cancel</button><strong>New Ping</strong><span /></div>
+        <div className="composer-header"><button onClick={onClose} disabled={publishing}>Cancel</button><strong>New Ping</strong><span /></div>
         <h2>What’s happening?</h2>
-        <div className="category-grid">{(Object.keys(categoryMeta) as Category[]).map((item) => <button key={item} className={category === item ? "selected" : ""} onClick={() => setCategory(item)}>{categoryMeta[item].emoji} {item}</button>)}</div>
+        <div className="category-grid">{(Object.keys(categoryMeta) as Category[]).map((item) => <button key={item} className={category === item ? "selected" : ""} onClick={() => setCategory(item)} disabled={publishing}>{categoryMeta[item].emoji} {item}</button>)}</div>
         <label className="composer-label">Short headline</label>
-        <input className="composer-input" placeholder="What should neighbours know?" maxLength={70} value={title} onChange={(event) => setTitle(event.target.value)} />
+        <input className="composer-input" placeholder="What should neighbours know?" maxLength={70} value={title} onChange={(event) => setTitle(event.target.value)} disabled={publishing} />
         <label className="composer-label">Useful detail</label>
-        <textarea placeholder="Keep it clear and useful…" maxLength={280} value={body} onChange={(event) => setBody(event.target.value)} />
+        <textarea placeholder="Keep it clear and useful…" maxLength={280} value={body} onChange={(event) => setBody(event.target.value)} disabled={publishing} />
+
+        <label className="composer-photo-picker">
+          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => choosePhoto(event.target.files?.[0] || null)} disabled={publishing} />
+          <span>📷</span>
+          <div><strong>{photo ? "Change photo" : "Add a photo"}</strong><small>Optional · JPEG, PNG or WebP · max 6 MB</small></div>
+          <b>{photo ? "Change" : "Add"}</b>
+        </label>
+        {photoPreview && (
+          <div className="composer-photo-preview">
+            <img src={photoPreview} alt="Selected Ping photo preview" />
+            <button type="button" onClick={() => choosePhoto(null)} disabled={publishing}>Remove</button>
+          </div>
+        )}
+        {photoError && <div className="composer-photo-error">{photoError}</div>}
+
         <div className="expiry-note">📍 Posted near your current location · exact coordinates are not shown publicly.</div>
         <div className="expiry-note">⏱ This Ping will disappear automatically after 24 hours.</div>
-        <button className="publish-button" disabled={!canPublish} onClick={() => canPublish && onPublish({ category, title: title.trim(), body: body.trim() })}>Ping it</button>
+        <button className="publish-button" disabled={!canPublish} onClick={publish}>{publishing ? "Posting…" : "Ping it"}</button>
       </div>
     </div>
   );
@@ -290,7 +369,8 @@ export default function Home() {
     const loadNearby = async () => {
       setDataMode("loading");
       try {
-        const { data, error } = await createClient().rpc("nearby_pings", {
+        const supabase = createClient();
+        const { data, error } = await supabase.rpc("nearby_pings", {
           viewer_lat: coordinates.lat,
           viewer_lng: coordinates.lng,
           radius_meters: Math.round(radius * 1609.344),
@@ -298,7 +378,9 @@ export default function Home() {
         });
         if (cancelled) return;
         if (error) throw error;
-        const live = ((data || []) as NearbyRow[]).map((row) => mapNearbyRow(row, userId));
+        const base = ((data || []) as NearbyRow[]).map((row) => mapNearbyRow(row, userId));
+        const live = await addSignedMediaUrls(base);
+        if (cancelled) return;
         setPings(live);
         setDataMode(live.length ? "live" : "quiet");
       } catch {
@@ -383,7 +465,7 @@ export default function Home() {
     } catch {}
   };
 
-  const publishPing = async (draft: { category: Category; title: string; body: string }) => {
+  const publishPing = async (draft: PingDraft) => {
     if (!userId) {
       setComposerOpen(false);
       requestAuth("Sign in to publish this Ping.");
@@ -396,7 +478,8 @@ export default function Home() {
       return;
     }
     try {
-      const { error } = await createClient().rpc("create_ping", {
+      const supabase = createClient();
+      const { data, error } = await supabase.rpc("create_ping", {
         ping_category: toDatabaseCategory[draft.category],
         ping_title: draft.title,
         ping_body: draft.body,
@@ -406,6 +489,33 @@ export default function Home() {
         ping_precision: "approximate",
       });
       if (error) throw error;
+      const createdId = String(data || "");
+
+      if (draft.photo && createdId) {
+        const storagePath = `${userId}/${createdId}/photo`;
+        const upload = await supabase.storage.from("ping-media").upload(storagePath, draft.photo, {
+          cacheControl: "3600",
+          contentType: draft.photo.type,
+          upsert: false,
+        });
+        if (upload.error) {
+          console.error("Ping photo upload failed", upload.error);
+          window.alert("Your Ping was posted, but the photo could not upload. The text Ping is still live.");
+        } else {
+          const attach = await supabase.rpc("attach_ping_media", {
+            target_ping_id: createdId,
+            object_path: storagePath,
+            media_mime_type: draft.photo.type,
+            media_byte_size: draft.photo.size,
+          });
+          if (attach.error) {
+            console.error("Ping photo attach failed", attach.error);
+            await supabase.storage.from("ping-media").remove([storagePath]);
+            window.alert("Your Ping was posted, but the photo could not be attached. The text Ping is still live.");
+          }
+        }
+      }
+
       setComposerOpen(false);
       setRefreshNonce((value) => value + 1);
     } catch {
@@ -432,6 +542,10 @@ export default function Home() {
         </nav>
       </div>
       {composerOpen && <Composer onClose={() => { setComposerOpen(false); setPendingCompose(false); }} onPublish={publishPing} />}
+      <style jsx global>{`
+        .ping-photo{display:block;width:100%;max-height:300px;object-fit:cover;border-radius:17px;margin:2px 0 14px;background:#eef1eb;border:1px solid #e2e7df}
+        .composer-photo-picker{margin-top:14px;display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;border:1px solid #dfe5dc;border-radius:16px;padding:12px;background:#fff;cursor:pointer}.composer-photo-picker input{display:none}.composer-photo-picker>span{font-size:20px}.composer-photo-picker strong{display:block;font-size:11px;color:#354038}.composer-photo-picker small{display:block;margin-top:2px;color:#7a847c;font-size:9px}.composer-photo-picker b{font-size:10px;color:#2f6a35}.composer-photo-preview{position:relative;margin-top:10px}.composer-photo-preview img{display:block;width:100%;max-height:230px;object-fit:cover;border-radius:16px;background:#eef1eb}.composer-photo-preview button{position:absolute;right:8px;top:8px;border:0;border-radius:999px;padding:7px 10px;background:rgba(20,27,21,.82);color:#fff;font-size:9px;font-weight:850}.composer-photo-error{margin-top:8px;border-radius:12px;padding:9px 11px;background:#fff0ed;color:#9a4038;font-size:10px;font-weight:750}
+      `}</style>
     </div>
   );
 }
