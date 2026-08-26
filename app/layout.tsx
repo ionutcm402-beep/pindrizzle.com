@@ -9,7 +9,6 @@ import Phase8SinceLastVisit from "@/components/Phase8SinceLastVisit";
 import Phase8NearbyPulse from "@/components/Phase8NearbyPulse";
 import Phase8FollowBridge from "@/components/Phase8FollowBridge";
 import Phase9PromotedLocal from "@/components/Phase9PromotedLocal";
-import Phase9CheckoutPanel from "@/components/Phase9CheckoutPanel";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 
@@ -40,7 +39,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Phase8NearbyPulse />
         <Phase8FollowBridge />
         <Phase9PromotedLocal />
-        <Phase9CheckoutPanel />
       </body>
     </html>
   );
