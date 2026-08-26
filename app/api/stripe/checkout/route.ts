@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { getPingStripe, PingStripeConfigError } from "@/lib/stripeServer";
 
 export const runtime = "nodejs";
@@ -34,7 +34,7 @@ function radiusLabel(meters: number) {
 export async function POST(request: NextRequest) {
   let claimToken = "";
   let promotionId = "";
-  let supabase: ReturnType<typeof createClient> | null = null;
+  let supabase: SupabaseClient | null = null;
 
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
