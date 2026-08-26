@@ -11,6 +11,8 @@ export default function PasswordAuthOverlay() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [termsConfirmed, setTermsConfirmed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [contextMessage, setContextMessage] = useState("");
@@ -23,9 +25,9 @@ export default function PasswordAuthOverlay() {
   const emailValid = email.includes("@") && email.includes(".");
   const canSubmit = useMemo(() => {
     if (mode === "recovery") return emailValid;
-    if (mode === "signup") return emailValid && passwordValid && password === confirmPassword;
+    if (mode === "signup") return emailValid && passwordValid && password === confirmPassword && ageConfirmed && termsConfirmed;
     return emailValid && passwordValid;
-  }, [mode, emailValid, passwordValid, password, confirmPassword]);
+  }, [mode, emailValid, passwordValid, password, confirmPassword, ageConfirmed, termsConfirmed]);
 
   useEffect(() => { busyRef.current = busy; }, [busy]);
 
@@ -51,6 +53,8 @@ export default function PasswordAuthOverlay() {
         setOpen(false);
         setPassword("");
         setConfirmPassword("");
+        setAgeConfirmed(false);
+        setTermsConfirmed(false);
         setContextMessage("");
       }
     });
@@ -67,6 +71,8 @@ export default function PasswordAuthOverlay() {
     setContextMessage("");
     setPassword("");
     setConfirmPassword("");
+    setAgeConfirmed(false);
+    setTermsConfirmed(false);
   }, []);
 
   useEffect(() => {
@@ -125,7 +131,14 @@ export default function PasswordAuthOverlay() {
         const { data, error } = await supabase.auth.signUp({
           email: normalizedEmail,
           password,
-          options: { emailRedirectTo: window.location.origin },
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: {
+              age_13_plus_declared: true,
+              ping_terms_version: "2026-08-26",
+              ping_privacy_notice_version: "2026-08-26",
+            },
+          },
         });
         if (error) throw error;
 
@@ -167,6 +180,8 @@ export default function PasswordAuthOverlay() {
     setMessage("");
     setPassword("");
     setConfirmPassword("");
+    setAgeConfirmed(false);
+    setTermsConfirmed(false);
     window.setTimeout(() => emailRef.current?.focus(), 0);
   };
 
@@ -196,7 +211,7 @@ export default function PasswordAuthOverlay() {
           {contextMessage && mode === "signin" && <p className="password-auth-context">{contextMessage}</p>}
           <p className="password-auth-copy">
             {mode === "signup"
-              ? "Create one account per email. Your email is never shown publicly."
+              ? "Ping accounts are for people aged 13 or over. Your email is never shown publicly."
               : mode === "recovery"
                 ? "Enter your email and we’ll send a secure password reset link."
                 : "Sign in with your email and password. Normal sign-in does not send an email."}
@@ -216,6 +231,17 @@ export default function PasswordAuthOverlay() {
             <>
               <label htmlFor="password-auth-confirm">Confirm password</label>
               <input id="password-auth-confirm" type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Repeat your password" aria-invalid={confirmPassword.length > 0 && password !== confirmPassword} aria-describedby={confirmPassword.length > 0 && password !== confirmPassword ? "password-auth-confirm-hint" : undefined} />
+
+              <div className="password-auth-declarations">
+                <label className="password-auth-check" htmlFor="password-auth-age">
+                  <input id="password-auth-age" type="checkbox" checked={ageConfirmed} onChange={(event) => setAgeConfirmed(event.target.checked)} />
+                  <span>I confirm I am 13 or older.</span>
+                </label>
+                <label className="password-auth-check" htmlFor="password-auth-terms">
+                  <input id="password-auth-terms" type="checkbox" checked={termsConfirmed} onChange={(event) => setTermsConfirmed(event.target.checked)} />
+                  <span>I agree to the <a href="/terms" target="_blank" rel="noreferrer">Terms</a> and have read the <a href="/privacy" target="_blank" rel="noreferrer">Privacy Notice</a>.</span>
+                </label>
+              </div>
             </>
           )}
 
@@ -235,7 +261,7 @@ export default function PasswordAuthOverlay() {
       </div>
 
       <style jsx global>{`
-        .password-auth-backdrop{position:fixed;inset:0;z-index:500;background:rgba(17,25,18,.55);backdrop-filter:blur(8px);display:flex;align-items:flex-end;justify-content:center;padding:14px}.password-auth-sheet{width:min(100%,430px);background:#fbfbf7;border-radius:30px 30px 22px 22px;padding:10px 20px 24px;color:#172019;box-shadow:0 -24px 70px rgba(17,25,18,.3)}.password-auth-handle{width:44px;height:5px;border-radius:999px;background:#d5ddd3;margin:2px auto 12px}.password-auth-header{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center}.password-auth-header strong{text-align:center}.password-auth-header button{justify-self:start;border:0;background:transparent;color:#68756b;font-weight:800;padding:8px 0}.password-auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#edf2ea;padding:5px;border-radius:15px;margin:18px 0}.password-auth-tabs button{border:0;border-radius:11px;padding:10px;background:transparent;color:#66736a;font-weight:850}.password-auth-tabs button.active{background:#fff;color:#183924;box-shadow:0 3px 12px rgba(22,45,27,.08)}.password-auth-sheet h2{font-size:26px;letter-spacing:-.7px;margin:16px 0 7px}.password-auth-copy,.password-auth-context{font-size:12px;line-height:1.5;color:#68746b}.password-auth-context{background:#eef6eb;color:#315a34;padding:10px 11px;border-radius:13px;font-weight:750}.password-auth-sheet label{display:block;font-size:10px;font-weight:900;color:#657168;margin:14px 0 6px}.password-auth-sheet input{width:100%;height:48px;border:1px solid #dde5da;border-radius:14px;background:#fff;padding:0 13px;outline:none;font:inherit}.password-auth-sheet input:focus{border-color:#61d95a;box-shadow:0 0 0 3px rgba(97,217,90,.12)}.password-auth-hint{margin-top:7px;color:#68746b;font-size:10px}.password-auth-hint.error{color:#9a4038}.password-auth-message{margin-top:12px;border-radius:13px;padding:11px;background:#eef6eb;color:#315a34;font-size:11px;line-height:1.45;font-weight:750}.password-auth-primary{width:100%;border:0;border-radius:15px;padding:14px;margin-top:16px;background:#59d951;color:#123214;font-weight:950;font-size:14px}.password-auth-primary:disabled{opacity:.48}.password-auth-link{display:block;margin:12px auto 0;border:0;background:transparent;color:#3c6641;font-weight:850;text-decoration:underline;text-underline-offset:3px}.password-auth-note{text-align:center;margin-top:16px;color:#899289;font-size:9px}@media(max-width:520px){.password-auth-backdrop{padding:0}.password-auth-sheet{border-radius:28px 28px 0 0;padding-bottom:28px}}
+        .password-auth-backdrop{position:fixed;inset:0;z-index:500;background:rgba(17,25,18,.55);backdrop-filter:blur(8px);display:flex;align-items:flex-end;justify-content:center;padding:14px}.password-auth-sheet{width:min(100%,430px);background:#fbfbf7;border-radius:30px 30px 22px 22px;padding:10px 20px 24px;color:#172019;box-shadow:0 -24px 70px rgba(17,25,18,.3)}.password-auth-handle{width:44px;height:5px;border-radius:999px;background:#d5ddd3;margin:2px auto 12px}.password-auth-header{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center}.password-auth-header strong{text-align:center}.password-auth-header button{justify-self:start;border:0;background:transparent;color:#68756b;font-weight:800;padding:8px 0}.password-auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#edf2ea;padding:5px;border-radius:15px;margin:18px 0}.password-auth-tabs button{border:0;border-radius:11px;padding:10px;background:transparent;color:#66736a;font-weight:850}.password-auth-tabs button.active{background:#fff;color:#183924;box-shadow:0 3px 12px rgba(22,45,27,.08)}.password-auth-sheet h2{font-size:26px;letter-spacing:-.7px;margin:16px 0 7px}.password-auth-copy,.password-auth-context{font-size:12px;line-height:1.5;color:#68746b}.password-auth-context{background:#eef6eb;color:#315a34;padding:10px 11px;border-radius:13px;font-weight:750}.password-auth-sheet label{display:block;font-size:10px;font-weight:900;color:#657168;margin:14px 0 6px}.password-auth-sheet input{width:100%;height:48px;border:1px solid #dde5da;border-radius:14px;background:#fff;padding:0 13px;outline:none;font:inherit}.password-auth-sheet input:focus{border-color:#61d95a;box-shadow:0 0 0 3px rgba(97,217,90,.12)}.password-auth-declarations{display:grid;gap:8px;margin-top:14px}.password-auth-sheet label.password-auth-check{display:grid;grid-template-columns:24px 1fr;gap:9px;align-items:start;margin:0;padding:10px 11px;border:1px solid #e0e6dd;border-radius:13px;background:#f7f9f5;color:#59655d;font-size:11px;font-weight:750;line-height:1.45}.password-auth-sheet .password-auth-check input{width:20px;height:20px;min-height:20px;margin:1px 0 0;padding:0;border-radius:5px;accent-color:#3fac43}.password-auth-check a{color:#315f36;text-underline-offset:2px}.password-auth-hint{margin-top:7px;color:#68746b;font-size:10px}.password-auth-hint.error{color:#9a4038}.password-auth-message{margin-top:12px;border-radius:13px;padding:11px;background:#eef6eb;color:#315a34;font-size:11px;line-height:1.45;font-weight:750}.password-auth-primary{width:100%;border:0;border-radius:15px;padding:14px;margin-top:16px;background:#59d951;color:#123214;font-weight:950;font-size:14px}.password-auth-primary:disabled{opacity:.48}.password-auth-link{display:block;margin:12px auto 0;border:0;background:transparent;color:#3c6641;font-weight:850;text-decoration:underline;text-underline-offset:3px}.password-auth-note{text-align:center;margin-top:16px;color:#657067;font-size:10px}@media(max-width:520px){.password-auth-backdrop{padding:0}.password-auth-sheet{border-radius:28px 28px 0 0;padding-bottom:28px}}
       `}</style>
     </>
   );
