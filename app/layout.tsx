@@ -14,8 +14,10 @@ import Phase14SearchEntry from "@/components/Phase14SearchEntry";
 import Phase15PlaceIntelligence from "@/components/Phase15PlaceIntelligence";
 import Phase16PushSafetyBridge from "@/components/Phase16PushSafetyBridge";
 import Phase19ProductAnalytics from "@/components/Phase19ProductAnalytics";
+import Phase21AccessibilityBridge from "@/components/Phase21AccessibilityBridge";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
+import "./accessibility.css";
 
 export const metadata: Metadata = {
   title: "Ping — Know what's happening in your mile",
@@ -25,7 +27,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  viewportFit: "cover",
   themeColor: "#f7f7f2",
 };
 
@@ -49,6 +51,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Phase15PlaceIntelligence />
         <Phase16PushSafetyBridge />
         <Phase19ProductAnalytics />
+        <Phase21AccessibilityBridge />
       </body>
     </html>
   );
