@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type Radius = 0.5 | 1 | 3 | 5;
+type IconName = "location" | "bolt" | "shield" | "eye";
 
 const RADII: Array<{ value: Radius; label: string; detail: string }> = [
   { value: 0.5, label: "0.5 mi", detail: "Very local" },
@@ -11,192 +12,40 @@ const RADII: Array<{ value: Radius; label: string; detail: string }> = [
   { value: 5, label: "5 mi", detail: "Explore more" },
 ];
 
-const styles: Record<string, CSSProperties> = {
-  backdrop: {
-    position: "fixed",
-    inset: 0,
-    zIndex: 1000,
-    display: "flex",
-    alignItems: "flex-end",
-    justifyContent: "center",
-    padding: 14,
-    background: "rgba(15, 22, 16, .58)",
-    backdropFilter: "blur(10px)",
-  },
-  sheet: {
-    width: "min(100%, 430px)",
-    borderRadius: "30px 30px 24px 24px",
-    padding: "12px 20px 22px",
-    background: "#fbfbf7",
-    boxShadow: "0 -24px 70px rgba(12, 18, 13, .28)",
-  },
-  handle: {
-    width: 44,
-    height: 5,
-    borderRadius: 999,
-    margin: "0 auto 16px",
-    background: "#d9ded7",
-  },
-  top: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    minHeight: 34,
-  },
-  brand: {
-    fontSize: 27,
-    lineHeight: 1,
-    fontWeight: 900,
-    letterSpacing: "-1.2px",
-    color: "#151815",
-  },
-  skip: {
-    border: 0,
-    padding: "8px 4px",
-    background: "transparent",
-    color: "#747c75",
-    fontSize: 12,
-    fontWeight: 800,
-  },
-  kicker: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 7,
-    marginTop: 20,
-    padding: "7px 10px",
-    borderRadius: 999,
-    background: "#edf8e9",
-    color: "#2b6c2e",
-    fontSize: 10,
-    fontWeight: 900,
-    letterSpacing: ".25px",
-  },
-  title: {
-    margin: "13px 0 9px",
-    maxWidth: 360,
-    color: "#172019",
-    fontSize: 31,
-    lineHeight: 1.03,
-    letterSpacing: "-1.15px",
-  },
-  copy: {
-    margin: 0,
-    color: "#657067",
-    fontSize: 13,
-    lineHeight: 1.55,
-  },
-  featureGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: 9,
-    marginTop: 18,
-  },
-  feature: {
-    minHeight: 92,
-    padding: 13,
-    border: "1px solid #e3e8df",
-    borderRadius: 18,
-    background: "#fff",
-  },
-  featureIcon: {
-    display: "block",
-    marginBottom: 8,
-    fontSize: 20,
-  },
-  featureTitle: {
-    display: "block",
-    color: "#29312b",
-    fontSize: 11,
-    fontWeight: 900,
-  },
-  featureCopy: {
-    display: "block",
-    marginTop: 3,
-    color: "#7b847c",
-    fontSize: 9.5,
-    lineHeight: 1.35,
-  },
-  primary: {
-    width: "100%",
-    marginTop: 18,
-    border: 0,
-    borderRadius: 17,
-    padding: "15px 16px",
-    background: "#59d951",
-    color: "#123214",
-    boxShadow: "0 10px 24px rgba(89, 217, 81, .27)",
-    fontSize: 14,
-    fontWeight: 900,
-  },
-  progress: {
-    display: "flex",
-    justifyContent: "center",
-    gap: 6,
-    marginTop: 13,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 999,
-    background: "#d8ded5",
-  },
-  dotActive: {
-    width: 19,
-    background: "#59d951",
-  },
-  radiusGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: 9,
-    marginTop: 19,
-  },
-  radius: {
-    border: "1px solid #dfe5dc",
-    borderRadius: 17,
-    padding: "13px 12px",
-    background: "#fff",
-    textAlign: "left",
-    color: "#3a433c",
-  },
-  radiusSelected: {
-    borderColor: "#59d951",
-    background: "#effaec",
-    boxShadow: "inset 0 0 0 1px #59d951",
-  },
-  radiusLabel: {
-    display: "block",
-    fontSize: 14,
-    fontWeight: 900,
-  },
-  radiusDetail: {
-    display: "block",
-    marginTop: 3,
-    color: "#788079",
-    fontSize: 9.5,
-    fontWeight: 700,
-  },
-  privacy: {
-    display: "flex",
-    gap: 10,
-    marginTop: 15,
-    padding: 13,
-    borderRadius: 17,
-    background: "#f1f4ef",
-    color: "#626c64",
-    fontSize: 10.5,
-    lineHeight: 1.45,
-  },
-  secondary: {
-    width: "100%",
-    marginTop: 8,
-    border: 0,
-    padding: "10px 12px",
-    background: "transparent",
-    color: "#717a72",
-    fontSize: 11,
-    fontWeight: 800,
-  },
-};
+function LineIcon({ name }: { name: IconName }) {
+  if (name === "bolt") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M13 2 5.5 13h6L11 22l7.5-12h-6L13 2Z" />
+      </svg>
+    );
+  }
+
+  if (name === "shield") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 3 19 6v5c0 4.7-2.8 8.1-7 10-4.2-1.9-7-5.3-7-10V6l7-3Z" />
+        <path d="m9 12 2 2 4-4" />
+      </svg>
+    );
+  }
+
+  if (name === "eye") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z" />
+        <circle cx="12" cy="12" r="2.5" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" />
+      <circle cx="12" cy="10" r="2.5" />
+    </svg>
+  );
+}
 
 export default function FirstRunOnboarding() {
   const [visible, setVisible] = useState(false);
@@ -274,79 +123,100 @@ export default function FirstRunOnboarding() {
   if (!visible) return null;
 
   return (
-    <div className="first-run-backdrop" style={styles.backdrop} role="dialog" aria-modal="true" aria-labelledby="ping-onboarding-title">
-      <section className="first-run-sheet" style={styles.sheet} ref={sheetRef}>
-        <div style={styles.handle} aria-hidden="true" />
-        <div style={styles.top}>
-          <div style={styles.brand} aria-label="Ping">ping<span style={{ color: "#55d84d" }} aria-hidden="true">.</span></div>
-          <button type="button" style={styles.skip} onClick={() => finish(false)}>Not now</button>
-        </div>
+    <div className="first-run-backdrop" role="dialog" aria-modal="true" aria-labelledby="ping-onboarding-title">
+      <section className="first-run-sheet" ref={sheetRef}>
+        <header className="first-run-top">
+          <div className="first-run-brand" aria-label="Ping">ping<span aria-hidden="true">.</span></div>
+          <button type="button" className="first-run-skip" onClick={() => finish(false)}>Not now</button>
+        </header>
 
         {step === 1 ? (
-          <>
-            <div style={styles.kicker}>● REAL LOCAL ACTIVITY</div>
-            <h1 id="ping-onboarding-title" ref={headingRef} tabIndex={-1} style={styles.title}>Know what matters around you.</h1>
-            <p style={styles.copy}>Ping is a live neighbourhood feed for useful things happening nearby—not a social network full of filler.</p>
+          <div className="first-run-step first-run-step-one">
+            <div className="first-run-intro">
+              <div className="first-run-kicker"><i aria-hidden="true" />LIVE AROUND YOU</div>
+              <h1 id="ping-onboarding-title" className="first-run-heading" ref={headingRef} tabIndex={-1}>Know what matters around you.</h1>
+              <p className="first-run-copy">Useful local updates from people nearby—without the noise of a traditional social feed.</p>
+            </div>
 
-            <div style={styles.featureGrid}>
-              <div style={styles.feature}>
-                <span style={styles.featureIcon} aria-hidden="true">📍</span>
-                <strong style={styles.featureTitle}>Nearby first</strong>
-                <small style={styles.featureCopy}>See real Pings inside the area you choose.</small>
+            <div className="first-run-content-grid">
+              <div className="first-run-benefits">
+                <div className="first-run-benefit">
+                  <span className="first-run-icon"><LineIcon name="location" /></span>
+                  <div><strong>Nearby first</strong><small>Your chosen area decides what you see, not global popularity.</small></div>
+                </div>
+                <div className="first-run-benefit">
+                  <span className="first-run-icon"><LineIcon name="bolt" /></span>
+                  <div><strong>Useful right now</strong><small>Alerts, traffic, lost & found, free items, help and local updates.</small></div>
+                </div>
+                <div className="first-run-benefit">
+                  <span className="first-run-icon"><LineIcon name="shield" /></span>
+                  <div><strong>Community checked</strong><small>People nearby can confirm useful information and report bad information.</small></div>
+                </div>
+                <div className="first-run-browse-note">
+                  <span className="first-run-note-icon"><LineIcon name="eye" /></span>
+                  <span>Browse before signing in. Join only when you want to participate.</span>
+                </div>
               </div>
-              <div style={styles.feature}>
-                <span style={styles.featureIcon} aria-hidden="true">⚡</span>
-                <strong style={styles.featureTitle}>Useful now</strong>
-                <small style={styles.featureCopy}>Alerts, traffic, lost & found, help and local updates.</small>
-              </div>
-              <div style={styles.feature}>
-                <span style={styles.featureIcon} aria-hidden="true">✓</span>
-                <strong style={styles.featureTitle}>Community checked</strong>
-                <small style={styles.featureCopy}>People nearby can confirm, reply and report bad information.</small>
-              </div>
-              <div style={styles.feature}>
-                <span style={styles.featureIcon} aria-hidden="true">○</span>
-                <strong style={styles.featureTitle}>Browse freely</strong>
-                <small style={styles.featureCopy}>No account wall just to look around your local Feed.</small>
+
+              <div className="first-run-local-visual" aria-hidden="true">
+                <span className="first-run-ring ring-one" />
+                <span className="first-run-ring ring-two" />
+                <span className="first-run-ring ring-three" />
+                <span className="first-run-local-dot dot-one" />
+                <span className="first-run-local-dot dot-two" />
+                <span className="first-run-local-dot dot-three" />
+                <span className="first-run-local-center"><LineIcon name="location" /></span>
+                <span className="first-run-local-label">YOUR AREA</span>
               </div>
             </div>
 
-            <button type="button" style={styles.primary} onClick={() => setStep(2)}>Set up my area</button>
-          </>
+            <div className="first-run-actions">
+              <button type="button" className="first-run-primary" onClick={() => setStep(2)}>
+                Choose my area <span aria-hidden="true">→</span>
+              </button>
+            </div>
+          </div>
         ) : (
-          <>
-            <div style={styles.kicker}>📍 YOUR AREA</div>
-            <h1 id="ping-onboarding-title" ref={headingRef} tabIndex={-1} style={styles.title}>How local should Ping feel?</h1>
-            <p style={styles.copy}>Start small. You can change this radius at any time from the Feed or your profile.</p>
+          <div className="first-run-step first-run-step-two">
+            <div className="first-run-intro compact">
+              <div className="first-run-kicker"><i aria-hidden="true" />YOUR AREA</div>
+              <h1 id="ping-onboarding-title" className="first-run-heading" ref={headingRef} tabIndex={-1}>Choose how local Ping feels.</h1>
+              <p className="first-run-copy">Start small. You can change this radius whenever you want from the Feed or your profile.</p>
+            </div>
 
-            <div style={styles.radiusGrid} role="group" aria-label="Choose nearby radius">
+            <div className="first-run-radius-grid" role="group" aria-label="Choose nearby radius">
               {RADII.map((option) => (
                 <button
                   type="button"
                   key={option.value}
-                  style={{ ...styles.radius, ...(radius === option.value ? styles.radiusSelected : {}) }}
+                  className={`first-run-radius${radius === option.value ? " selected" : ""}`}
                   aria-pressed={radius === option.value}
                   onClick={() => setRadius(option.value)}
                 >
-                  <strong style={styles.radiusLabel}>{option.label}</strong>
-                  <small style={styles.radiusDetail}>{option.detail}</small>
+                  <span className="first-run-radius-mark" aria-hidden="true" />
+                  <strong>{option.label}</strong>
+                  <small>{option.detail}</small>
                 </button>
               ))}
             </div>
 
-            <div style={styles.privacy}>
-              <span style={{ fontSize: 18 }} aria-hidden="true">🔒</span>
-              <div><strong style={{ color: "#354038" }}>Your exact public position stays private.</strong><br />Ping asks for device location only when you enable it. Public Ping locations are approximate, not your exact browser coordinates.</div>
+            <div className="first-run-privacy">
+              <span className="first-run-icon"><LineIcon name="shield" /></span>
+              <div><strong>Your exact public position stays private.</strong><small>Ping asks for device location only when you enable it. Public Ping locations are approximate, not your exact browser coordinates.</small></div>
             </div>
 
-            <button type="button" style={styles.primary} onClick={() => finish(true)}>Open my Feed</button>
-            <button type="button" style={styles.secondary} onClick={() => setStep(1)}>Back</button>
-          </>
+            <div className="first-run-actions two">
+              <button type="button" className="first-run-primary" onClick={() => finish(true)}>
+                Open my local Feed <span aria-hidden="true">→</span>
+              </button>
+              <button type="button" className="first-run-secondary" onClick={() => setStep(1)}>Back</button>
+            </div>
+          </div>
         )}
 
-        <div style={styles.progress} aria-hidden="true">
-          <span style={{ ...styles.dot, ...(step === 1 ? styles.dotActive : {}) }} />
-          <span style={{ ...styles.dot, ...(step === 2 ? styles.dotActive : {}) }} />
+        <div className="first-run-progress" aria-hidden="true">
+          <span className={step === 1 ? "active" : ""} />
+          <span className={step === 2 ? "active" : ""} />
         </div>
       </section>
     </div>
