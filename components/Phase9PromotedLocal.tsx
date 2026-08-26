@@ -60,6 +60,37 @@ async function getCoords() {
   });
 }
 
+function promotionSessionId(promotionId: string) {
+  try {
+    const key = `ping:promotion-session:${promotionId}`;
+    const current = window.sessionStorage.getItem(key);
+    if (current) return current;
+    if (!window.crypto?.randomUUID) return null;
+    const next = window.crypto.randomUUID();
+    window.sessionStorage.setItem(key, next);
+    return next;
+  } catch {
+    return null;
+  }
+}
+
+async function recordPromotionEvent(item: PromotedPing, eventKind: "impression" | "open") {
+  const browserSession = promotionSessionId(item.promotion_id);
+  if (!browserSession) return;
+  try {
+    const supabase = createClient();
+    const { data: authData } = await supabase.auth.getSession();
+    if (authData.session?.user.id === item.user_id) return;
+    await supabase.rpc("record_promotion_event", {
+      target_promotion_id: item.promotion_id,
+      event_kind: eventKind,
+      browser_session: browserSession,
+    });
+  } catch (error) {
+    console.error("Promotion analytics event failed", error);
+  }
+}
+
 export default function Phase9PromotedLocal() {
   const [host, setHost] = useState<HTMLElement | null>(null);
   const [item, setItem] = useState<PromotedPing | null>(null);
@@ -178,11 +209,19 @@ export default function Phase9PromotedLocal() {
     };
   }, [load]);
 
+  useEffect(() => {
+    if (!item) return;
+    void recordPromotionEvent(item, "impression");
+  }, [item?.promotion_id]);
+
   if (!host || !item) return null;
 
   const meta = categoryMeta[item.category];
   const distanceMiles = item.distance_meters / 1609.344;
-  const openPing = () => window.dispatchEvent(new CustomEvent("ping:open-detail", { detail: { id: item.ping_id, live: true } }));
+  const openPing = () => {
+    void recordPromotionEvent(item, "open");
+    window.dispatchEvent(new CustomEvent("ping:open-detail", { detail: { id: item.ping_id, live: true } }));
+  };
 
   return createPortal(
     <section className="phase9-promoted-card" aria-label={`Promoted local Ping from ${item.sponsor_name}`}>
