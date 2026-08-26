@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 
 type QuietMode = "location" | "quiet" | "offline";
+type ValidationEvent = "quiet_feed_seen" | "quiet_expand_radius" | "quiet_open_map" | "quiet_create_ping";
 
 function readRadius() {
   try {
@@ -11,6 +12,10 @@ function readRadius() {
     if ([0.5, 1, 3, 5].includes(value)) return value;
   } catch {}
   return 1;
+}
+
+function track(eventType: ValidationEvent) {
+  window.dispatchEvent(new CustomEvent("ping:product-event", { detail: { eventType } }));
 }
 
 export default function Phase26QuietFeedGuide() {
@@ -41,6 +46,7 @@ export default function Phase26QuietFeedGuide() {
         setTarget(card);
         setMode(nextMode);
         setRadius(readRadius());
+        if (nextMode === "quiet") track("quiet_feed_seen");
       });
     };
 
@@ -63,6 +69,7 @@ export default function Phase26QuietFeedGuide() {
 
   const widen = () => {
     if (!widerRadius) return;
+    track("quiet_expand_radius");
     try { localStorage.setItem("ping-radius", String(widerRadius)); } catch {}
     window.location.reload();
   };
@@ -90,7 +97,7 @@ export default function Phase26QuietFeedGuide() {
 
       {mode === "quiet" && (
         <>
-          <a className="phase26-primary-action" href="/#ping">
+          <a className="phase26-primary-action" href="/#ping" onClick={() => track("quiet_create_ping")}>
             <span className="phase26-action-icon" aria-hidden="true">＋</span>
             Create a useful Ping
           </a>
@@ -98,7 +105,7 @@ export default function Phase26QuietFeedGuide() {
             {widerRadius && (
               <button type="button" onClick={widen}>Widen to {widerRadius} mi</button>
             )}
-            <a href="/map">Explore the map</a>
+            <a href="/map" onClick={() => track("quiet_open_map")}>Explore the map</a>
           </div>
           <small className="phase26-quiet-note">Quiet is real data too. Ping never fills an empty area with sample posts.</small>
         </>
