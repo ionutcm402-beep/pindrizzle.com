@@ -5,10 +5,13 @@ import { createPortal } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 
 type ContributorContext = {
+  profile_id: string;
   display_name: string;
   helpful_pings: number;
   confirmations: number;
   member_since: string;
+  reputation_points: number;
+  reputation_level: string;
 };
 
 type OpenPingEvent = { id?: string };
@@ -67,7 +70,7 @@ export default function Phase7ContributorContext() {
 
     let cancelled = false;
     const load = async () => {
-      const { data, error } = await createClient().rpc("ping_author_context", { target_ping_id: pingId });
+      const { data, error } = await createClient().rpc("ping_author_profile_context", { target_ping_id: pingId });
       if (cancelled) return;
       if (error) {
         console.error("Contributor context failed", error);
@@ -114,20 +117,21 @@ export default function Phase7ContributorContext() {
 
   return createPortal(
     <>
-      <div className="phase7-contributor-card" aria-label="Contributor context">
+      <div className="phase7-contributor-card" aria-label="Contributor profile">
         <div className="phase7-contributor-avatar">{initials}</div>
         <div className="phase7-contributor-copy">
-          <span>Contributor context</span>
+          <span>Contributor profile</span>
           <strong>{context.display_name}</strong>
-          <small>{memberLabel(context.member_since)}</small>
+          <small>{memberLabel(context.member_since)} · {context.reputation_level}</small>
         </div>
         <div className="phase7-contributor-signals">
           <div><strong>{context.helpful_pings}</strong><span>Helpful earned</span></div>
           <div><strong>{context.confirmations}</strong><span>Confirms earned</span></div>
         </div>
+        <a className="phase7-profile-link" href={`/profile/${context.profile_id}`}>View profile <span>›</span></a>
       </div>
       <style jsx global>{`
-        .phase7-contributor-anchor{margin:14px 0 0}.phase7-contributor-card{display:grid;grid-template-columns:42px 1fr auto;gap:10px;align-items:center;padding:12px 13px;border:1px solid #dfe7dc;border-radius:17px;background:#f5f8f2;color:#172019}.phase7-contributor-avatar{width:42px;height:42px;border-radius:14px;background:#dfeadb;display:grid;place-items:center;color:#326039;font-size:10px;font-weight:1000}.phase7-contributor-copy>span{display:block;color:#758078;font-size:8px;font-weight:850;text-transform:uppercase;letter-spacing:.45px}.phase7-contributor-copy>strong{display:block;margin-top:2px;font-size:12px}.phase7-contributor-copy>small{display:block;margin-top:2px;color:#7d877f;font-size:8px}.phase7-contributor-signals{display:flex;gap:6px}.phase7-contributor-signals div{min-width:62px;padding:7px 6px;border-radius:11px;background:#fff;text-align:center}.phase7-contributor-signals strong{display:block;font-size:12px}.phase7-contributor-signals span{display:block;margin-top:1px;color:#7a857c;font-size:7px;font-weight:750;white-space:nowrap}@media(max-width:420px){.phase7-contributor-card{grid-template-columns:38px 1fr}.phase7-contributor-signals{grid-column:1/-1}.phase7-contributor-signals div{flex:1}}
+        .phase7-contributor-anchor{margin:14px 0 0}.phase7-contributor-card{display:grid;grid-template-columns:42px 1fr auto;gap:10px;align-items:center;padding:12px 13px;border:1px solid #dfe7dc;border-radius:17px;background:#f5f8f2;color:#172019}.phase7-contributor-avatar{width:42px;height:42px;border-radius:14px;background:#dfeadb;display:grid;place-items:center;color:#326039;font-size:10px;font-weight:1000}.phase7-contributor-copy>span{display:block;color:#758078;font-size:8px;font-weight:850;text-transform:uppercase;letter-spacing:.45px}.phase7-contributor-copy>strong{display:block;margin-top:2px;font-size:12px}.phase7-contributor-copy>small{display:block;margin-top:2px;color:#7d877f;font-size:8px}.phase7-contributor-signals{display:flex;gap:6px}.phase7-contributor-signals div{min-width:62px;padding:7px 6px;border-radius:11px;background:#fff;text-align:center}.phase7-contributor-signals strong{display:block;font-size:12px}.phase7-contributor-signals span{display:block;margin-top:1px;color:#7a857c;font-size:7px;font-weight:750;white-space:nowrap}.phase7-profile-link{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;margin-top:1px;padding:9px 10px;border-radius:11px;background:#fff;color:#326039;text-decoration:none;font-size:9px;font-weight:900}.phase7-profile-link span{font-size:15px;line-height:1}@media(max-width:420px){.phase7-contributor-card{grid-template-columns:38px 1fr}.phase7-contributor-signals{grid-column:1/-1}.phase7-contributor-signals div{flex:1}}
       `}</style>
     </>,
     host,
