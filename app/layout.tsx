@@ -23,6 +23,8 @@ import Phase24BetaBridge from "@/components/Phase24BetaBridge";
 import Phase26QuietFeedGuide from "@/components/Phase26QuietFeedGuide";
 import Phase26BetaPulse from "@/components/Phase26BetaPulse";
 import Phase26FirstRunHandoff from "@/components/Phase26FirstRunHandoff";
+import Phase26BetaValidationSignals from "@/components/Phase26BetaValidationSignals";
+import Phase26BetaValidationOps from "@/components/Phase26BetaValidationOps";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 import "./accessibility.css";
@@ -82,6 +84,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Phase15PlaceIntelligence />
         <Phase16PushSafetyBridge />
         <Phase19ProductAnalytics />
+        <Phase26BetaValidationSignals />
         <Phase22StorageChoice />
         <Phase22LegalSettingsEntry />
         <Phase23PwaBridge />
@@ -89,6 +92,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Phase24BetaBridge />
         <Phase26QuietFeedGuide />
         <Phase26BetaPulse />
+        <Phase26BetaValidationOps />
         <Phase21AccessibilityBridge />
       </body>
     </html>
