@@ -28,11 +28,24 @@ export type PingCategoryLabel =
 
 export type DealSource = "spotted" | "business";
 export type DealKind = "offer" | "new_in" | "restock" | "clearance" | "limited_time";
+
+// `parking_space` remains a legacy Marketplace type so existing preview data can
+// still render safely. New listings expose Parking space under Property instead.
 export type MarketplaceType = "property" | "vehicle" | "parking_space";
 export type MarketplaceIntent = "sale" | "rent" | "wanted";
-export type PropertySubtype = "house" | "flat" | "room" | "land" | "warehouse" | "commercial" | "garage" | "other";
+export type PropertySubtype =
+  | "house"
+  | "flat"
+  | "room"
+  | "land"
+  | "warehouse"
+  | "commercial"
+  | "garage"
+  | "parking_space"
+  | "business"
+  | "other";
 export type VehicleSubtype = "car" | "van" | "motorbike" | "bicycle" | "other";
-export type MarketplaceSubtype = PropertySubtype | VehicleSubtype | "parking_space";
+export type MarketplaceSubtype = PropertySubtype | VehicleSubtype;
 export type MarketplacePricePeriod = "total" | "month" | "week" | "day" | "hour";
 export type Radius = 0.5 | 1 | 3 | 5;
 
@@ -47,6 +60,8 @@ export type CategoryDefinition = {
   maxExpiryHours: number;
 };
 
+// Parking is deliberately no longer a main user-facing category. The legacy
+// category definition remains below so historical Parking Pings can still load.
 export const CATEGORY_ORDER: PingCategoryKey[] = [
   "alert",
   "traffic",
@@ -55,7 +70,6 @@ export const CATEGORY_ORDER: PingCategoryKey[] = [
   "help",
   "deals",
   "marketplace",
-  "parking",
   "events",
   "outages",
   "local",
@@ -93,7 +107,7 @@ export const DEAL_KINDS = Object.keys(DEAL_KIND_LABEL) as DealKind[];
 export const MARKETPLACE_TYPE_LABEL: Record<MarketplaceType, string> = {
   property: "Property",
   vehicle: "Vehicles",
-  parking_space: "Parking spaces",
+  parking_space: "Parking space",
 };
 
 export const MARKETPLACE_INTENT_LABEL: Record<MarketplaceIntent, string> = {
@@ -110,6 +124,8 @@ export const PROPERTY_SUBTYPE_LABEL: Record<PropertySubtype, string> = {
   warehouse: "Warehouse",
   commercial: "Commercial space",
   garage: "Garage",
+  parking_space: "Parking space",
+  business: "Business",
   other: "Other property",
 };
 
@@ -129,7 +145,9 @@ export const MARKETPLACE_PRICE_PERIOD_LABEL: Record<MarketplacePricePeriod, stri
   hour: "Per hour",
 };
 
-export const MARKETPLACE_TYPES = Object.keys(MARKETPLACE_TYPE_LABEL) as MarketplaceType[];
+// Only these two groups are offered for new Marketplace posts. Parking space is
+// now one of the Property listing types rather than a third Marketplace group.
+export const MARKETPLACE_TYPES: MarketplaceType[] = ["property", "vehicle"];
 export const MARKETPLACE_INTENTS = Object.keys(MARKETPLACE_INTENT_LABEL) as MarketplaceIntent[];
 export const PROPERTY_SUBTYPES = Object.keys(PROPERTY_SUBTYPE_LABEL) as PropertySubtype[];
 export const VEHICLE_SUBTYPES = Object.keys(VEHICLE_SUBTYPE_LABEL) as VehicleSubtype[];
