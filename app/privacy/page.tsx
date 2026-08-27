@@ -18,7 +18,7 @@ export default function PrivacyPage() {
   return (
     <LegalPageShell title="Privacy Notice" kicker="YOUR DATA" active="privacy">
       <section className="legal-intro">
-        <h2>Local information without exposing your exact public position.</h2>
+        <h2>Local information with clear control over location precision.</h2>
         <p>This notice explains the personal information Ping currently uses, why it uses it, how long it may be kept, and how to make a rights request.</p>
       </section>
 
@@ -40,7 +40,7 @@ export default function PrivacyPage() {
           <li><b>Account data:</b> your email address, authentication identifiers, account-security records, your 13+ signup declaration and the versions of the Terms/Privacy Notice accepted at signup.</li>
           <li><b>Public profile data:</b> display name, account age and activity-based reputation signals. Your email is not shown publicly.</li>
           <li><b>Community content:</b> Pings, replies, photos, confirmations and Helpful signals you choose to submit.</li>
-          <li><b>Location:</b> device coordinates are used to find nearby activity and create Pings. Public Ping locations are deliberately approximate; exact browser coordinates are not displayed publicly.</li>
+          <li><b>Location:</b> device coordinates are used to find nearby activity and create Pings. New Pings default to Private location, which publishes an approximate nearby area. If you explicitly choose Exact location, the selected exact point is public to people who can see that Ping.</li>
           <li><b>Safety and rights records:</b> reports, blocks, hidden content, moderation decisions, privacy-rights requests, safety complaints and moderation appeals needed to operate safety and compliance controls.</li>
           <li><b>Notifications:</b> notification preferences and, if enabled, browser push subscription details needed to deliver push messages.</li>
           <li><b>Promotions and payments:</b> promotion requests and payment-status metadata. Payment processing is handled through Stripe; Ping does not need your full card number.</li>
@@ -56,13 +56,14 @@ export default function PrivacyPage() {
 
       <section className="legal-card">
         <h2>Visibility and location privacy</h2>
-        <p>Nearby Feed and Map queries use your device location when you enable location permission. Ping’s posting flow receives coordinates so it can create a nearby Ping, but the public location is snapped/approximated before exposure. Do not put a home address, school address, phone number or other sensitive precise location in Ping text or photos.</p>
+        <p>Nearby Feed and Map queries use your device location when you enable location permission. When you create a Ping, <b>Private location is the default</b>: Ping snaps the selected point to an approximate nearby area before it is shown publicly. Ping does not silently turn a Private Ping into an Exact one.</p>
+        <p>If you deliberately choose <b>Exact location</b>, the exact point you select is visible to people who can see that Ping and is used for its public Map position and nearby distance. Do not choose Exact for a home, school or other sensitive place unless you genuinely intend to publish that precise point.</p>
         <p>Uploaded Ping photos are re-encoded in the browser before upload to reduce metadata such as EXIF/GPS. This is a privacy safeguard, not a guarantee that a photo’s visible contents cannot reveal a location.</p>
       </section>
 
       <section className="legal-card">
         <h2>Retention</h2>
-        <p>Active Pings normally stop being publicly available after about 24 hours, but expiry is not the same as immediate database deletion. Safety, moderation, payment, security and legal records may need to be retained longer. Raw optional product analytics is designed to age out after up to 90 days. Account data is retained while the account exists unless deletion is appropriate, subject to safety, fraud, payment or legal retention needs.</p>
+        <p>Active Pings normally stop being publicly available after their chosen category-specific expiry, but expiry is not the same as immediate database deletion. Safety, moderation, payment, security and legal records may need to be retained longer. Raw optional product analytics is designed to age out after up to 90 days. Account data is retained while the account exists unless deletion is appropriate, subject to safety, fraud, payment or legal retention needs.</p>
       </section>
 
       <section className="legal-card">
