@@ -100,6 +100,14 @@
   color:#3e6679!important;
 }
 
+/* Install screen uses the exact supplied Pindrizzle app icon, never a substitute mark. */
+.phase23-install-icon{
+  background:#fff url('/pindrizzle-icon-192.png') center/cover no-repeat!important;
+  box-shadow:0 10px 26px rgba(6,38,61,.20),inset 0 0 0 1px rgba(255,255,255,.65)!important;
+  overflow:hidden!important;
+}
+.phase23-install-icon i{display:none!important}
+
 @media (prefers-reduced-motion:reduce){
   .password-auth-sheet,.reset-card{scroll-behavior:auto!important}
 }
