@@ -4,6 +4,13 @@ import { useEffect } from "react";
 
 const ATTRIBUTES = ["aria-label", "title", "placeholder"] as const;
 
+const FACT_RULES: Array<[RegExp, string]> = [
+  [
+    /Ping stores only an approximate neighbourhood-scale point for public Pings\. Your browser’s original GPS coordinate is not published as the Ping location\./g,
+    "Private pins store an approximate neighbourhood-scale point. If you explicitly choose Exact, the selected point is public. Your browser location is never silently published as a pin location.",
+  ],
+];
+
 const BRAND_RULES: Array<[RegExp, string]> = [
   [/\bPing is installed\b/g, "Pindrizzle is installed"],
   [/\bInstall Ping\b/g, "Install Pindrizzle"],
@@ -52,6 +59,7 @@ const PIN_RULES: Array<[RegExp, string]> = [
 
 function rewrite(value: string) {
   let next = value;
+  for (const [pattern, replacement] of FACT_RULES) next = next.replace(pattern, replacement);
   for (const [pattern, replacement] of BRAND_RULES) next = next.replace(pattern, replacement);
   for (const [pattern, replacement] of PIN_RULES) next = next.replace(pattern, replacement);
   return next;
