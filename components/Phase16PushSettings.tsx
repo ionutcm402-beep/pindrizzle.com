@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import PingIcon from "@/components/PingIcon";
 
 type PushState = "checking" | "unsupported" | "off" | "blocked" | "on" | "working";
 
@@ -87,7 +88,7 @@ export default function Phase16PushSettings({ userId, authLoading }: Props) {
 
   const enable = async () => {
     if (!userId) {
-      window.dispatchEvent(new CustomEvent("ping:auth-needed", { detail: { message: "Sign in to enable push notifications on this device." } }));
+      window.dispatchEvent(new CustomEvent("ping:auth-needed", { detail: { message: "Sign in to enable Pindrizzle notifications on this device." } }));
       return;
     }
     if (!supported()) {
@@ -134,12 +135,12 @@ export default function Phase16PushSettings({ userId, authLoading }: Props) {
       });
       if (error) throw error;
 
-      setMessage("Push is enabled on this device.");
+      setMessage("Pindrizzle notifications are enabled on this device.");
       await refresh();
     } catch (error) {
       console.error("Enable push failed", error);
       setState("off");
-      setMessage("Push could not be enabled on this device yet.");
+      setMessage("Notifications could not be enabled on this device yet.");
     }
   };
 
@@ -155,11 +156,11 @@ export default function Phase16PushSettings({ userId, authLoading }: Props) {
         await subscription.unsubscribe();
       }
       setState("off");
-      setMessage("Push is off on this device.");
+      setMessage("Pindrizzle notifications are off on this device.");
       await refresh();
     } catch (error) {
       console.error("Disable push failed", error);
-      setMessage("Push settings could not be changed right now.");
+      setMessage("Notification settings could not be changed right now.");
       await refresh();
     }
   };
@@ -175,11 +176,11 @@ export default function Phase16PushSettings({ userId, authLoading }: Props) {
           : "Off on this device";
 
   return (
-    <section className="phase16-push-card" aria-label="Push notification settings">
-      <div className="phase16-push-icon">🔔</div>
+    <section className="phase16-push-card" aria-label="Pindrizzle notification settings">
+      <div className="phase16-push-icon"><PingIcon name="alerts" size={20} /></div>
       <div className="phase16-push-copy">
         <div className="phase16-push-title"><strong>Push notifications</strong><span className={state === "on" ? "on" : ""}>{statusCopy}</span></div>
-        <p>Get real Ping activity even when the app is closed. Push follows the Reply, Confirmation and Helpful choices below.</p>
+        <p>Get useful local activity even when Pindrizzle is closed. Notifications follow your Reply, Confirmation and Helpful choices below.</p>
         {deviceCount > 0 && <small>{deviceCount} {deviceCount === 1 ? "device" : "devices"} connected to this account.</small>}
         {message && <div className="phase16-push-message">{message}</div>}
       </div>
@@ -191,7 +192,7 @@ export default function Phase16PushSettings({ userId, authLoading }: Props) {
         {state === "on" ? "Turn off" : state === "working" ? "Working…" : "Enable push"}
       </button>
       <style jsx>{`
-        .phase16-push-card{margin:0 0 13px;padding:15px;border:1px solid #dce8d8;background:linear-gradient(135deg,#f4fbf1,#fff);border-radius:20px;display:grid;grid-template-columns:42px 1fr;gap:11px;align-items:start}.phase16-push-icon{width:42px;height:42px;border-radius:14px;background:#e7f7e3;display:grid;place-items:center;font-size:18px}.phase16-push-copy{min-width:0}.phase16-push-title{display:flex;align-items:center;justify-content:space-between;gap:8px}.phase16-push-title strong{font-size:12px}.phase16-push-title span{font-size:8px;font-weight:900;color:#7a847b;background:#edf0eb;border-radius:999px;padding:5px 7px;white-space:nowrap}.phase16-push-title span.on{color:#2d6a32;background:#e6f7e3}.phase16-push-copy p{margin:6px 0 0;color:#657168;font-size:10px;line-height:1.45}.phase16-push-copy small{display:block;margin-top:6px;color:#778279;font-size:8px;font-weight:800}.phase16-push-message{margin-top:7px;color:#3d6d41;font-size:9px;font-weight:850}.phase16-push-card>button{grid-column:2;justify-self:start;border:0;border-radius:11px;background:#1d2a1f;color:#fff;padding:9px 12px;font-size:9px;font-weight:900}.phase16-push-card>button:disabled{opacity:.45;cursor:not-allowed}
+        .phase16-push-card{margin:0 0 13px;padding:15px;border:1px solid rgba(31,91,124,.13);background:linear-gradient(135deg,#edf8fc,#fff);border-radius:20px;display:grid;grid-template-columns:42px 1fr;gap:11px;align-items:start}.phase16-push-icon{width:42px;height:42px;border-radius:14px;background:#dff5fb;color:#0a668d;display:grid;place-items:center}.phase16-push-copy{min-width:0}.phase16-push-title{display:flex;align-items:center;justify-content:space-between;gap:8px}.phase16-push-title strong{font-size:12px;color:#17364a}.phase16-push-title span{font-size:8px;font-weight:900;color:#6f8490;background:#edf3f6;border-radius:999px;padding:5px 7px;white-space:nowrap}.phase16-push-title span.on{color:#0d6182;background:#d9f1f8}.phase16-push-copy p{margin:6px 0 0;color:#657d8b;font-size:10px;line-height:1.45}.phase16-push-copy small{display:block;margin-top:6px;color:#778d98;font-size:8px;font-weight:800}.phase16-push-message{margin-top:7px;color:#245b74;font-size:9px;font-weight:850}.phase16-push-card>button{grid-column:2;justify-self:start;border:0;border-radius:11px;background:#123c57;color:#fff;padding:9px 12px;font-size:9px;font-weight:900}.phase16-push-card>button:disabled{opacity:.45;cursor:not-allowed}
       `}</style>
     </section>
   );
