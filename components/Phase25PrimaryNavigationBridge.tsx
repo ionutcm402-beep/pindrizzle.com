@@ -71,12 +71,11 @@ export default function Phase25PrimaryNavigationBridge() {
     event.preventDefault();
     router.push(href);
   };
-  const dropPin = () => router.push("/?compose=1#ping");
-  const showCompose = (pathname === "/" || pathname === "/map") && !composerOpen;
-  const composeClass = `ping-global-compose${pathname === "/map" ? " ping-global-compose-map" : ""}`;
+  const createPin = () => router.push("/#ping");
+  const showCreate = pathname === "/my-pings" && !composerOpen;
 
   return <>
-    {showCompose && <button type="button" className={composeClass} onClick={dropPin} aria-label="Drop a pin"><PingIcon name="plus" size={18}/><span>Pin</span></button>}
+    {showCreate && <button type="button" className="ping-global-create" onClick={createPin} aria-label="Create a new pin"><PingIcon name="plus" size={18}/><span>Create a new pin</span></button>}
     {!composerOpen && <nav className="ping-global-nav" data-ping-global-nav="true" aria-label="Primary navigation">
       <a href="/" onClick={(event) => navigate(event, "/")} className={itemClass("feed")} aria-current={active === "feed" ? "page" : undefined}><PingIcon name="feed" size={21}/><span>Feed</span></a>
       <a href="/map" onClick={(event) => navigate(event, "/map")} className={itemClass("map")} aria-current={active === "map" ? "page" : undefined}><PingIcon name="map" size={21}/><span>Map</span></a>
@@ -91,10 +90,9 @@ export default function Phase25PrimaryNavigationBridge() {
       .ping-global-nav-item{position:relative;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border-radius:13px;color:#7d847f;text-decoration:none;font-size:9px;font-weight:720;line-height:1}
       .ping-global-nav-item svg{display:block;color:currentColor}.ping-global-nav-item span{display:block;white-space:nowrap}.ping-global-nav-item.active{color:var(--ping-accent-ink)}.ping-global-nav-item:active{background:var(--ping-surface-soft)}
       .ping-global-nav-item .ping-global-unread{position:absolute;top:5px;left:calc(50% + 7px);min-width:16px;height:16px;display:grid;place-items:center;border:2px solid #fff;border-radius:999px;background:var(--ping-danger);color:#fff;padding:0 3px;font-size:7px;font-style:normal;font-weight:850;line-height:1}
-      .ping-global-compose{position:fixed;z-index:151;right:max(20px,calc((100vw - 444px)/2 + 12px));bottom:max(92px,calc(80px + env(safe-area-inset-bottom)));min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:0 16px;border:0;border-radius:999px;background:var(--ping-ink);color:#fff;box-shadow:0 12px 28px rgba(16,19,17,.18);font-size:11px;font-weight:780;cursor:pointer}.ping-global-compose:active{transform:scale(.97)}
-      .ping-global-compose-map{left:max(20px,calc((100vw - 444px)/2 + 12px));right:auto;top:clamp(320px,42dvh,410px);bottom:auto}
-      @media(max-width:350px){.ping-global-nav{width:calc(100% - 18px);padding-left:4px;padding-right:4px}.ping-global-nav-item{font-size:8px}.ping-global-compose{right:14px}.ping-global-compose-map{left:14px;right:auto}}
-      @media(min-width:521px){.ping-global-compose{right:calc(50% - 210px)}.ping-global-compose-map{left:calc(50% - 210px);right:auto}}
+      .ping-global-create{position:fixed;z-index:151;right:max(20px,calc((100vw - 444px)/2 + 12px));bottom:max(92px,calc(80px + env(safe-area-inset-bottom)));min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:0 16px;border:0;border-radius:999px;background:var(--ping-ink);color:#fff;box-shadow:0 12px 28px rgba(16,19,17,.18);font-size:11px;font-weight:780;cursor:pointer}.ping-global-create:active{transform:scale(.97)}
+      @media(max-width:350px){.ping-global-nav{width:calc(100% - 18px);padding-left:4px;padding-right:4px}.ping-global-nav-item{font-size:8px}.ping-global-create{right:14px}}
+      @media(min-width:521px){.ping-global-create{right:calc(50% - 210px)}}
     `}</style>
   </>;
 }
