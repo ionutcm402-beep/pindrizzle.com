@@ -81,6 +81,7 @@ function isUserContent(element: Element | null) {
       ".following-v3-main h2",
       ".following-v3-main > p",
       ".map-v3-card h2",
+      ".ping-map-pin:not(.cluster)",
       ".activity-copy > small",
       ".phase9-ping-options button > strong",
       ".phase9-ping-options button > p",
