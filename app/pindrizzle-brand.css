@@ -74,11 +74,13 @@ html,body{
 }
 
 .first-run-backdrop{
-  background:radial-gradient(circle at 50% 14%,rgba(57,174,212,.20),rgba(11,45,65,.30))!important;
+  background:rgba(9,38,56,.46)!important;
+  backdrop-filter:blur(14px) saturate(120%);
+  -webkit-backdrop-filter:blur(14px) saturate(120%);
 }
 .first-run-sheet{
   border-color:rgba(31,91,124,.12)!important;
-  background:linear-gradient(145deg,rgba(255,255,255,.98),rgba(232,247,252,.97))!important;
+  background:linear-gradient(145deg,#ffffff,#e8f7fc)!important;
   box-shadow:0 30px 80px rgba(21,70,98,.20)!important;
 }
 .first-run-kicker{color:var(--ping-accent-ink)!important}
