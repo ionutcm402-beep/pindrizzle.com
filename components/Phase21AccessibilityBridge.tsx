@@ -8,10 +8,10 @@ const routeNames: Record<string, string> = {
   "/map": "Map",
   "/search": "Search",
   "/place": "Local area",
-  "/alerts": "Alerts",
-  "/following": "Following",
+  "/alerts": "Activity",
+  "/following": "Following pins",
   "/you": "Your profile",
-  "/promote": "Promote",
+  "/promote": "Promote a pin",
   "/business": "Promoter dashboard",
   "/moderation": "Moderation",
   "/moderation/promotions": "Promotion moderation",
@@ -22,7 +22,7 @@ const routeNames: Record<string, string> = {
   "/cookies": "Browser Storage",
   "/terms": "Terms of Use",
   "/safety": "Safety and Complaints",
-  "/install": "Install Ping",
+  "/install": "Install Pindrizzle",
   "/offline": "Offline",
   "/beta": "Closed Beta",
   "/ops": "Operations",
@@ -48,11 +48,11 @@ export default function Phase21AccessibilityBridge() {
 
   const label = useMemo(() => {
     if (pathname.startsWith("/profile/")) return "Public profile";
-    return routeNames[pathname] || "Ping";
+    return routeNames[pathname] || "Pindrizzle";
   }, [pathname]);
 
   useEffect(() => {
-    document.title = `${label} — Ping`;
+    document.title = `${label} — Pindrizzle`;
 
     const main = document.querySelector<HTMLElement>("main");
     if (main) {
