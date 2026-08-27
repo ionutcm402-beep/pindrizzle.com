@@ -1,0 +1,105 @@
+/* Pindrizzle premium auth/recovery surfaces. Visual only; auth logic stays unchanged. */
+
+.password-auth-backdrop{
+  background:rgba(4,29,47,.48)!important;
+  backdrop-filter:blur(18px) saturate(125%)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(125%)!important;
+}
+.password-auth-sheet{
+  border:1px solid rgba(255,255,255,.72)!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(239,249,252,.98))!important;
+  color:var(--pd-navy-deep)!important;
+  box-shadow:0 -26px 76px rgba(6,38,61,.24),inset 0 1px 0 rgba(255,255,255,.88)!important;
+}
+.password-auth-handle{background:#cadce5!important}
+.password-auth-header button{color:#6f8795!important}
+.password-auth-header strong{color:var(--pd-navy-deep)!important;font-weight:800!important;letter-spacing:-.035em!important}
+.password-auth-tabs{
+  background:rgba(225,243,249,.84)!important;
+  box-shadow:inset 0 0 0 1px rgba(20,78,107,.05)!important;
+}
+.password-auth-tabs button{color:#66808e!important}
+.password-auth-tabs button.active{
+  background:rgba(255,255,255,.96)!important;
+  color:#0b6588!important;
+  box-shadow:0 5px 15px rgba(8,47,74,.08)!important;
+}
+.password-auth-sheet h2{color:var(--pd-navy-deep)!important;letter-spacing:-.045em!important}
+.password-auth-copy,.password-auth-context{color:#68818f!important}
+.password-auth-sheet label{color:#587586!important}
+.password-auth-sheet input{
+  border-color:rgba(20,78,107,.10)!important;
+  background:rgba(255,255,255,.94)!important;
+  color:var(--pd-navy-deep)!important;
+  box-shadow:inset 0 0 0 1px rgba(20,78,107,.025)!important;
+}
+.password-auth-sheet input:focus{
+  border-color:rgba(57,181,222,.58)!important;
+  box-shadow:0 0 0 4px rgba(57,181,222,.12)!important;
+}
+.password-auth-declarations{
+  border-color:rgba(20,78,107,.075)!important;
+  background:rgba(237,248,251,.72)!important;
+}
+.password-auth-check span{color:#557484!important}
+.password-auth-check a{color:#08779f!important}
+.password-auth-hint{color:#718995!important}
+.password-auth-hint.error{color:#a14d43!important}
+.password-auth-message{
+  border-color:rgba(20,113,151,.09)!important;
+  background:#eaf7fb!important;
+  color:#285f78!important;
+}
+.password-auth-primary{
+  border:1px solid rgba(255,255,255,.10)!important;
+  background:linear-gradient(180deg,#0d4567,var(--pd-navy-deep))!important;
+  color:#fff!important;
+  box-shadow:0 12px 28px rgba(6,38,61,.22),inset 0 1px 0 rgba(255,255,255,.12)!important;
+}
+.password-auth-link{color:#0b7198!important}
+.password-auth-note{color:#8ca0ab!important}
+
+.reset-shell{
+  background:
+    radial-gradient(circle at 14% 0%,rgba(57,181,222,.17),transparent 30%),
+    radial-gradient(circle at 90% 18%,rgba(101,208,230,.10),transparent 27%),
+    linear-gradient(180deg,#fbfeff,#edf8fb)!important;
+  color:var(--pd-navy-deep)!important;
+}
+.reset-card{
+  border:1px solid rgba(255,255,255,.76)!important;
+  background:linear-gradient(155deg,rgba(255,255,255,.98),rgba(240,249,252,.98))!important;
+  box-shadow:0 26px 72px rgba(6,38,61,.13),inset 0 1px 0 rgba(255,255,255,.9)!important;
+}
+.reset-card h1{color:var(--pd-navy-deep)!important;font-weight:790!important;letter-spacing:-.05em!important}
+.reset-card .intro{color:#68818f!important}
+.reset-card label{color:#587586!important}
+.reset-card input{
+  border-color:rgba(20,78,107,.10)!important;
+  background:rgba(255,255,255,.95)!important;
+  color:var(--pd-navy-deep)!important;
+}
+.reset-card input:focus{
+  border-color:rgba(57,181,222,.58)!important;
+  box-shadow:0 0 0 4px rgba(57,181,222,.12)!important;
+}
+.reset-card .hint{color:#718995!important}
+.reset-card .hint.error{color:#a14d43!important}
+.reset-card .status{
+  background:#eaf7fb!important;
+  color:#285f78!important;
+}
+.reset-card .error-box{background:#f9eeeb!important;color:#95483f!important}
+.reset-card .primary{
+  background:linear-gradient(180deg,#0d4567,var(--pd-navy-deep))!important;
+  color:#fff!important;
+  box-shadow:0 12px 28px rgba(6,38,61,.20),inset 0 1px 0 rgba(255,255,255,.12)!important;
+}
+.reset-card .secondary{
+  background:#edf7fa!important;
+  color:#3e6679!important;
+}
+
+@media (prefers-reduced-motion:reduce){
+  .password-auth-sheet,.reset-card{scroll-behavior:auto!important}
+}
