@@ -43,17 +43,17 @@ import "./pindrizzle-premium.css";
 import "./pindrizzle-premium-my-pins.css";
 import "./pindrizzle-premium-overrides.css";
 
-const metadataOrigin = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://ping-app-cyan.vercel.app";
-
 export const metadata: Metadata = {
-  metadataBase: new URL(metadataOrigin),
+  metadataBase: new URL("https://pindrizzle.com"),
   title: "Pindrizzle — Drop in daily",
   description: "Drop in daily for useful local pins, deals, Marketplace listings and real-time updates around you.",
   applicationName: "Pindrizzle",
   manifest: "/manifest.webmanifest",
+  alternates: { canonical: "/" },
   openGraph: {
     title: "Pindrizzle — Drop in daily",
     description: "Useful local pins and real-time updates around you.",
+    url: "https://pindrizzle.com",
     siteName: "Pindrizzle",
     type: "website",
   },
