@@ -19,9 +19,9 @@ export function getPingStripe(options?: { allowDisabledLive?: boolean }) {
       ? "live"
       : null;
 
-  if (!mode) throw new PingStripeConfigError("Ping requires a Stripe secret key with a recognised test or live prefix.");
+  if (!mode) throw new PingStripeConfigError("Pindrizzle requires a Stripe secret key with a recognised test or live prefix.");
   if (mode === "live" && !options?.allowDisabledLive && process.env.PING_LIVE_PAYMENTS_ENABLED !== "true") {
-    throw new PingStripeConfigError("Live payments are locked until Ping's production launch gate is enabled.");
+    throw new PingStripeConfigError("Live payments are locked until Pindrizzle's production launch gate is enabled.");
   }
 
   return {
