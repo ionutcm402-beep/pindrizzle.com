@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { PingCategoryKey } from "@/lib/ping-categories";
 
-export type MapPingCategory = "alert" | "traffic" | "lost_found" | "free" | "help" | "local";
+export type MapPingCategory = PingCategoryKey;
 export type MapPing = {
   id: string;
   lat: number;
@@ -35,9 +36,24 @@ function markerSvg(category: MapPingCategory) {
     lost_found: '<circle cx="10" cy="10" r="5.5"/><path d="m14 14 5 5M8.3 9a2 2 0 1 1 3.4 1.4c-.8.7-1.5 1-1.5 2.1"/>',
     free: '<rect x="4" y="9" width="16" height="10" rx="2"/><path d="M12 9v10M3.5 9h17M8 6c0-1.6 1.8-2.2 4 3 2.2-5.2 4-4.6 4-3S14.4 9 12 9 8 7.6 8 6Z"/>',
     help: '<circle cx="12" cy="12" r="8"/><path d="M9.8 9.5a2.4 2.4 0 1 1 4 1.7c-.9.8-1.7 1.2-1.7 2.5M12 16.5h.01"/>',
+    deals: '<path d="M4 5h8l8 8-7 7-8-8V5Z"/><circle cx="8" cy="9" r="1.1"/><path d="m10 15 5-5"/>',
+    parking: '<rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/>',
+    events: '<rect x="4" y="6" width="16" height="14" rx="2"/><path d="M8 3v5M16 3v5M4 10h16"/>',
+    outages: '<path d="m13 3-7 10h6l-1 8 7-11h-6l1-7Z"/>',
     local: '<path d="M19 10c0 4.4-7 10-7 10S5 14.4 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2"/>',
   };
   return `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${paths[category]}</svg>`;
+}
+
+function groupPings(pings: MapPing[]) {
+  const groups = new Map<string, MapPing[]>();
+  pings.forEach((ping) => {
+    const key = `${Math.round(ping.lat * 1000)}:${Math.round(ping.lng * 1000)}`;
+    const current = groups.get(key) || [];
+    current.push(ping);
+    groups.set(key, current);
+  });
+  return Array.from(groups.values());
 }
 
 export default function LivePingMap({ center, radiusMiles, pings, selectedId, onSelect }: Props) {
@@ -64,21 +80,10 @@ export default function LivePingMap({ center, radiusMiles, pings, selectedId, on
         if (disposed) return;
         const maplibre = (module as any).default ?? module;
         maplibreRef.current = maplibre;
-        const map = new maplibre.Map({
-          container,
-          style: STYLE_URL,
-          center: [center.lng, center.lat],
-          zoom: zoomForRadius(radiusMiles),
-          attributionControl: true,
-        });
+        const map = new maplibre.Map({ container, style: STYLE_URL, center: [center.lng, center.lat], zoom: zoomForRadius(radiusMiles), attributionControl: true });
         mapRef.current = map;
         map.on("error", (event: any) => setMapError(event?.error?.message || "The map tiles could not be loaded."));
-        map.on("load", () => {
-          if (disposed) return;
-          map.resize();
-          requestAnimationFrame(() => map.resize());
-          setMapReady(true);
-        });
+        map.on("load", () => { if (!disposed) { map.resize(); requestAnimationFrame(() => map.resize()); setMapReady(true); } });
         map.addControl(new maplibre.NavigationControl({ showCompass: false }), "top-right");
         const userEl = document.createElement("div");
         userEl.className = "ping-user-marker";
@@ -119,20 +124,24 @@ export default function LivePingMap({ center, radiusMiles, pings, selectedId, on
     const maplibre = maplibreRef.current;
     if (!map || !maplibre || !mapReady) return;
     markersRef.current.forEach((marker) => marker.remove());
-    markersRef.current = pings.map((ping) => {
+    const groups = groupPings(pings);
+    markersRef.current = groups.map((group) => {
+      const representative = group[0];
+      const selected = group.some((ping) => ping.id === selectedId);
       const button = document.createElement("button");
       button.type = "button";
-      button.className = `ping-map-pin ping-map-pin-${ping.categoryKey}${selectedId === ping.id ? " selected" : ""}`;
-      button.setAttribute("aria-label", `${ping.category}: ${ping.title}`);
-      button.title = ping.title;
-      button.innerHTML = `<span class="ping-map-pin-head">${markerSvg(ping.categoryKey)}</span><span class="ping-map-pin-tail"></span>`;
-      button.addEventListener("click", () => onSelect(ping.id));
-      return new maplibre.Marker({ element: button, anchor: "bottom" }).setLngLat([ping.lng, ping.lat]).addTo(map);
+      button.className = `ping-map-pin ping-map-pin-${representative.categoryKey}${selected ? " selected" : ""}${group.length > 1 ? " cluster" : ""}`;
+      button.setAttribute("aria-label", group.length > 1 ? `${group.length} nearby Pings` : `${representative.category}: ${representative.title}`);
+      button.title = group.length > 1 ? `${group.length} nearby Pings` : representative.title;
+      button.innerHTML = group.length > 1
+        ? `<span class="ping-map-pin-head"><b>${group.length}</b></span><span class="ping-map-pin-tail"></span>`
+        : `<span class="ping-map-pin-head">${markerSvg(representative.categoryKey)}</span><span class="ping-map-pin-tail"></span>`;
+      button.addEventListener("click", () => onSelect(selected ? (group.find((ping) => ping.id !== selectedId)?.id || representative.id) : representative.id));
+      const avgLat = group.reduce((sum, ping) => sum + ping.lat, 0) / group.length;
+      const avgLng = group.reduce((sum, ping) => sum + ping.lng, 0) / group.length;
+      return new maplibre.Marker({ element: button, anchor: "bottom" }).setLngLat([avgLng, avgLat]).addTo(map);
     });
-    return () => {
-      markersRef.current.forEach((marker) => marker.remove());
-      markersRef.current = [];
-    };
+    return () => { markersRef.current.forEach((marker) => marker.remove()); markersRef.current = []; };
   }, [pings, selectedId, onSelect, mapReady]);
 
   return (
@@ -141,9 +150,9 @@ export default function LivePingMap({ center, radiusMiles, pings, selectedId, on
       {!mapReady && !mapError && <div className="live-map-starting" role="status">Loading map…</div>}
       {mapError && <div className="live-map-error" role="status"><strong>Map couldn’t load</strong><span>{mapError}</span></div>}
       <style jsx global>{`
-        .live-ping-map{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;background:#e9ece7}.live-map-starting{position:absolute;z-index:35;left:14px;top:190px;padding:8px 11px;border:1px solid rgba(16,19,17,.09);border-radius:999px;background:rgba(255,255,255,.9);color:#555b57;font-size:10px;font-weight:650;box-shadow:0 8px 24px rgba(17,22,18,.06);backdrop-filter:blur(16px)}.live-map-error{position:absolute;z-index:40;left:14px;right:14px;top:190px;padding:14px 15px;border:1px solid rgba(16,19,17,.10);border-radius:16px;background:rgba(255,255,255,.94);color:#101311;box-shadow:0 12px 34px rgba(17,22,18,.08);display:grid;gap:4px}.live-map-error strong{font-size:13px}.live-map-error span{font-size:10px;color:#727873;line-height:1.45}
+        .live-ping-map{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;background:#e9ece7}.live-map-starting{position:absolute;z-index:35;left:14px;top:150px;padding:8px 11px;border:1px solid rgba(16,19,17,.09);border-radius:999px;background:rgba(255,255,255,.9);color:#555b57;font-size:10px;font-weight:650;box-shadow:0 8px 24px rgba(17,22,18,.06);backdrop-filter:blur(16px)}.live-map-error{position:absolute;z-index:40;left:14px;right:14px;top:150px;padding:14px 15px;border:1px solid rgba(16,19,17,.10);border-radius:16px;background:rgba(255,255,255,.94);color:#101311;box-shadow:0 12px 34px rgba(17,22,18,.08);display:grid;gap:4px}.live-map-error strong{font-size:13px}.live-map-error span{font-size:10px;color:#727873;line-height:1.45}
         .ping-user-marker{width:14px;height:14px;border:3px solid #fff;border-radius:50%;background:#3c83f6;box-shadow:0 0 0 6px rgba(60,131,246,.15),0 3px 10px rgba(42,86,158,.22)}
-        .ping-map-pin{--pin:#46d66f;position:relative;width:36px!important;height:44px!important;min-width:36px!important;min-height:44px!important;border:0!important;background:transparent!important;padding:0!important;cursor:pointer;filter:drop-shadow(0 5px 7px rgba(16,25,18,.18));transform-origin:50% 100%;transition:transform .16s ease}.ping-map-pin-head{position:absolute;top:0;left:2px;width:32px;height:32px;display:grid;place-items:center;border:2px solid #fff;border-radius:50%;background:var(--pin);color:#fff}.ping-map-pin-head svg{width:16px;height:16px}.ping-map-pin-tail{position:absolute;left:14px;top:27px;width:8px;height:12px;background:var(--pin);clip-path:polygon(0 0,100% 0,50% 100%)}.ping-map-pin-alert{--pin:#e8554f}.ping-map-pin-traffic{--pin:#d86b43}.ping-map-pin-lost_found{--pin:#b16b9b}.ping-map-pin-free{--pin:#31a955}.ping-map-pin-help{--pin:#34865a}.ping-map-pin-local{--pin:#3c83f6}.ping-map-pin.selected{transform:scale(1.22);z-index:5!important}.ping-map-pin.selected .ping-map-pin-head{box-shadow:0 0 0 4px rgba(255,255,255,.7)}.ping-map-pin:focus-visible{outline:3px solid #1769d2!important;outline-offset:4px!important}
+        .ping-map-pin{--pin:#46d66f;position:relative;width:36px!important;height:44px!important;min-width:36px!important;min-height:44px!important;border:0!important;background:transparent!important;padding:0!important;cursor:pointer;filter:drop-shadow(0 5px 7px rgba(16,25,18,.18));transform-origin:50% 100%;transition:transform .16s ease}.ping-map-pin-head{position:absolute;top:0;left:2px;width:32px;height:32px;display:grid;place-items:center;border:2px solid #fff;border-radius:50%;background:var(--pin);color:#fff}.ping-map-pin-head svg{width:16px;height:16px}.ping-map-pin-head b{font-size:11px;color:#fff}.ping-map-pin-tail{position:absolute;left:14px;top:27px;width:8px;height:12px;background:var(--pin);clip-path:polygon(0 0,100% 0,50% 100%)}.ping-map-pin-alert{--pin:#e8554f}.ping-map-pin-traffic{--pin:#d86b43}.ping-map-pin-lost_found{--pin:#b16b9b}.ping-map-pin-free{--pin:#31a955}.ping-map-pin-help{--pin:#34865a}.ping-map-pin-deals{--pin:#b68b22}.ping-map-pin-parking{--pin:#556cc4}.ping-map-pin-events{--pin:#7c65bf}.ping-map-pin-outages{--pin:#cf7b26}.ping-map-pin-local{--pin:#3c83f6}.ping-map-pin.cluster{--pin:#202722}.ping-map-pin.selected{transform:scale(1.22);z-index:5!important}.ping-map-pin.selected .ping-map-pin-head{box-shadow:0 0 0 4px rgba(255,255,255,.7)}.ping-map-pin:focus-visible{outline:3px solid #1769d2!important;outline-offset:4px!important}
       `}</style>
     </>
   );

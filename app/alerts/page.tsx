@@ -2,25 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import PingIcon, { type PingIconName } from "@/components/PingIcon";
 
 type NotificationKind = "reply" | "confirmation" | "helpful" | "follow_update";
-type NotificationRow = {
-  id: string;
-  user_id: string;
-  actor_id: string | null;
-  ping_id: string | null;
-  kind: NotificationKind;
-  title: string;
-  body: string;
-  read_at: string | null;
-  created_at: string;
-};
+type NotificationRow = { id:string; user_id:string; actor_id:string|null; ping_id:string|null; kind:NotificationKind; title:string; body:string; read_at:string|null; created_at:string; };
 
-const kindMeta: Record<NotificationKind, { icon: string; label: string }> = {
-  reply: { icon: "💬", label: "Reply" },
-  confirmation: { icon: "✓", label: "Confirmation" },
-  helpful: { icon: "★", label: "Helpful" },
-  follow_update: { icon: "◎", label: "Outcome" },
+const kindMeta: Record<NotificationKind, { icon: PingIconName; label: string }> = {
+  reply: { icon: "replies", label: "Reply" },
+  confirmation: { icon: "confirmations", label: "Confirmation" },
+  helpful: { icon: "check", label: "Helpful" },
+  follow_update: { icon: "following", label: "Outcome" },
 };
 
 function relativeTime(value: string) {
@@ -32,173 +23,98 @@ function relativeTime(value: string) {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
+function isToday(value: string) {
+  const date = new Date(value); const now = new Date();
+  return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate();
+}
+
 export default function AlertsPage() {
   const [userId, setUserId] = useState<string | null>(null);
-  const [email, setEmail] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<NotificationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setMessage("");
+    setLoading(true); setMessage("");
     try {
       const supabase = createClient();
       const { data: authData } = await supabase.auth.getSession();
       const session = authData.session;
       setUserId(session?.user.id || null);
-      setEmail(session?.user.email || null);
-      if (!session?.user) {
-        setNotifications([]);
-        return;
-      }
-      const { data, error } = await supabase
-        .from("notifications")
-        .select("id,user_id,actor_id,ping_id,kind,title,body,read_at,created_at")
-        .eq("user_id", session.user.id)
-        .order("created_at", { ascending: false })
-        .limit(100);
+      if (!session?.user) { setNotifications([]); return; }
+      const { data, error } = await supabase.from("notifications").select("id,user_id,actor_id,ping_id,kind,title,body,read_at,created_at").eq("user_id", session.user.id).order("created_at", { ascending:false }).limit(100);
       if (error) throw error;
       setNotifications((data || []) as NotificationRow[]);
-    } catch (error) {
-      console.error("Notifications failed", error);
-      setMessage("Alerts could not load right now.");
-    } finally {
-      setLoading(false);
-    }
+    } catch (error) { console.error("Activity failed", error); setMessage("Activity could not load right now."); }
+    finally { setLoading(false); }
   }, []);
 
   useEffect(() => {
     void load();
     const supabase = createClient();
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserId(session?.user.id || null);
-      setEmail(session?.user.email || null);
-      setTimeout(() => void load(), 0);
-    });
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => { setUserId(session?.user.id || null); setTimeout(() => void load(), 0); });
     return () => data.subscription.unsubscribe();
   }, [load]);
 
   useEffect(() => {
     if (!userId) return;
     const supabase = createClient();
-    const channel = supabase
-      .channel(`phase6-alerts-${userId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` }, () => {
-        void load();
-      })
-      .subscribe();
+    const channel = supabase.channel(`activity-${userId}`).on("postgres_changes", { event:"*", schema:"public", table:"notifications", filter:`user_id=eq.${userId}` }, () => void load()).subscribe();
     return () => { void supabase.removeChannel(channel); };
   }, [userId, load]);
 
   const unread = useMemo(() => notifications.filter((item) => !item.read_at).length, [notifications]);
+  const today = useMemo(() => notifications.filter((item) => isToday(item.created_at)), [notifications]);
+  const earlier = useMemo(() => notifications.filter((item) => !isToday(item.created_at)), [notifications]);
 
   const markRead = async (item: NotificationRow) => {
     if (item.read_at) return;
     const readAt = new Date().toISOString();
-    setNotifications((current) => current.map((entry) => entry.id === item.id ? { ...entry, read_at: readAt } : entry));
-    const { error } = await createClient().from("notifications").update({ read_at: readAt }).eq("id", item.id);
-    if (error) {
-      console.error("Mark notification read failed", error);
-      void load();
-    }
+    setNotifications((current) => current.map((entry) => entry.id === item.id ? { ...entry, read_at:readAt } : entry));
+    const { error } = await createClient().from("notifications").update({ read_at:readAt }).eq("id", item.id);
+    if (error) void load();
   };
 
   const openNotification = async (item: NotificationRow) => {
     await markRead(item);
-    if (item.kind === "follow_update") {
-      window.location.assign("/following");
-      return;
-    }
-    if (item.ping_id) {
-      window.dispatchEvent(new CustomEvent("ping:open-detail", { detail: { id: item.ping_id, live: true } }));
-    }
+    if (item.kind === "follow_update") { window.location.assign("/following"); return; }
+    if (item.ping_id) window.dispatchEvent(new CustomEvent("ping:open-detail", { detail:{ id:item.ping_id, live:true } }));
   };
 
   const markAllRead = async () => {
     if (!userId || unread === 0) return;
     const readAt = new Date().toISOString();
-    setNotifications((current) => current.map((item) => item.read_at ? item : { ...item, read_at: readAt }));
-    const { error } = await createClient()
-      .from("notifications")
-      .update({ read_at: readAt })
-      .eq("user_id", userId)
-      .is("read_at", null);
-    if (error) {
-      console.error("Mark all notifications read failed", error);
-      setMessage("Some alerts could not be marked read.");
-      void load();
-    }
+    setNotifications((current) => current.map((item) => item.read_at ? item : { ...item, read_at:readAt }));
+    const { error } = await createClient().from("notifications").update({ read_at:readAt }).eq("user_id", userId).is("read_at", null);
+    if (error) { setMessage("Some activity could not be marked read."); void load(); }
   };
 
-  const openAuth = () => {
-    window.dispatchEvent(new CustomEvent("ping:auth-needed", { detail: { message: "Sign in to see useful local activity and followed Ping outcomes." } }));
-  };
+  const openAuth = () => window.dispatchEvent(new CustomEvent("ping:auth-needed", { detail:{ message:"Sign in to see replies, confirmations, Helpful marks and followed outcomes." } }));
+
+  const renderGroup = (title: string, rows: NotificationRow[]) => rows.length ? (
+    <section className="activity-group" aria-label={title}><h2>{title}</h2><div className="activity-list">{rows.map((item) => { const meta = kindMeta[item.kind] || { icon:"bell" as PingIconName, label:"Update" }; return (
+      <button key={item.id} type="button" className={`activity-card ${item.read_at ? "read" : "unread"}`} onClick={() => void openNotification(item)}>
+        <span className="activity-icon"><PingIcon name={meta.icon} size={19} /></span>
+        <span className="activity-copy"><span className="activity-top"><b>{meta.label}</b><time>{relativeTime(item.created_at)}</time></span><strong>{item.title}</strong>{item.body && <small>{item.body}</small>}</span>
+        {!item.read_at && <i className="activity-unread" aria-label="Unread" />}
+      </button>
+    ); })}</div></section>
+  ) : null;
 
   return (
-    <div className="page-shell">
-      <div className="app-shell">
-        <main className="phase6-alerts-screen">
-          <header className="phase6-alerts-header">
-            <a href="/" className="phase6-alerts-back" aria-label="Back to Feed">‹</a>
-            <div className="phase6-alerts-heading">
-              <div className="brand small">ping<span>.</span></div>
-              <div className="phase6-title-row"><h1>Alerts</h1>{unread > 0 && <span>{unread} new</span>}</div>
-            </div>
-            {userId && unread > 0 ? <button type="button" onClick={markAllRead}>Read all</button> : <span />}
-          </header>
+    <div className="page-shell"><div className="app-shell"><main className="activity-screen">
+      <header className="activity-header"><div><div className="brand small">ping<span>.</span></div><div className="activity-title"><h1>Activity</h1>{unread > 0 && <span>{unread} new</span>}</div><p>Only useful things that happened around your Pings.</p></div>{userId && unread > 0 && <button type="button" onClick={() => void markAllRead()}>Read all</button>}</header>
 
-          {!userId && !loading ? (
-            <section className="phase6-empty-card">
-              <div className="phase6-empty-icon">🔔</div>
-              <h2>Your useful activity lives here.</h2>
-              <p>Sign in to see replies, confirmations, Helpful marks and outcomes from Pings you follow.</p>
-              <button type="button" onClick={openAuth}>Sign in / Sign up</button>
-            </section>
-          ) : loading ? (
-            <section className="phase6-empty-card"><div className="phase6-empty-icon">…</div><h2>Checking your alerts.</h2><p>Getting the latest useful activity.</p></section>
-          ) : notifications.length ? (
-            <section className="phase6-alert-list" aria-label="Notifications">
-              {notifications.map((item) => {
-                const meta = kindMeta[item.kind] || { icon: "•", label: "Update" };
-                return (
-                  <button key={item.id} type="button" className={`phase6-alert-card ${item.read_at ? "read" : "unread"}`} onClick={() => openNotification(item)}>
-                    <div className="phase6-alert-icon">{meta.icon}</div>
-                    <div className="phase6-alert-copy">
-                      <div className="phase6-alert-top"><span>{meta.label}</span><time>{relativeTime(item.created_at)}</time></div>
-                      <strong>{item.title}</strong>
-                      {item.body && <p>{item.body}</p>}
-                    </div>
-                    {!item.read_at && <span className="phase6-unread-dot" aria-label="Unread" />}
-                  </button>
-                );
-              })}
-            </section>
-          ) : (
-            <section className="phase6-empty-card">
-              <div className="phase6-empty-icon">✓</div>
-              <h2>You’re all caught up.</h2>
-              <p>Useful replies, confirmations, Helpful marks and followed Ping outcomes will appear here.</p>
-            </section>
-          )}
+      {!userId && !loading ? <section className="activity-empty"><span><PingIcon name="alerts" size={26} /></span><h2>Your useful activity lives here.</h2><p>Sign in to see replies, confirmations, Helpful marks and outcomes from Pings you follow.</p><button type="button" onClick={openAuth}>Sign in / Sign up</button></section>
+      : loading ? <section className="activity-empty"><h2>Checking your activity…</h2></section>
+      : notifications.length ? <>{renderGroup("TODAY", today)}{renderGroup("EARLIER", earlier)}</>
+      : <section className="activity-empty"><span><PingIcon name="check" size={26} /></span><h2>You’re all caught up.</h2><p>Useful replies, confirmations, Helpful marks and followed outcomes will appear here.</p></section>}
 
-          {email && <div className="phase6-account-note">Alerts for <strong>{email}</strong></div>}
-          {message && <div className="phase6-message">{message}</div>}
-          <section className="phase6-rule-card"><strong>Useful notifications only.</strong><p>No “we miss you” messages. Ping alerts are reserved for real activity and outcomes that matter.</p></section>
-        </main>
-
-        <nav className="bottom-nav" aria-label="Primary navigation">
-          <a href="/"><span>⌂</span>Feed</a>
-          <a href="/map"><span>⌖</span>Map</a>
-          <a href="/#ping" className="compose-nav"><span>+</span>Ping</a>
-          <a href="/alerts" className="active"><span>♢</span>Alerts{unread > 0 && <i>{unread > 99 ? "99+" : unread}</i>}</a>
-          <a href="/you"><span>○</span>You</a>
-        </nav>
-      </div>
-
-      <style jsx global>{`
-        .phase6-alerts-screen{min-height:100%;padding:0 18px 110px}.phase6-alerts-header{display:grid;grid-template-columns:42px 1fr auto;gap:12px;align-items:start;padding:24px 4px 20px}.phase6-alerts-back{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;text-decoration:none;color:#233329;background:#fff;box-shadow:0 8px 24px rgba(31,41,32,.08);font-size:29px;line-height:1}.phase6-alerts-heading .brand{margin-top:2px}.phase6-title-row{display:flex;align-items:center;gap:9px;margin-top:14px}.phase6-title-row h1{margin:0;font-size:31px;letter-spacing:-1px}.phase6-title-row span{background:#e9f7e5;color:#2f6a34;border-radius:999px;padding:5px 8px;font-size:9px;font-weight:900}.phase6-alerts-header>button{border:0;background:transparent;color:#37633b;font-size:10px;font-weight:900;padding:11px 0}.phase6-alert-list{display:grid;gap:10px}.phase6-alert-card{width:100%;border:1px solid #e2e8df;background:#fff;border-radius:20px;padding:14px;display:grid;grid-template-columns:44px 1fr auto;gap:11px;text-align:left;color:#172019;box-shadow:0 8px 22px rgba(25,40,28,.04)}.phase6-alert-card.unread{border-color:#cfe9ca;background:#fbfff9}.phase6-alert-card.read{opacity:.72}.phase6-alert-icon{width:44px;height:44px;border-radius:15px;background:#eef5eb;display:grid;place-items:center;font-size:18px}.phase6-alert-copy{min-width:0}.phase6-alert-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px}.phase6-alert-top span{font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.3px;color:#4e6a54}.phase6-alert-top time{font-size:9px;color:#8a938b}.phase6-alert-copy>strong{display:block;font-size:13px;line-height:1.3}.phase6-alert-copy p{margin:5px 0 0;color:#667168;font-size:11px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.phase6-unread-dot{width:9px;height:9px;border-radius:50%;background:#57d950;margin-top:6px}.phase6-empty-card{margin-top:18px;padding:32px 22px;border-radius:24px;background:#fff;border:1px solid #e4e9e1;text-align:center}.phase6-empty-icon{width:54px;height:54px;border-radius:18px;background:#eef5eb;display:grid;place-items:center;margin:0 auto 13px;font-size:24px}.phase6-empty-card h2{font-size:20px;margin:0 0 7px}.phase6-empty-card p{margin:0 auto;color:#6a756c;font-size:12px;line-height:1.55;max-width:310px}.phase6-empty-card button{margin-top:17px;border:0;border-radius:14px;background:#59d951;color:#163819;padding:13px 18px;font-weight:950}.phase6-account-note,.phase6-message{margin:12px 3px 0;color:#7c867d;font-size:9px;text-align:center}.phase6-message{color:#7a4b45}.phase6-rule-card{margin-top:15px;padding:16px;border-radius:18px;background:#eef4ec}.phase6-rule-card strong{font-size:11px}.phase6-rule-card p{margin:5px 0 0;color:#6a756c;font-size:10px;line-height:1.5}.bottom-nav a{height:100%;border:0;background:transparent;color:#8a928b;font-size:10px;font-weight:800;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:3px;position:relative;text-decoration:none}.bottom-nav a>span{font-size:22px;line-height:1}.bottom-nav a.active{color:#1f5420}.bottom-nav a.compose-nav{color:#1f5420}
-      `}</style>
-    </div>
+      {message && <div className="activity-message" role="status">{message}</div>}
+      <section className="activity-rule"><strong>Useful notifications only.</strong><p>No “we miss you” messages. Ping Activity is reserved for real actions and outcomes that matter.</p></section>
+    </main></div>
+    <style jsx global>{`
+      .activity-screen{min-height:100%;padding:0 18px 120px}.activity-header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:25px 2px 18px}.activity-title{display:flex;align-items:center;gap:9px;margin-top:12px}.activity-title h1{margin:0;font-size:31px;letter-spacing:-1px}.activity-title span{background:var(--ping-accent-soft);color:var(--ping-accent-ink);border-radius:999px;padding:5px 8px;font-size:9px;font-weight:800}.activity-header p{margin:6px 0 0;color:var(--ping-muted);font-size:10px}.activity-header>button{border:0;background:transparent;color:var(--ping-accent-ink);font-size:10px;font-weight:800;padding:10px 0}.activity-group{margin-top:14px}.activity-group>h2{margin:0 0 8px 3px;color:var(--ping-muted-2);font-size:8px;letter-spacing:.1em}.activity-list{border:1px solid var(--ping-line);border-radius:16px;background:#fff;overflow:hidden}.activity-card{width:100%;border:0;border-bottom:1px solid var(--ping-line);background:#fff;padding:13px;display:grid;grid-template-columns:40px 1fr auto;gap:10px;text-align:left;color:var(--ping-ink)}.activity-card:last-child{border-bottom:0}.activity-card.read{opacity:.72}.activity-card.unread{background:#fbfef9}.activity-icon{width:40px;height:40px;border-radius:12px;background:var(--ping-surface-soft);display:grid;place-items:center;color:var(--ping-ink-2)}.activity-copy{min-width:0}.activity-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.activity-top b{font-size:8px;text-transform:uppercase;letter-spacing:.05em;color:var(--ping-muted)}.activity-top time{font-size:8px;color:var(--ping-muted-2)}.activity-copy>strong{display:block;margin-top:4px;font-size:12px;line-height:1.3}.activity-copy>small{display:-webkit-box;margin-top:4px;color:var(--ping-muted);font-size:10px;line-height:1.4;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.activity-unread{width:8px;height:8px;border-radius:50%;background:var(--ping-accent);margin-top:5px}.activity-empty{margin-top:22px;padding:36px 22px;border:1px solid var(--ping-line);border-radius:18px;background:#fff;text-align:center}.activity-empty>span{width:52px;height:52px;display:grid;place-items:center;margin:0 auto 13px;border-radius:15px;background:var(--ping-surface-soft)}.activity-empty h2{font-size:20px;margin:0 0 7px}.activity-empty p{margin:0 auto;color:var(--ping-muted);font-size:12px;line-height:1.55;max-width:310px}.activity-empty button{margin-top:17px;border:0;border-radius:12px;background:var(--ping-ink);color:#fff;padding:13px 18px;font-weight:800}.activity-message{margin:12px 3px 0;color:#7a4b45;font-size:9px;text-align:center}.activity-rule{margin-top:16px;padding:15px 3px;border-top:1px solid var(--ping-line)}.activity-rule strong{font-size:11px}.activity-rule p{margin:5px 0 0;color:var(--ping-muted);font-size:10px;line-height:1.5}
+    `}</style></div>
   );
 }
