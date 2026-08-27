@@ -6,7 +6,7 @@ export default function CookiesPage() {
     <LegalPageShell title="Browser Storage" kicker="COOKIES & LOCAL STORAGE" active="cookies">
       <section className="legal-intro">
         <h2>Necessary storage works by default. Optional analytics does not.</h2>
-        <p>Ping uses browser storage for account sessions and product preferences. Optional product analytics only starts after you choose Allow analytics.</p>
+        <p>Pindrizzle uses browser storage for account sessions and product preferences. Optional product analytics only starts after you choose Allow analytics.</p>
       </section>
 
       <AnalyticsStorageControls />
@@ -25,18 +25,18 @@ export default function CookiesPage() {
 
       <section className="legal-card">
         <h2>Optional product analytics</h2>
-        <p>If you choose Allow analytics, Ping creates a random browser-session UUID in session storage and records coarse events such as opening Feed, Map, Search or a Ping. The current analytics design does not send the words you search for, the text of Pings you read, or your exact coordinates into the product analytics table.</p>
-        <p>Choosing Only necessary stops new optional analytics collection in this browser and removes Ping’s analytics-only session identifier and seen-event keys from session storage. Previously collected analytics is not instantly erased by changing this browser choice; raw product analytics is designed to age out after up to 90 days, and you can make a data request from the Privacy page.</p>
+        <p>If you choose Allow analytics, Pindrizzle creates a random browser-session UUID in session storage and records coarse events such as opening Feed, Map, Search or a pin. The current analytics design does not send the words you search for, the text of pins you read, or your exact coordinates into the product analytics table.</p>
+        <p>Choosing Only necessary stops new optional analytics collection in this browser and removes Pindrizzle’s analytics-only session identifier and seen-event keys from session storage. Previously collected analytics is not instantly erased by changing this browser choice; raw product analytics is designed to age out after up to 90 days, and you can make a data request from the Privacy page.</p>
       </section>
 
       <section className="legal-card">
         <h2>No behavioural advertising cookies</h2>
-        <p>Ping does not currently use personalised advertising trackers. Promoted Pings are paid local placement, not behavioural ads built from your browsing history.</p>
+        <p>Pindrizzle does not currently use personalised advertising trackers. Promoted pins are paid local placement, not behavioural ads built from your browsing history.</p>
       </section>
 
       <section className="legal-card legal-warning">
         <h2>Clearing browser data</h2>
-        <p>Your browser can clear cookies and site storage at any time. Doing that may sign you out and remove saved choices such as your radius, onboarding state and analytics preference, so Ping may ask you to choose again.</p>
+        <p>Your browser can clear cookies and site storage at any time. Doing that may sign you out and remove saved choices such as your radius, onboarding state and analytics preference, so Pindrizzle may ask you to choose again.</p>
       </section>
     </LegalPageShell>
   );
