@@ -31,7 +31,7 @@ export default function Phase23InstallEntry() {
 
   return createPortal(
     <button type="button" onClick={() => window.location.assign("/install")}>
-      <span><PingIcon name="install" /></span><div><strong>{installed ? "Ping is installed" : "Install Ping"}</strong><small>{installed ? "See installed-app details" : "Add Ping to your home screen or desktop"}</small></div><b><PingIcon name="chevron" size={16} /></b>
+      <span><PingIcon name="install" /></span><div><strong>{installed ? "Pindrizzle is installed" : "Install Pindrizzle"}</strong><small>{installed ? "See installed-app details" : "Add Pindrizzle to your home screen or desktop"}</small></div><b><PingIcon name="chevron" size={16} /></b>
     </button>,
     target,
   );
