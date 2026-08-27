@@ -60,7 +60,28 @@ function rewrite(value: string) {
 function isUserContent(element: Element | null) {
   if (!element) return false;
   return Boolean(element.closest(
-    "[data-ping-id] .ping-body,[data-ping-id] h1,[data-ping-id] h2,[data-ping-id] h3,.comment-body,.reply-body,.public-profile-bio,[data-user-content],input,textarea,[contenteditable='true']",
+    [
+      "[data-ping-id] .ping-body",
+      "[data-ping-id] h1",
+      "[data-ping-id] h2",
+      "[data-ping-id] h3",
+      ".detail-v3-sheet h1",
+      ".detail-v3-body",
+      ".detail-v3-photo",
+      ".my-pings-v3-card > h2",
+      ".my-pings-v3-card > p",
+      ".following-v3-main h2",
+      ".following-v3-main > p",
+      ".map-v3-card h2",
+      ".activity-copy > small",
+      ".comment-body",
+      ".reply-body",
+      ".public-profile-bio",
+      "[data-user-content]",
+      "input",
+      "textarea",
+      "[contenteditable='true']",
+    ].join(","),
   ));
 }
 
