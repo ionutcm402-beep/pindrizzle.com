@@ -40,6 +40,7 @@ import "./ping-internal-system.css";
 import "./ping-polish-system.css";
 import "./pindrizzle-brand.css";
 import "./pindrizzle-premium.css";
+import "./pindrizzle-premium-my-pins.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://pindrizzle.com"),
