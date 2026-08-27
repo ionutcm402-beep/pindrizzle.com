@@ -40,12 +40,23 @@ export default function Phase25PrimaryNavigationBridge() {
 
   const itemClass = (section: string) => `ping-global-nav-item${active === section ? " active" : ""}`;
 
+  const createPing = () => {
+    if (pathname === "/") {
+      const nativeCompose = document.querySelector<HTMLButtonElement>('nav[aria-label="Primary navigation"]:not([data-ping-global-nav="true"]) button[aria-label="Create a Ping"]');
+      if (nativeCompose) {
+        nativeCompose.click();
+        return;
+      }
+    }
+    window.location.assign("/#ping");
+  };
+
   return (
     <>
-      <a className="ping-global-compose" href="/#ping" aria-label="Create a Ping">
+      <button type="button" className="ping-global-compose" onClick={createPing} aria-label="Create a Ping">
         <PingIcon name="plus" size={18} />
         <span>Ping</span>
-      </a>
+      </button>
 
       <nav className="ping-global-nav" data-ping-global-nav="true" aria-label="Primary navigation">
         <a href="/" className={itemClass("feed")} aria-current={active === "feed" ? "page" : undefined}>
@@ -72,8 +83,7 @@ export default function Phase25PrimaryNavigationBridge() {
 
       <style jsx global>{`
         body[data-ping-global-nav-active="true"] nav[aria-label="Primary navigation"]:not([data-ping-global-nav="true"]){display:none!important}
-        body[data-ping-global-nav-active="true"] .screen-content,
-        body[data-ping-global-nav-active="true"] main{padding-bottom:max(104px,calc(92px + env(safe-area-inset-bottom)))}
+        body[data-ping-global-nav-active="true"] .screen-content{padding-bottom:max(104px,calc(92px + env(safe-area-inset-bottom)))}
 
         .ping-global-nav{
           position:fixed;
@@ -125,13 +135,14 @@ export default function Phase25PrimaryNavigationBridge() {
           justify-content:center;
           gap:8px;
           padding:0 17px;
+          border:0;
           border-radius:999px;
           background:var(--ping-ink);
           color:#fff;
-          text-decoration:none;
           box-shadow:0 12px 28px rgba(16,19,17,.18);
           font-size:11px;
           font-weight:780;
+          cursor:pointer;
         }
         .ping-global-compose svg{display:block}
         .ping-global-compose:active{transform:scale(.97)}
