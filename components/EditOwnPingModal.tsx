@@ -190,7 +190,7 @@ export default function EditOwnPingModal({ pingId, onClose, onSaved }: Props) {
           <label className="edit-ping-field">Details<textarea value={body} onChange={(event) => setBody(event.target.value)} maxLength={280} /></label>
           <label className="edit-ping-field">Expiry<select value={expiryHours} onChange={(event) => setExpiryHours(event.target.value)}><option value="">Keep current · {currentExpiryLabel(ping.expires_at)}</option>{expiryOptions.map((hours) => <option key={hours} value={hours}>{hours < 24 ? `${hours} hours from now` : `${hours / 24} ${hours === 24 ? "day" : "days"} from now`}</option>)}</select><small>Extensions are capped by the original maximum lifetime for this category.</small></label>
           <div className="edit-ping-location-note"><PingIcon name="location" size={14} /><span>The approximate location stays unchanged when you edit.</span></div>
-          <div className="edit-ping-photo-note"><PingIcon name="photo" size={14} /><span>Photo replacement is coming next; this edit does not change the current photo.</span></div>
+          <div className="edit-ping-photo-note"><PingIcon name="edit" size={14} /><span>Photo replacement is coming next; this edit does not change the current photo.</span></div>
           {error && <div className="edit-ping-error-box" role="alert">{error}</div>}
           <button type="button" className="edit-ping-save" onClick={() => void save()} disabled={!valid || saving}>{saving ? "Saving…" : "Save changes"}</button>
         </> : <div className="edit-ping-error-box">{error || "This Ping is not available for editing."}</div>}
