@@ -33,8 +33,9 @@ html,body{
 .brand span,.first-run-brand span{color:var(--ping-accent)}
 
 /* The visual wordmark is text; the supplied metallic/water artwork remains the logo/app icon. */
-.brand{font-size:0!important;letter-spacing:0!important}
+.brand{font-size:0!important;letter-spacing:0!important;display:inline-flex!important;flex-direction:column;align-items:flex-start}
 .brand::before{content:"Pindrizzle";font-size:30px;font-weight:800;line-height:.95;letter-spacing:-1.7px}
+.brand:not(.small)::after{content:"Drop in daily";margin-top:4px;color:var(--ping-accent-ink);font-size:7.5px;font-weight:820;line-height:1;letter-spacing:.16em;text-transform:uppercase;opacity:.72}
 .brand.small::before{font-size:25px}
 .first-run-brand{font-size:0!important}
 .first-run-brand::before{content:"Pindrizzle";font-size:28px;font-weight:820;letter-spacing:-1.3px}
@@ -90,4 +91,5 @@ html,body{
 @media (max-width:380px){
   .brand::before{font-size:27px}
   .brand.small::before{font-size:23px}
+  .brand:not(.small)::after{font-size:7px}
 }
