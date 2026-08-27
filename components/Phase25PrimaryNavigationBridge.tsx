@@ -72,7 +72,7 @@ export default function Phase25PrimaryNavigationBridge() {
     router.push(href);
   };
   const dropPin = () => router.push("/?compose=1#ping");
-  const showCompose = active !== "you" && !composerOpen;
+  const showCompose = (pathname === "/" || pathname === "/map") && !composerOpen;
 
   return <>
     {showCompose && <button type="button" className="ping-global-compose" onClick={dropPin} aria-label="Drop a pin"><PingIcon name="plus" size={18}/><span>Pin</span></button>}
