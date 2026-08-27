@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import PingIcon from "@/components/PingIcon";
 
 const APP_PATHS = new Set([
@@ -44,6 +44,7 @@ function sectionFor(pathname: string) {
 
 export default function Phase25PrimaryNavigationBridge() {
   const pathname = usePathname();
+  const router = useRouter();
   const visible = isAppPath(pathname);
   const active = sectionFor(pathname);
   const [composerOpen, setComposerOpen] = useState(false);
@@ -66,17 +67,21 @@ export default function Phase25PrimaryNavigationBridge() {
   if (!visible) return null;
 
   const itemClass = (section: string) => `ping-global-nav-item${active === section ? " active" : ""}`;
-  const createPing = () => window.location.assign("/?compose=1#ping");
+  const navigate = (event: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    event.preventDefault();
+    router.push(href);
+  };
+  const createPing = () => router.push("/?compose=1#ping");
   const showCompose = active !== "you" && !composerOpen;
 
   return <>
     {showCompose && <button type="button" className="ping-global-compose" onClick={createPing} aria-label="Create a Ping"><PingIcon name="plus" size={18}/><span>Ping</span></button>}
     {!composerOpen && <nav className="ping-global-nav" data-ping-global-nav="true" aria-label="Primary navigation">
-      <a href="/" className={itemClass("feed")} aria-current={active === "feed" ? "page" : undefined}><PingIcon name="feed" size={21}/><span>Feed</span></a>
-      <a href="/map" className={itemClass("map")} aria-current={active === "map" ? "page" : undefined}><PingIcon name="map" size={21}/><span>Map</span></a>
-      <a href="/my-pings" className={itemClass("mine")} aria-current={active === "mine" ? "page" : undefined}><PingIcon name="myPings" size={21}/><span>My Pings</span></a>
-      <a href="/alerts" className={itemClass("activity")} data-ping-nav-role="activity" aria-current={active === "activity" ? "page" : undefined}><PingIcon name="alerts" size={21}/><span>Activity</span></a>
-      <a href="/you" className={itemClass("you")} aria-current={active === "you" ? "page" : undefined}><PingIcon name="user" size={21}/><span>You</span></a>
+      <a href="/" onClick={(event) => navigate(event, "/")} className={itemClass("feed")} aria-current={active === "feed" ? "page" : undefined}><PingIcon name="feed" size={21}/><span>Feed</span></a>
+      <a href="/map" onClick={(event) => navigate(event, "/map")} className={itemClass("map")} aria-current={active === "map" ? "page" : undefined}><PingIcon name="map" size={21}/><span>Map</span></a>
+      <a href="/my-pings" onClick={(event) => navigate(event, "/my-pings")} className={itemClass("mine")} aria-current={active === "mine" ? "page" : undefined}><PingIcon name="myPings" size={21}/><span>My Pings</span></a>
+      <a href="/alerts" onClick={(event) => navigate(event, "/alerts")} className={itemClass("activity")} data-ping-nav-role="activity" aria-current={active === "activity" ? "page" : undefined}><PingIcon name="alerts" size={21}/><span>Activity</span></a>
+      <a href="/you" onClick={(event) => navigate(event, "/you")} className={itemClass("you")} aria-current={active === "you" ? "page" : undefined}><PingIcon name="user" size={21}/><span>You</span></a>
     </nav>}
     <style jsx global>{`
       body[data-ping-global-nav-active="true"] nav[aria-label="Primary navigation"]:not([data-ping-global-nav="true"]){display:none!important}
