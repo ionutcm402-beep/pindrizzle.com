@@ -56,7 +56,7 @@ export default function Phase22StorageChoice() {
     <aside className="phase22-storage-choice" aria-label="Browser storage choice">
       <div>
         <strong>Your privacy choice</strong>
-        <p>Ping uses necessary browser storage for sign-in and preferences. Optional product analytics stays off unless you allow it.</p>
+        <p>Pindrizzle uses necessary browser storage for sign-in and preferences. Optional product analytics stays off unless you allow it.</p>
         <a href="/cookies">Storage details</a>
       </div>
       <div className="phase22-storage-actions">
@@ -64,7 +64,7 @@ export default function Phase22StorageChoice() {
         <button type="button" className="allow" onClick={() => choose("allow")}>Allow analytics</button>
       </div>
       <style jsx global>{`
-        .phase22-storage-choice{position:fixed;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:390;width:min(calc(100% - 28px),430px);background:#172019;color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:16px;box-shadow:0 18px 55px rgba(10,18,12,.28);display:grid;gap:13px}.phase22-storage-choice strong{font-size:14px}.phase22-storage-choice p{margin:5px 0 7px;color:#d5ddd5;font-size:11px;line-height:1.45}.phase22-storage-choice a{color:#c8efc5;font-size:10px;font-weight:850;text-underline-offset:3px}.phase22-storage-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.phase22-storage-actions button{border:1px solid #5b695e;background:transparent;color:#fff;border-radius:13px;padding:11px 8px;font-size:11px;font-weight:900}.phase22-storage-actions button.allow{background:#59d951;color:#123214;border-color:#59d951}@media(max-width:520px){.phase22-storage-choice{bottom:max(12px,env(safe-area-inset-bottom));width:calc(100% - 20px)}}
+        .phase22-storage-choice{position:fixed;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:390;width:min(calc(100% - 28px),430px);background:linear-gradient(150deg,rgba(9,31,52,.98),rgba(13,48,72,.98));color:#f7fbff;border:1px solid rgba(124,211,246,.24);border-radius:22px;padding:15px 16px;box-shadow:0 20px 60px rgba(4,21,36,.34);display:grid;gap:12px;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}.phase22-storage-choice strong{font-size:14px;letter-spacing:-.01em}.phase22-storage-choice p{margin:5px 0 7px;color:#c7dbe8;font-size:11px;line-height:1.45}.phase22-storage-choice a{color:#7dd9f5;font-size:10px;font-weight:850;text-underline-offset:3px}.phase22-storage-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.phase22-storage-actions button{border:1px solid rgba(183,214,229,.34);background:rgba(255,255,255,.04);color:#f7fbff;border-radius:13px;padding:11px 8px;font-size:11px;font-weight:900}.phase22-storage-actions button.allow{background:linear-gradient(135deg,#1687b8,#1faac7);color:#fff;border-color:rgba(125,217,245,.44);box-shadow:0 8px 22px rgba(22,135,184,.2)}.phase22-storage-actions button:focus-visible{outline:3px solid rgba(125,217,245,.38);outline-offset:2px}@media(max-width:520px){.phase22-storage-choice{bottom:max(10px,env(safe-area-inset-bottom));width:calc(100% - 20px);border-radius:20px;padding:14px}.phase22-storage-choice p{font-size:10.5px}.phase22-storage-actions button{padding:10px 7px}}
       `}</style>
     </aside>
   );
