@@ -53,6 +53,7 @@ export function getPublicOperatorConfig(): PublicOperatorConfig {
 
 export function getLaunchReadiness(releaseStage: string | null) {
   const operator = getPublicOperatorConfig();
+  const stage = releaseStage === "public" ? "public" : "closed_beta";
   let stripeMode: "test" | "live" | "missing" = "missing";
   try {
     stripeMode = getPingStripe({ allowDisabledLive: true }).mode;
@@ -63,8 +64,11 @@ export function getLaunchReadiness(releaseStage: string | null) {
   const livePaymentsEnabled = flag("PING_LIVE_PAYMENTS_ENABLED");
   const stripeAccountReady = flag("PING_STRIPE_ACCOUNT_READY");
   const smtpReady = flag("PING_SMTP_READY");
+  const domainReady = flag("PING_DOMAIN_READY");
+  const authProductionReady = flag("PING_AUTH_PRODUCTION_READY");
   const legalReviewComplete = flag("PING_LEGAL_REVIEW_COMPLETE");
   const onlineSafetyReviewComplete = flag("PING_ONLINE_SAFETY_REVIEW_COMPLETE");
+  const customDomainConfigured = publicUrlReady(operator.publicUrl);
 
   const gates: LaunchGate[] = [
     { key: "operator_name", label: "Operator identity", ready: operator.operatorName.length >= 2, detail: operator.operatorName ? "Configured" : "Set PING_OPERATOR_NAME" },
@@ -73,15 +77,16 @@ export function getLaunchReadiness(releaseStage: string | null) {
     { key: "privacy_email", label: "Privacy contact", ready: emailReady(operator.privacyEmail), detail: emailReady(operator.privacyEmail) ? operator.privacyEmail : "Set a valid PING_PRIVACY_EMAIL" },
     { key: "safety_email", label: "Safety contact", ready: emailReady(operator.safetyEmail), detail: emailReady(operator.safetyEmail) ? operator.safetyEmail : "Set a valid PING_SAFETY_EMAIL" },
     { key: "governing_law", label: "Governing-law wording", ready: operator.governingLaw.length >= 4, detail: operator.governingLaw || "Set PING_GOVERNING_LAW after legal review" },
-    { key: "public_domain", label: "Custom HTTPS domain", ready: publicUrlReady(operator.publicUrl), detail: publicUrlReady(operator.publicUrl) ? operator.publicUrl : "Set PING_PUBLIC_URL to the final custom HTTPS domain" },
+    { key: "public_domain", label: "Custom HTTPS domain", ready: customDomainConfigured && domainReady, detail: !customDomainConfigured ? "Set PING_PUBLIC_URL to the final custom HTTPS domain" : domainReady ? `${operator.publicUrl} · DNS/HTTPS verified` : `${operator.publicUrl} configured · verify DNS/HTTPS, then set PING_DOMAIN_READY=true` },
     { key: "smtp", label: "Production auth email / SMTP", ready: smtpReady, detail: smtpReady ? "Operator confirmed tested" : "Configure and test custom SMTP, then set PING_SMTP_READY=true" },
+    { key: "auth_production", label: "Supabase Auth production redirects & templates", ready: authProductionReady, detail: authProductionReady ? "Production Site URL, redirect allowlist and Pindrizzle auth emails confirmed" : "Configure and smoke-test production Site URL, redirects and Pindrizzle auth templates, then set PING_AUTH_PRODUCTION_READY=true" },
     { key: "stripe_account", label: "Pindrizzle live Stripe identity", ready: stripeAccountReady && stripeMode === "live", detail: stripeMode !== "live" ? `Stripe mode: ${stripeMode}` : stripeAccountReady ? "Live Stripe account confirmed for Pindrizzle" : "Live key present, but PING_STRIPE_ACCOUNT_READY is not confirmed" },
     { key: "legal_review", label: "Final legal review", ready: legalReviewComplete, detail: legalReviewComplete ? "Operator confirmed complete" : "Set PING_LEGAL_REVIEW_COMPLETE=true only after final review" },
     { key: "online_safety", label: "Online Safety assessments & ownership", ready: onlineSafetyReviewComplete, detail: onlineSafetyReviewComplete ? "Operator confirmed complete" : "Set PING_ONLINE_SAFETY_REVIEW_COMPLETE=true after the required assessments/process ownership are complete" },
   ];
 
   const prerequisitesReady = gates.every((gate) => gate.ready);
-  const stage = releaseStage === "public" ? "public" : "closed_beta";
+  const paymentsLive = stage === "public" && stripeMode === "live" && livePaymentsEnabled;
 
   return {
     stage,
@@ -89,9 +94,9 @@ export function getLaunchReadiness(releaseStage: string | null) {
     livePaymentsEnabled,
     prerequisitesReady,
     publicAccessLive: stage === "public",
-    paymentsLive: stripeMode === "live" && livePaymentsEnabled,
+    paymentsLive,
     safeToOpenPublicAccess: prerequisitesReady && stage === "closed_beta",
-    safeToEnableLivePayments: prerequisitesReady && stripeMode === "live" && !livePaymentsEnabled,
+    safeToEnableLivePayments: prerequisitesReady && stage === "public" && stripeMode === "live" && !livePaymentsEnabled,
     operator,
     gates,
   };
