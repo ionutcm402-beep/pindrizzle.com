@@ -177,11 +177,11 @@ export default function PasswordAuthOverlay() {
           const identities = data.user?.identities;
           if (Array.isArray(identities) && identities.length === 0) {
             try { localStorage.removeItem("ping-beta-pending-invite"); } catch {}
-            setMessage("This email already has a Ping account. Choose Sign in and use your password.");
+            setMessage("This email already has a Pindrizzle account. Choose Sign in and use your password.");
           } else if (isClosedBeta) {
-            setMessage("Check your email to confirm your new Ping account. Your beta invite will activate when you return and sign in on this browser.");
+            setMessage("Check your email to confirm your new Pindrizzle account. Your beta invite will activate when you return and sign in on this browser.");
           } else {
-            setMessage("Check your email to confirm your new Ping account, then return here to sign in.");
+            setMessage("Check your email to confirm your new Pindrizzle account, then return here to sign in.");
           }
         }
       } else {
@@ -192,7 +192,7 @@ export default function PasswordAuthOverlay() {
     } catch (error) {
       const text = error instanceof Error ? error.message : "Authentication failed.";
       if (/invalid login credentials/i.test(text)) setMessage("Email or password is incorrect. Use Forgot password? if you need to reset it.");
-      else if (/already registered|already exists/i.test(text)) setMessage("This email already has a Ping account. Choose Sign in instead.");
+      else if (/already registered|already exists/i.test(text)) setMessage("This email already has a Pindrizzle account. Choose Sign in instead.");
       else if (/rate limit|too many requests|429/i.test(text)) setMessage("Email delivery is temporarily rate-limited. Normal password sign-in still works without sending an email.");
       else setMessage(text);
     } finally {
@@ -212,17 +212,17 @@ export default function PasswordAuthOverlay() {
   };
 
   if (!open) return null;
-  const heading = mode === "signup" ? (isClosedBeta ? "Join the Ping closed beta." : "Create your Ping account.") : mode === "recovery" ? "Reset your password." : "Welcome back.";
+  const heading = mode === "signup" ? (isClosedBeta ? "Join the Pindrizzle closed beta." : "Create your Pindrizzle account.") : mode === "recovery" ? "Reset your password." : "Welcome back.";
   const signupCopy = isClosedBeta
-    ? "New accounts currently need a beta invite. Ping accounts are for people aged 13 or over, and your email is never shown publicly."
-    : "Create an account to post, confirm, reply and follow useful local updates. Ping accounts are for people aged 13 or over, and your email is never shown publicly.";
+    ? "New accounts currently need a beta invite. Pindrizzle accounts are for people aged 13 or over, and your email is never shown publicly."
+    : "Create an account to post, confirm, reply and follow useful local updates. Pindrizzle accounts are for people aged 13 or over, and your email is never shown publicly.";
 
   return (
     <>
       <div className="password-auth-backdrop" role="dialog" aria-modal="true" aria-labelledby="password-auth-title">
         <section className="password-auth-sheet" ref={sheetRef}>
           <div className="password-auth-handle" aria-hidden="true" />
-          <div className="password-auth-header"><button type="button" onClick={close} disabled={busy}>Cancel</button><strong>Ping</strong><span /></div>
+          <div className="password-auth-header"><button type="button" onClick={close} disabled={busy}>Cancel</button><strong>Pindrizzle</strong><span /></div>
           {(mode === "signin" || mode === "signup") && <div className="password-auth-tabs" aria-label="Account mode"><button type="button" aria-pressed={mode === "signin"} className={mode === "signin" ? "active" : ""} onClick={() => switchMode("signin")}>Sign in</button><button type="button" aria-pressed={mode === "signup"} className={mode === "signup" ? "active" : ""} onClick={() => switchMode("signup")}>Sign up</button></div>}
 
           <h2 id="password-auth-title">{heading}</h2>
