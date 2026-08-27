@@ -93,12 +93,12 @@ export default function Phase24BetaBridge() {
       {entry}
       {releaseStage === "closed_beta" && signedIn && state && !state.has_access && pathname !== "/beta" && !composerOpen && (
         <div className="phase24-beta-banner" role="status">
-          <div><strong>Ping is in closed beta.</strong><span>Your account can browse, but participation needs an invite.</span></div>
+          <div><strong>Pindrizzle is in closed beta.</strong><span>Your account can browse, but participation needs an invite.</span></div>
           <a href={`/beta?from=${encodeURIComponent(pathname)}`}>Enter invite</a>
         </div>
       )}
       <style jsx global>{`
-        .phase24-beta-banner{position:fixed;z-index:180;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(calc(100% - 24px),430px);display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;border:1px solid #d7e6d3;border-radius:16px;background:rgba(248,250,245,.97);box-shadow:0 14px 38px rgba(25,36,27,.17);backdrop-filter:blur(10px)}.phase24-beta-banner strong,.phase24-beta-banner span{display:block}.phase24-beta-banner strong{font-size:10px;color:#234827}.phase24-beta-banner span{font-size:9px;color:#6d786f;margin-top:2px}.phase24-beta-banner a{flex:0 0 auto;border-radius:11px;background:#183924;color:#fff;text-decoration:none;padding:10px 11px;font-size:9px;font-weight:900}@media(max-width:360px){.phase24-beta-banner span{display:none}}
+        .phase24-beta-banner{position:fixed;z-index:180;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(calc(100% - 24px),430px);display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;border:1px solid rgba(66,171,213,.24);border-radius:16px;background:rgba(244,251,254,.97);box-shadow:0 14px 38px rgba(18,53,72,.18);backdrop-filter:blur(10px)}.phase24-beta-banner strong,.phase24-beta-banner span{display:block}.phase24-beta-banner strong{font-size:10px;color:#10364d}.phase24-beta-banner span{font-size:9px;color:#617987;margin-top:2px}.phase24-beta-banner a{flex:0 0 auto;border-radius:11px;background:#0e3850;color:#fff;text-decoration:none;padding:10px 11px;font-size:9px;font-weight:900}@media(max-width:360px){.phase24-beta-banner span{display:none}}
       `}</style>
     </>
   );
