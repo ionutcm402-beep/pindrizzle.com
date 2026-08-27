@@ -106,7 +106,7 @@ export default function LaunchReadinessPage() {
                   <li>Resolve every blocked prerequisite above and run final signup/reset/payment smoke tests.</li>
                   <li>Merge Phase 25 only after explicit approval and verify the production build.</li>
                   <li>Set the Supabase release stage from <b>closed_beta</b> to <b>public</b>.</li>
-                  <li>Enable <b>PING_LIVE_PAYMENTS_ENABLED=true</b> only after the correct Ping live Stripe key/webhook are deployed and verified.</li>
+                  <li>Enable <b>PING_LIVE_PAYMENTS_ENABLED=true</b> only after the correct Pindrizzle live Stripe key/webhook are deployed and verified.</li>
                   <li>Re-open this dashboard and confirm Public access and Payments both show LIVE.</li>
                 </ol>
                 <p><b>Rollback:</b> switch release stage back to closed beta and disable live payments first. Do not delete payment records or undo completed Stripe events.</p>
@@ -114,7 +114,7 @@ export default function LaunchReadinessPage() {
 
               <section className="legal-card legal-warning">
                 <h2>No bypass button by design</h2>
-                <p>Ping deliberately has no “Launch anyway” control here. The final release requires operator/account configuration outside the app, followed by an explicit controlled switch.</p>
+                <p>Pindrizzle deliberately has no “Launch anyway” control here. The final release requires operator/account configuration outside the app, followed by an explicit controlled switch.</p>
               </section>
             </>
           )}
