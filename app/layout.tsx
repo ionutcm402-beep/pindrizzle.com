@@ -39,6 +39,7 @@ import "./ping-utility-system.css";
 import "./ping-internal-system.css";
 import "./ping-polish-system.css";
 import "./pindrizzle-brand.css";
+import "./pindrizzle-premium.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://pindrizzle.com"),
@@ -67,7 +68,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#edf7fb",
+  themeColor: "#eef8fb",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
