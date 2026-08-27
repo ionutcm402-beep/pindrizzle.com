@@ -14,7 +14,7 @@ type Campaign = {
   duration_hours: number;
   quoted_price_pence: number | null;
   currency: string;
-  payment_status: "unpaid" | "paid" | "refunded" | "waived";
+  payment_status: "unpaid" | "paid" | "refunded" | "disputed" | "waived";
   requested_at: string;
   approved_at: string | null;
   paid_at: string | null;
@@ -60,6 +60,8 @@ function timeLeft(minutes: number) {
 }
 
 function statusLabel(status: CampaignStatus, paymentStatus: Campaign["payment_status"]) {
+  if (paymentStatus === "disputed") return "Payment disputed";
+  if (paymentStatus === "refunded") return "Refunded";
   if (status === "active") return "Live now";
   if (status === "pending") return "In review";
   if (status === "approved" && paymentStatus === "unpaid") return "Ready to pay";
@@ -68,6 +70,14 @@ function statusLabel(status: CampaignStatus, paymentStatus: Campaign["payment_st
   if (status === "ended") return "Ended";
   if (status === "paused") return "Paused";
   return "Draft";
+}
+
+function paymentLabel(status: Campaign["payment_status"]) {
+  if (status === "paid") return "Paid";
+  if (status === "waived") return "Waived";
+  if (status === "refunded") return "Refunded";
+  if (status === "disputed") return "Disputed";
+  return "Price";
 }
 
 export default function BusinessPage() {
@@ -145,7 +155,7 @@ export default function BusinessPage() {
     return true;
   }), [rows, filter]);
 
-  const openAuth = () => window.dispatchEvent(new CustomEvent("ping:auth-needed", { detail: { message: "Sign in to manage your promoted Pings." } }));
+  const openAuth = () => window.dispatchEvent(new CustomEvent("ping:auth-needed", { detail: { message: "Sign in to manage your promoted pins." } }));
   const openPing = (pingId: string) => window.dispatchEvent(new CustomEvent("ping:open-detail", { detail: { id: pingId, live: true } }));
 
   return (
@@ -154,7 +164,7 @@ export default function BusinessPage() {
         <main className="phase18-business-screen">
           <header className="phase18-business-header">
             <a href="/you" aria-label="Back to You">‹</a>
-            <div><div className="brand small">ping<span>.</span></div><h1>Promoter dashboard</h1></div>
+            <div><div className="brand small">Pindrizzle</div><h1>Promoter dashboard</h1></div>
           </header>
 
           <section className="phase18-business-intro">
@@ -163,7 +173,7 @@ export default function BusinessPage() {
           </section>
 
           {!loading && signedIn === false ? (
-            <section className="phase18-empty"><h2>Sign in to manage promotions.</h2><p>Your campaign history and performance stay tied to your Ping account.</p><button type="button" onClick={openAuth}>Sign in / Sign up</button></section>
+            <section className="phase18-empty"><h2>Sign in to manage promotions.</h2><p>Your campaign history and performance stay tied to your Pindrizzle account.</p><button type="button" onClick={openAuth}>Sign in / Sign up</button></section>
           ) : loading ? (
             <section className="phase18-empty"><h2>Loading campaigns…</h2></section>
           ) : (
@@ -176,8 +186,8 @@ export default function BusinessPage() {
               </section>
 
               <section className="phase18-actions">
-                <a href="/promote">+ Promote another Ping</a>
-                <small>{email}</small>
+                <a href="/promote">+ Promote another pin</a>
+                <small data-user-content>{email}</small>
               </section>
 
               {message && <div className="phase18-message">{message}</div>}
@@ -198,13 +208,13 @@ export default function BusinessPage() {
                         <span className={`phase18-status status-${campaign.status}`}>{statusLabel(campaign.status, campaign.payment_status)}</span>
                         <small>Requested {relativeTime(campaign.requested_at)}</small>
                       </div>
-                      <h2>{campaign.ping_title}</h2>
-                      <p className="phase18-sponsor">Promoted as <strong>{campaign.sponsor_name}</strong></p>
+                      <h2 data-user-content>{campaign.ping_title}</h2>
+                      <p className="phase18-sponsor">Promoted as <strong data-user-content>{campaign.sponsor_name}</strong></p>
 
                       <div className="phase18-commercial">
                         <div><strong>{radiusLabel(campaign.target_radius_meters)}</strong><span>Radius</span></div>
                         <div><strong>{campaign.duration_hours}h</strong><span>Duration</span></div>
-                        <div><strong>{money(campaign.quoted_price_pence)}</strong><span>{campaign.payment_status === "paid" ? "Paid" : campaign.payment_status === "waived" ? "Waived" : "Price"}</span></div>
+                        <div><strong>{money(campaign.quoted_price_pence)}</strong><span>{paymentLabel(campaign.payment_status)}</span></div>
                       </div>
 
                       {campaign.status === "active" && (
@@ -213,22 +223,22 @@ export default function BusinessPage() {
 
                       <div className="phase18-performance">
                         <div><strong>{campaign.impression_sessions}</strong><span>Card sessions</span></div>
-                        <div><strong>{campaign.open_sessions}</strong><span>Ping opens</span></div>
+                        <div><strong>{campaign.open_sessions}</strong><span>Pin opens</span></div>
                         <div><strong>{openRate}%</strong><span>Open rate</span></div>
                         <div><strong>+{campaign.confirmation_gain}</strong><span>Confirms</span></div>
                         <div><strong>+{campaign.reply_gain}</strong><span>Replies</span></div>
                       </div>
 
                       <small className="phase18-method">Sessions are counted once per campaign per browser session. No IP, GPS history or cross-campaign viewer profile is stored.</small>
-                      {campaign.review_notes && <div className="phase18-review-note"><strong>Review note</strong><span>{campaign.review_notes}</span></div>}
+                      {campaign.review_notes && <div className="phase18-review-note"><strong>Review note</strong><span data-user-content>{campaign.review_notes}</span></div>}
 
                       <div className="phase18-card-actions">
-                        <button type="button" onClick={() => openPing(campaign.ping_id)}>View Ping</button>
+                        <button type="button" onClick={() => openPing(campaign.ping_id)}>View pin</button>
                         {campaign.status === "approved" && campaign.payment_status === "unpaid" ? <a href="/promote">Complete payment →</a> : <a href="/promote">Promote another →</a>}
                       </div>
                     </article>
                   );
-                }) : <div className="phase18-no-campaigns"><strong>{rows.length ? "No campaigns in this view." : "No promotion history yet."}</strong><p>Promote a useful local Ping to start building campaign history.</p><a href="/promote">Promote a Ping →</a></div>}
+                }) : <div className="phase18-no-campaigns"><strong>{rows.length ? "No campaigns in this view." : "No promotion history yet."}</strong><p>Promote a useful local pin to start building campaign history.</p><a href="/promote">Promote a pin →</a></div>}
               </section>
             </>
           )}
@@ -237,8 +247,8 @@ export default function BusinessPage() {
         <nav className="bottom-nav" aria-label="Primary navigation">
           <a href="/"><span>⌂</span>Feed</a>
           <a href="/map"><span>⌖</span>Map</a>
-          <a href="/#ping" className="compose-nav"><span>+</span>Ping</a>
-          <a href="/alerts"><span>♢</span>Alerts</a>
+          <a href="/#ping" className="compose-nav"><span>+</span>Pin</a>
+          <a href="/alerts"><span>♢</span>Activity</a>
           <a href="/you" className="active"><span>○</span>You</a>
         </nav>
       </div>
