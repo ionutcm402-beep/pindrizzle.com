@@ -58,7 +58,7 @@ function groupPings(pings: MapPing[]) {
   return Array.from(groups.values());
 }
 
-export default function LivePingMap({ center, radiusMiles, pings, selectedId, onSelect }: Props) {
+export default function LivePingMap({ center, radiusMiles, pings }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const maplibreRef = useRef<any>(null);
   const mapRef = useRef<any>(null);
@@ -129,14 +129,17 @@ export default function LivePingMap({ center, radiusMiles, pings, selectedId, on
     const groups = groupPings(pings);
     markersRef.current = groups.map((group) => {
       const representative = group[0];
-      const selected = group.some((ping) => ping.id === selectedId);
-      const isPricePin = group.length === 1 && representative.categoryKey === "marketplace" && Boolean(representative.priceLabel);
+      const isCluster = group.length > 1;
+      const isPricePin = !isCluster && representative.categoryKey === "marketplace" && Boolean(representative.priceLabel);
+      const avgLat = group.reduce((sum, ping) => sum + ping.lat, 0) / group.length;
+      const avgLng = group.reduce((sum, ping) => sum + ping.lng, 0) / group.length;
       const button = document.createElement("button");
       button.type = "button";
-      button.className = `ping-map-pin ping-map-pin-${representative.categoryKey}${selected ? " selected" : ""}${group.length > 1 ? " cluster" : ""}${isPricePin ? " price" : ""}`;
-      button.setAttribute("aria-label", group.length > 1 ? `${group.length} nearby Pings` : `${representative.category}: ${representative.title}${representative.priceLabel ? `, ${representative.priceLabel}` : ""}`);
-      button.title = group.length > 1 ? `${group.length} nearby Pings` : representative.title;
-      button.innerHTML = group.length > 1
+      button.className = `ping-map-pin ping-map-pin-${representative.categoryKey}${isCluster ? " cluster" : ""}${isPricePin ? " price" : ""}`;
+      button.setAttribute("aria-label", isCluster ? `${group.length} nearby pins. Zoom in to separate them.` : `${representative.category}: ${representative.title}${representative.priceLabel ? `, ${representative.priceLabel}` : ""}`);
+      button.dataset.pingTitle = isCluster ? `${group.length} pins nearby` : representative.title;
+      if (!isCluster) button.dataset.userContent = "true";
+      button.innerHTML = isCluster
         ? `<span class="ping-map-pin-head"><b>${group.length}</b></span><span class="ping-map-pin-tail"></span>`
         : isPricePin
           ? `<span class="ping-map-price-head"><b></b></span><span class="ping-map-price-tail"></span>`
@@ -145,24 +148,31 @@ export default function LivePingMap({ center, radiusMiles, pings, selectedId, on
         const price = button.querySelector(".ping-map-price-head b");
         if (price) price.textContent = representative.priceLabel || "";
       }
-      button.addEventListener("click", () => onSelect(selected ? (group.find((ping) => ping.id !== selectedId)?.id || representative.id) : representative.id));
-      const avgLat = group.reduce((sum, ping) => sum + ping.lat, 0) / group.length;
-      const avgLng = group.reduce((sum, ping) => sum + ping.lng, 0) / group.length;
+      button.addEventListener("click", () => {
+        if (isCluster) {
+          map.easeTo({ center: [avgLng, avgLat], zoom: Math.min(map.getZoom() + 2, 17), duration: 360 });
+          return;
+        }
+        window.location.assign(`/#ping=${encodeURIComponent(representative.id)}`);
+      });
       return new maplibre.Marker({ element: button, anchor: "bottom" }).setLngLat([avgLng, avgLat]).addTo(map);
     });
     return () => { markersRef.current.forEach((marker) => marker.remove()); markersRef.current = []; };
-  }, [pings, selectedId, onSelect, mapReady]);
+  }, [pings, mapReady]);
 
   return (
     <>
-      <div ref={containerRef} className="live-ping-map" aria-label="Map of nearby Pings" />
+      <div ref={containerRef} className="live-ping-map" aria-label="Map of nearby pins" />
       {!mapReady && !mapError && <div className="live-map-starting" role="status">Loading map…</div>}
       {mapError && <div className="live-map-error" role="status"><strong>Map couldn’t load</strong><span>{mapError}</span></div>}
       <style jsx global>{`
+        .map-v3-card{display:none!important}
         .live-ping-map{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;background:#e9ece7}.live-map-starting{position:absolute;z-index:35;left:14px;top:150px;padding:8px 11px;border:1px solid rgba(16,19,17,.09);border-radius:999px;background:rgba(255,255,255,.9);color:#555b57;font-size:10px;font-weight:650;box-shadow:0 8px 24px rgba(17,22,18,.06);backdrop-filter:blur(16px)}.live-map-error{position:absolute;z-index:40;left:14px;right:14px;top:150px;padding:14px 15px;border:1px solid rgba(16,19,17,.10);border-radius:16px;background:rgba(255,255,255,.94);color:#101311;box-shadow:0 12px 34px rgba(17,22,18,.08);display:grid;gap:4px}.live-map-error strong{font-size:13px}.live-map-error span{font-size:10px;color:#727873;line-height:1.45}
         .ping-user-marker{width:14px;height:14px;border:3px solid #fff;border-radius:50%;background:#3c83f6;box-shadow:0 0 0 6px rgba(60,131,246,.15),0 3px 10px rgba(42,86,158,.22)}
-        .ping-map-pin{--pin:#46d66f;position:relative;width:36px!important;height:44px!important;min-width:36px!important;min-height:44px!important;border:0!important;background:transparent!important;padding:0!important;cursor:pointer;filter:drop-shadow(0 5px 7px rgba(16,25,18,.18));transform-origin:50% 100%;transition:transform .16s ease}.ping-map-pin-head{position:absolute;top:0;left:2px;width:32px;height:32px;display:grid;place-items:center;border:2px solid #fff;border-radius:50%;background:var(--pin);color:#fff}.ping-map-pin-head svg{width:16px;height:16px}.ping-map-pin-head b{font-size:11px;color:#fff}.ping-map-pin-tail{position:absolute;left:14px;top:27px;width:8px;height:12px;background:var(--pin);clip-path:polygon(0 0,100% 0,50% 100%)}.ping-map-pin-alert{--pin:#e8554f}.ping-map-pin-traffic{--pin:#d86b43}.ping-map-pin-lost_found{--pin:#b16b9b}.ping-map-pin-free{--pin:#31a955}.ping-map-pin-help{--pin:#34865a}.ping-map-pin-deals{--pin:#b68b22}.ping-map-pin-marketplace{--pin:#202722}.ping-map-pin-parking{--pin:#556cc4}.ping-map-pin-events{--pin:#7c65bf}.ping-map-pin-outages{--pin:#cf7b26}.ping-map-pin-local{--pin:#3c83f6}.ping-map-pin.cluster{--pin:#202722}.ping-map-pin.selected{transform:scale(1.22);z-index:5!important}.ping-map-pin.selected .ping-map-pin-head{box-shadow:0 0 0 4px rgba(255,255,255,.7)}.ping-map-pin:focus-visible{outline:3px solid #1769d2!important;outline-offset:4px!important}
-        .ping-map-pin.price{width:auto!important;min-width:52px!important;height:42px!important;min-height:42px!important;filter:drop-shadow(0 5px 8px rgba(16,25,18,.22))}.ping-map-price-head{position:relative;z-index:2;display:flex;align-items:center;justify-content:center;min-width:52px;height:31px;padding:0 9px;border:2px solid #fff;border-radius:999px;background:#202722;color:#fff;white-space:nowrap}.ping-map-price-head b{font-size:10px;font-weight:850;letter-spacing:-.02em}.ping-map-price-tail{position:absolute;z-index:1;left:50%;top:27px;width:9px;height:11px;transform:translateX(-50%);background:#202722;clip-path:polygon(0 0,100% 0,50% 100%)}.ping-map-pin.price.selected .ping-map-price-head{box-shadow:0 0 0 4px rgba(255,255,255,.72)}
+        .ping-map-pin{--pin:#46d66f;position:relative;width:36px!important;height:44px!important;min-width:36px!important;min-height:44px!important;border:0!important;background:transparent!important;padding:0!important;cursor:pointer;filter:drop-shadow(0 5px 7px rgba(16,25,18,.18));transform-origin:50% 100%;transition:transform .16s ease,filter .16s ease;overflow:visible!important}.ping-map-pin-head{position:absolute;top:0;left:2px;width:32px;height:32px;display:grid;place-items:center;border:2px solid #fff;border-radius:50%;background:var(--pin);color:#fff}.ping-map-pin-head svg{width:16px;height:16px}.ping-map-pin-head b{font-size:11px;color:#fff}.ping-map-pin-tail{position:absolute;left:14px;top:27px;width:8px;height:12px;background:var(--pin);clip-path:polygon(0 0,100% 0,50% 100%)}.ping-map-pin-alert{--pin:#e8554f}.ping-map-pin-traffic{--pin:#d86b43}.ping-map-pin-lost_found{--pin:#b16b9b}.ping-map-pin-free{--pin:#31a955}.ping-map-pin-help{--pin:#34865a}.ping-map-pin-deals{--pin:#b68b22}.ping-map-pin-marketplace{--pin:#202722}.ping-map-pin-parking{--pin:#556cc4}.ping-map-pin-events{--pin:#7c65bf}.ping-map-pin-outages{--pin:#cf7b26}.ping-map-pin-local{--pin:#3c83f6}.ping-map-pin.cluster{--pin:#202722}.ping-map-pin:focus-visible{outline:3px solid #1769d2!important;outline-offset:4px!important}.ping-map-pin:hover,.ping-map-pin:focus-visible{transform:scale(1.16);z-index:8!important;filter:drop-shadow(0 8px 12px rgba(16,25,18,.24))}
+        .ping-map-pin::after{content:attr(data-ping-title);position:absolute;z-index:12;left:50%;bottom:48px;max-width:190px;min-width:max-content;padding:7px 9px;border:1px solid rgba(12,45,64,.08);border-radius:9px;background:rgba(255,255,255,.96);color:#15384d;box-shadow:0 8px 22px rgba(6,38,61,.14);font-size:9px;font-weight:760;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;pointer-events:none;transform:translate(-50%,5px) scale(.96);transition:opacity .14s ease,transform .14s ease}.ping-map-pin:hover::after,.ping-map-pin:focus-visible::after{opacity:1;transform:translate(-50%,0) scale(1)}
+        .ping-map-pin.price{width:auto!important;min-width:52px!important;height:42px!important;min-height:42px!important;filter:drop-shadow(0 5px 8px rgba(16,25,18,.22))}.ping-map-price-head{position:relative;z-index:2;display:flex;align-items:center;justify-content:center;min-width:52px;height:31px;padding:0 9px;border:2px solid #fff;border-radius:999px;background:#202722;color:#fff;white-space:nowrap}.ping-map-price-head b{font-size:10px;font-weight:850;letter-spacing:-.02em}.ping-map-price-tail{position:absolute;z-index:1;left:50%;top:27px;width:9px;height:11px;transform:translateX(-50%);background:#202722;clip-path:polygon(0 0,100% 0,50% 100%)}
+        @media (hover:none){.ping-map-pin::after{display:none}}
       `}</style>
     </>
   );
