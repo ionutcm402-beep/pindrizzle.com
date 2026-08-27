@@ -14,11 +14,15 @@ export default function Phase25LocationChoiceBridge() {
   const [coordinates, setCoordinates] = useState<PingPickerCoordinates | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const modeRef = useRef<LocationPrecision>("approximate");
-  const coordinatesRef = useRef<PingPickerCoordinates | null>(null);
-  const composerActiveRef = useRef(false);
 
   modeRef.current = mode;
-  coordinatesRef.current = coordinates;
+
+  useEffect(() => {
+    window.__pingLocationPublishChoice = { active: Boolean(host), precision: mode, coordinates };
+    return () => {
+      if (window.__pingLocationPublishChoice?.precision === mode) window.__pingLocationPublishChoice = undefined;
+    };
+  }, [host, mode, coordinates]);
 
   useEffect(() => {
     let currentSheet: HTMLElement | null = null;
@@ -47,7 +51,6 @@ export default function Phase25LocationChoiceBridge() {
       if (!sheet) {
         if (currentSheet) {
           currentSheet = null;
-          composerActiveRef.current = false;
           setHost(null);
           setPickerOpen(false);
         }
@@ -60,7 +63,6 @@ export default function Phase25LocationChoiceBridge() {
       }
 
       currentSheet = sheet;
-      composerActiveRef.current = true;
       modeRef.current = "approximate";
       setMode("approximate");
       setPickerOpen(false);
@@ -96,43 +98,6 @@ export default function Phase25LocationChoiceBridge() {
       ? "Exact location: this selected point will be visible to everyone who can see this Ping."
       : "Private location: Ping publishes an approximate nearby area, not this exact point.";
   }, [mode]);
-
-  useEffect(() => {
-    const originalFetch = window.fetch.bind(window);
-    const wrappedFetch: typeof window.fetch = async (input, init) => {
-      const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
-      if (!composerActiveRef.current || !url.includes("/rest/v1/rpc/create_ping_v3")) {
-        return originalFetch(input, init);
-      }
-
-      try {
-        let bodyText = typeof init?.body === "string" ? init.body : "";
-        if (!bodyText && input instanceof Request) bodyText = await input.clone().text();
-        if (!bodyText) return originalFetch(input, init);
-        const body = JSON.parse(bodyText) as Record<string, unknown>;
-        body.ping_location_precision = modeRef.current;
-        if (coordinatesRef.current) {
-          body.ping_lat = coordinatesRef.current.lat;
-          body.ping_lng = coordinatesRef.current.lng;
-        }
-        const nextUrl = url.replace("/rest/v1/rpc/create_ping_v3", "/rest/v1/rpc/create_ping_v4");
-        const nextInit = { ...init, body: JSON.stringify(body) };
-        if (input instanceof Request) {
-          const nextRequest = new Request(nextUrl, input);
-          return originalFetch(nextRequest, nextInit);
-        }
-        return originalFetch(nextUrl, nextInit);
-      } catch (error) {
-        console.error("Ping location choice bridge could not prepare publish request", error);
-        return originalFetch(input, init);
-      }
-    };
-
-    window.fetch = wrappedFetch;
-    return () => {
-      if (window.fetch === wrappedFetch) window.fetch = originalFetch;
-    };
-  }, []);
 
   if (!host) return null;
 
