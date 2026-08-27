@@ -57,9 +57,10 @@ export default function Phase25PrimaryNavigationBridge() {
 
   const itemClass = (section: string) => `ping-global-nav-item${active === section ? " active" : ""}`;
   const createPing = () => window.location.assign("/?compose=1#ping");
+  const showCompose = active !== "you";
 
   return <>
-    <button type="button" className="ping-global-compose" onClick={createPing} aria-label="Create a Ping"><PingIcon name="plus" size={18}/><span>Ping</span></button>
+    {showCompose && <button type="button" className="ping-global-compose" onClick={createPing} aria-label="Create a Ping"><PingIcon name="plus" size={18}/><span>Ping</span></button>}
     <nav className="ping-global-nav" data-ping-global-nav="true" aria-label="Primary navigation">
       <a href="/" className={itemClass("feed")} aria-current={active === "feed" ? "page" : undefined}><PingIcon name="feed" size={21}/><span>Feed</span></a>
       <a href="/map" className={itemClass("map")} aria-current={active === "map" ? "page" : undefined}><PingIcon name="map" size={21}/><span>Map</span></a>
