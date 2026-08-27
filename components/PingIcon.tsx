@@ -7,6 +7,7 @@ export type PingIconName =
   | "promote" | "beta" | "moderation" | "review" | "signout"
   | "alert" | "traffic" | "lostFound" | "free" | "help" | "local"
   | "deals" | "parking" | "events" | "outages" | "business"
+  | "marketplace" | "property" | "vehicle" | "link"
   | "check" | "remove" | "clock" | "replies" | "confirmations" | "chevron" | "more";
 
 type Props = SVGProps<SVGSVGElement> & { name: PingIconName; size?: number };
@@ -55,6 +56,10 @@ export default function PingIcon({ name, size = 20, ...props }: Props) {
     case "events": content = <><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M7 3v4M17 3v4M3.5 10h17"/><path d="m12 13 .9 1.8 2 .3-1.45 1.4.34 2-1.79-.95-1.79.95.34-2-1.45-1.4 2-.3Z"/></>; break;
     case "outages": content = <><path d="m13 2-7 11h6l-1 9 7-12h-6l1-8Z"/><path d="M3 20h4M17 20h4"/></>; break;
     case "business": content = <><path d="M4 9h16l-1-5H5L4 9Z"/><path d="M5 9v11h14V9M9 20v-6h6v6"/><path d="M4 9c0 2 3 2 4 0 1 2 3 2 4 0 1 2 3 2 4 0 1 2 4 2 4 0"/></>; break;
+    case "marketplace": content = <><path d="M4 8.5 12 4l8 4.5v10.5H4V8.5Z"/><path d="M8 19v-6h8v6M3 21h18"/><path d="M7 8h10"/></>; break;
+    case "property": content = <><path d="m3 11 9-7 9 7"/><path d="M5.5 9.5V20h13V9.5M9 20v-6h6v6"/></>; break;
+    case "vehicle": content = <><path d="M4 15h16l-1.5-6h-13L4 15Z"/><path d="m7 9 1.5-4h7L17 9"/><circle cx="7" cy="17.5" r="1.5"/><circle cx="17" cy="17.5" r="1.5"/></>; break;
+    case "link": content = <><path d="M10 13a4 4 0 0 0 5.7.1l2.2-2.2a4 4 0 0 0-5.7-5.7L11 6.4"/><path d="M14 11a4 4 0 0 0-5.7-.1l-2.2 2.2a4 4 0 0 0 5.7 5.7l1.2-1.2"/></>; break;
     case "check": content = <><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></>; break;
     case "remove": content = <><path d="M4 7h16M9 7V4h6v3M7 7l1 14h8l1-14M10 11v6M14 11v6"/></>; break;
     case "clock": content = <><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></>; break;
