@@ -15,6 +15,7 @@ export default function Phase24BetaBridge() {
   const [signedIn, setSignedIn] = useState(false);
   const [state, setState] = useState<BetaState | null>(null);
   const [target, setTarget] = useState<Element | null>(null);
+  const [composerOpen, setComposerOpen] = useState(false);
 
   const refresh = useCallback(async () => {
     const supabase = createClient();
@@ -64,6 +65,14 @@ export default function Phase24BetaBridge() {
   }, [refresh]);
 
   useEffect(() => {
+    const sync = () => setComposerOpen(Boolean(document.querySelector(".composer-backdrop")));
+    sync();
+    const observer = new MutationObserver(sync);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [pathname]);
+
+  useEffect(() => {
     if (pathname !== "/you" || releaseStage !== "closed_beta") {
       setTarget(null);
       return;
@@ -82,7 +91,7 @@ export default function Phase24BetaBridge() {
   return (
     <>
       {entry}
-      {releaseStage === "closed_beta" && signedIn && state && !state.has_access && pathname !== "/beta" && (
+      {releaseStage === "closed_beta" && signedIn && state && !state.has_access && pathname !== "/beta" && !composerOpen && (
         <div className="phase24-beta-banner" role="status">
           <div><strong>Ping is in closed beta.</strong><span>Your account can browse, but participation needs an invite.</span></div>
           <a href={`/beta?from=${encodeURIComponent(pathname)}`}>Enter invite</a>
