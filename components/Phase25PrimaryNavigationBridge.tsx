@@ -1,93 +1,150 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import PingIcon from "@/components/PingIcon";
 
-function roleForText(text: string) {
-  const value = text.trim().toLowerCase();
-  if (value === "feed") return "feed";
-  if (value === "map") return "map";
-  if (value === "ping") return "compose";
-  if (value.startsWith("alerts")) return "alerts";
-  if (value === "you") return "you";
-  return "";
-}
+const APP_PATHS = new Set([
+  "/",
+  "/map",
+  "/my-pings",
+  "/following",
+  "/alerts",
+  "/notifications",
+  "/you",
+]);
 
-function roleIsActive(role: string, pathname: string) {
-  if (role === "feed") return pathname === "/";
-  if (role === "map") return pathname === "/map";
-  if (role === "alerts") return pathname === "/alerts" || pathname === "/notifications";
-  if (role === "you") return pathname === "/you";
-  return false;
+function sectionFor(pathname: string) {
+  if (pathname === "/") return "feed";
+  if (pathname === "/map") return "map";
+  if (pathname === "/my-pings" || pathname === "/following") return "mine";
+  if (pathname === "/alerts" || pathname === "/notifications") return "alerts";
+  if (pathname === "/you") return "you";
+  return "";
 }
 
 export default function Phase25PrimaryNavigationBridge() {
   const pathname = usePathname();
-  const [target, setTarget] = useState<HTMLElement | null>(null);
+  const visible = APP_PATHS.has(pathname);
+  const active = sectionFor(pathname);
 
   useEffect(() => {
-    let disposed = false;
-    let retries = 0;
-    let timer = 0;
-    const attach = () => {
-      if (disposed) return;
-      const nav = document.querySelector<HTMLElement>('nav[aria-label="Primary navigation"]');
-      if (!nav) {
-        if (retries++ < 12) timer = window.setTimeout(attach, 80);
-        return;
-      }
-      nav.dataset.pingPrimaryNav = "true";
-      Array.from(nav.children).forEach((child) => {
-        const element = child as HTMLElement;
-        if (element.dataset.pingNavRole === "mine") return;
-        const role = roleForText(element.textContent || "");
-        if (!role) return;
-        element.dataset.pingNavRole = role;
-        if (roleIsActive(role, pathname)) element.dataset.pingNavActive = "true";
-        else delete element.dataset.pingNavActive;
-      });
-      setTarget(nav);
-    };
-    attach();
+    if (!visible) return;
+    document.body.dataset.pingGlobalNavActive = "true";
     return () => {
-      disposed = true;
-      if (timer) window.clearTimeout(timer);
-      const nav = document.querySelector<HTMLElement>('nav[data-ping-primary-nav="true"]');
-      if (nav) {
-        delete nav.dataset.pingPrimaryNav;
-        Array.from(nav.children).forEach((child) => {
-          const element = child as HTMLElement;
-          if (element.dataset.pingNavRole !== "mine") {
-            delete element.dataset.pingNavRole;
-            delete element.dataset.pingNavActive;
-          }
-        });
-      }
-      setTarget(null);
+      delete document.body.dataset.pingGlobalNavActive;
     };
-  }, [pathname]);
+  }, [visible, pathname]);
+
+  if (!visible) return null;
+
+  const itemClass = (section: string) => `ping-global-nav-item${active === section ? " active" : ""}`;
 
   return (
     <>
-      {target && createPortal(
-        <a href="/my-pings" data-ping-nav-role="mine" data-ping-nav-active={pathname === "/my-pings" ? "true" : undefined}>
-          <PingIcon name="activity" />
-          <span className="ping-nav-label">My Pings</span>
-        </a>,
-        target,
-      )}
+      <a className="ping-global-compose" href="/#ping" aria-label="Create a Ping">
+        <PingIcon name="plus" size={18} />
+        <span>Ping</span>
+      </a>
+
+      <nav className="ping-global-nav" data-ping-global-nav="true" aria-label="Primary navigation">
+        <a href="/" className={itemClass("feed")} aria-current={active === "feed" ? "page" : undefined}>
+          <PingIcon name="feed" size={21} />
+          <span>Feed</span>
+        </a>
+        <a href="/map" className={itemClass("map")} aria-current={active === "map" ? "page" : undefined}>
+          <PingIcon name="map" size={21} />
+          <span>Map</span>
+        </a>
+        <a href="/my-pings" className={itemClass("mine")} aria-current={active === "mine" ? "page" : undefined}>
+          <PingIcon name="activity" size={21} />
+          <span>My Pings</span>
+        </a>
+        <a href="/alerts" className={itemClass("alerts")} aria-current={active === "alerts" ? "page" : undefined}>
+          <PingIcon name="alerts" size={21} />
+          <span>Alerts</span>
+        </a>
+        <a href="/you" className={itemClass("you")} aria-current={active === "you" ? "page" : undefined}>
+          <PingIcon name="user" size={21} />
+          <span>You</span>
+        </a>
+      </nav>
+
       <style jsx global>{`
-        nav[data-ping-primary-nav="true"]{position:fixed!important;z-index:120!important;left:50%!important;right:auto!important;bottom:max(12px,env(safe-area-inset-bottom))!important;transform:translateX(-50%)!important;width:min(calc(100% - 28px),444px)!important;height:66px!important;display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;padding:5px 7px!important;border:1px solid rgba(16,19,17,.08)!important;border-radius:22px!important;background:rgba(255,255,255,.96)!important;box-shadow:0 12px 34px rgba(16,25,18,.09)!important;backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important;overflow:visible!important}
-        nav[data-ping-primary-nav="true"]>[data-ping-nav-role]{position:relative!important;min-width:0!important;height:100%!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:3px!important;border:0!important;background:transparent!important;color:var(--ping-muted-2)!important;text-decoration:none!important;font-size:8.5px!important;font-weight:720!important;line-height:1!important;padding:0!important;margin:0!important;box-shadow:none!important}
-        nav[data-ping-primary-nav="true"]>[data-ping-nav-role] svg{width:19px!important;height:19px!important;display:block!important;color:currentColor!important}
-        nav[data-ping-primary-nav="true"]>[data-ping-nav-role="feed"]{order:1!important}nav[data-ping-primary-nav="true"]>[data-ping-nav-role="map"]{order:2!important}nav[data-ping-primary-nav="true"]>[data-ping-nav-role="mine"]{order:3!important}nav[data-ping-primary-nav="true"]>[data-ping-nav-role="alerts"]{order:4!important}nav[data-ping-primary-nav="true"]>[data-ping-nav-role="you"]{order:5!important}
-        nav[data-ping-primary-nav="true"]>[data-ping-nav-active="true"],nav[data-ping-primary-nav="true"]>.active{color:var(--ping-accent-ink)!important}
-        nav[data-ping-primary-nav="true"]>[data-ping-nav-role="compose"]{position:absolute!important;right:10px!important;top:-48px!important;width:auto!important;height:40px!important;min-height:40px!important;display:flex!important;flex-direction:row!important;gap:6px!important;padding:0 14px!important;border-radius:999px!important;background:var(--ping-ink)!important;color:#fff!important;box-shadow:0 10px 24px rgba(16,19,17,.16)!important;font-size:10px!important;font-weight:780!important;z-index:3!important}
-        nav[data-ping-primary-nav="true"]>[data-ping-nav-role="compose"]>span{width:18px!important;height:18px!important;display:grid!important;place-items:center!important;border:0!important;border-radius:0!important;background:transparent!important;color:inherit!important;font-size:18px!important;line-height:1!important}nav[data-ping-primary-nav="true"]>[data-ping-nav-role="compose"]>span:before{display:none!important}nav[data-ping-primary-nav="true"]>[data-ping-nav-role="compose"] svg{width:17px!important;height:17px!important}
-        nav[data-ping-primary-nav="true"]>[data-ping-nav-role="alerts"] i{position:absolute!important;top:4px!important;right:calc(50% - 18px)!important}.ping-nav-label{display:block;white-space:nowrap}
-        @media(max-width:350px){nav[data-ping-primary-nav="true"]{width:calc(100% - 18px)!important}.ping-nav-label{font-size:7.5px}}
+        body[data-ping-global-nav-active="true"] nav[aria-label="Primary navigation"]:not([data-ping-global-nav="true"]){display:none!important}
+        body[data-ping-global-nav-active="true"] .screen-content,
+        body[data-ping-global-nav-active="true"] main{padding-bottom:max(104px,calc(92px + env(safe-area-inset-bottom)))}
+
+        .ping-global-nav{
+          position:fixed;
+          z-index:150;
+          left:50%;
+          bottom:max(12px,env(safe-area-inset-bottom));
+          transform:translateX(-50%);
+          width:min(calc(100% - 28px),444px);
+          height:70px;
+          display:grid;
+          grid-template-columns:repeat(5,minmax(0,1fr));
+          align-items:stretch;
+          padding:6px 8px;
+          border:1px solid rgba(16,19,17,.09);
+          border-radius:24px;
+          background:rgba(255,255,255,.97);
+          box-shadow:0 14px 38px rgba(16,25,18,.11);
+          backdrop-filter:blur(20px) saturate(150%);
+          -webkit-backdrop-filter:blur(20px) saturate(150%);
+        }
+        .ping-global-nav-item{
+          min-width:0;
+          display:flex;
+          flex-direction:column;
+          align-items:center;
+          justify-content:center;
+          gap:5px;
+          border-radius:15px;
+          color:#7d847f;
+          text-decoration:none;
+          font-size:9px;
+          font-weight:720;
+          line-height:1;
+          letter-spacing:-.01em;
+        }
+        .ping-global-nav-item svg{display:block;color:currentColor;flex:0 0 auto}
+        .ping-global-nav-item span{display:block;white-space:nowrap}
+        .ping-global-nav-item.active{color:var(--ping-accent-ink)}
+        .ping-global-nav-item:active{background:var(--ping-surface-soft)}
+
+        .ping-global-compose{
+          position:fixed;
+          z-index:151;
+          right:max(20px,calc((100vw - 444px)/2 + 12px));
+          bottom:max(92px,calc(80px + env(safe-area-inset-bottom)));
+          min-height:46px;
+          display:inline-flex;
+          align-items:center;
+          justify-content:center;
+          gap:8px;
+          padding:0 17px;
+          border-radius:999px;
+          background:var(--ping-ink);
+          color:#fff;
+          text-decoration:none;
+          box-shadow:0 12px 28px rgba(16,19,17,.18);
+          font-size:11px;
+          font-weight:780;
+        }
+        .ping-global-compose svg{display:block}
+        .ping-global-compose:active{transform:scale(.97)}
+
+        @media(max-width:350px){
+          .ping-global-nav{width:calc(100% - 18px);padding-left:4px;padding-right:4px}
+          .ping-global-nav-item{font-size:8px}
+          .ping-global-compose{right:14px}
+        }
+        @media(min-width:521px){
+          .ping-global-compose{right:calc(50% - 210px)}
+        }
+        @media(prefers-reduced-motion:reduce){.ping-global-compose:active{transform:none}}
       `}</style>
     </>
   );
