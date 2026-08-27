@@ -41,7 +41,7 @@ import "./ping-polish-system.css";
 import "./pindrizzle-brand.css";
 import "./pindrizzle-premium.css";
 import "./pindrizzle-premium-my-pins.css";
-import "./pindrizzle-premium-overrides.css";
+import "./pindrizzle-premium-layout-fixes.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://pindrizzle.com"),
