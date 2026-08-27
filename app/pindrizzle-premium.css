@@ -1,0 +1,444 @@
+/* Pindrizzle Premium UI — visual polish only. Functional architecture remains unchanged. */
+
+:root{
+  --pd-navy:#082f4a;
+  --pd-navy-deep:#06263d;
+  --pd-blue:#2d96d0;
+  --pd-rain:#39b5de;
+  --pd-aqua:#65d0e6;
+  --pd-aqua-soft:#e8f8fc;
+  --pd-silver:#e5edf1;
+  --pd-silver-2:#f4f8fa;
+  --pd-gold:#d7a13b;
+  --pd-coral:#df715b;
+  --pd-glass:rgba(250,254,255,.86);
+  --pd-line:rgba(20,78,107,.10);
+  --pd-shadow-card:0 12px 34px rgba(8,47,74,.08),0 2px 7px rgba(8,47,74,.035);
+  --pd-shadow-float:0 18px 46px rgba(7,43,68,.16),0 2px 8px rgba(7,43,68,.06);
+  --pd-ease:cubic-bezier(.2,.75,.25,1);
+
+  --ping-canvas:#eef8fb;
+  --ping-surface:#ffffff;
+  --ping-surface-soft:#edf8fb;
+  --ping-ink:#0b2d45;
+  --ping-ink-2:#315368;
+  --ping-muted:#708896;
+  --ping-muted-2:#9aadb8;
+  --ping-line:var(--pd-line);
+  --ping-line-strong:rgba(20,78,107,.17);
+  --ping-accent:var(--pd-rain);
+  --ping-accent-ink:#086184;
+  --ping-accent-soft:#e4f7fb;
+  --ping-blue:var(--pd-blue);
+  --ping-shadow-float:var(--pd-shadow-float);
+}
+
+html,body{
+  background:
+    radial-gradient(circle at 12% -5%,rgba(57,181,222,.15),transparent 29%),
+    radial-gradient(circle at 92% 10%,rgba(101,208,230,.10),transparent 25%),
+    linear-gradient(180deg,#fbfeff 0%,#f3fafc 30%,#ebf6fa 100%)!important;
+  color:var(--ping-ink)!important;
+  text-rendering:optimizeLegibility;
+  -webkit-font-smoothing:antialiased;
+}
+
+::selection{background:rgba(57,181,222,.22);color:var(--pd-navy-deep)}
+
+.app-shell{
+  background:linear-gradient(180deg,rgba(255,255,255,.93),rgba(239,249,252,.95))!important;
+  border-color:rgba(20,78,107,.075)!important;
+  box-shadow:0 28px 78px rgba(8,47,74,.105)!important;
+}
+
+/* Wordmark stays text. The supplied Pindrizzle artwork remains untouched. */
+.brand::before,.first-run-brand::before{
+  color:var(--pd-navy-deep)!important;
+  font-weight:820!important;
+  letter-spacing:-.055em!important;
+}
+.brand:not(.small)::after{
+  color:#14799f!important;
+  font-weight:760!important;
+  letter-spacing:.185em!important;
+}
+
+.app-header,.simple-header{padding-top:27px!important}
+.simple-header h1,.you-page-header h1{font-weight:780!important;letter-spacing:-.052em!important}
+
+/* Top-level information surfaces: quiet, confident, fewer visible boxes. */
+.feed-v3-summary,
+.feed-v3-location-card,
+.feed-v3-market-filters,
+.quiet-card,
+.notice-card,
+.profile-card,
+.phase12-profile-card,
+.phase12-reputation-card,
+.settings-list{
+  border-color:rgba(20,78,107,.075)!important;
+  box-shadow:var(--pd-shadow-card)!important;
+}
+
+.feed-v3-summary{
+  padding:18px 17px!important;
+  border-radius:22px!important;
+  background:linear-gradient(145deg,rgba(255,255,255,.98),rgba(239,249,252,.96))!important;
+}
+.feed-v3-summary>div:first-child>span{
+  color:#5f8396!important;
+  letter-spacing:.14em!important;
+}
+.feed-v3-summary h1{
+  margin-top:7px!important;
+  color:var(--pd-navy-deep)!important;
+  font-size:27px!important;
+  font-weight:790!important;
+  letter-spacing:-.047em!important;
+}
+.feed-v3-summary p{font-size:11px!important;line-height:1.48!important}
+.feed-v3-summary-side strong{color:#0b7198!important;font-weight:780!important}
+.feed-v3-summary-side select,
+.radius-setting select{
+  border-color:transparent!important;
+  background:rgba(226,245,251,.82)!important;
+  box-shadow:inset 0 0 0 1px rgba(20,78,107,.06)!important;
+}
+
+.feed-v3-location-card{
+  border-radius:18px!important;
+  background:linear-gradient(135deg,rgba(235,249,253,.96),rgba(247,252,254,.96))!important;
+}
+.feed-v3-location-card>span{
+  color:var(--pd-blue)!important;
+  background:rgba(255,255,255,.90)!important;
+  box-shadow:0 5px 15px rgba(25,113,155,.08)!important;
+}
+.feed-v3-location-card button{
+  background:var(--pd-navy)!important;
+  box-shadow:0 7px 18px rgba(8,47,74,.16)!important;
+}
+
+/* Category chips — soft until selected, then confident navy. */
+.filter-row button,
+.feed-v3-filters button{
+  min-height:36px!important;
+  border-color:rgba(20,78,107,.075)!important;
+  background:rgba(255,255,255,.74)!important;
+  color:#607986!important;
+  box-shadow:0 3px 12px rgba(8,47,74,.035)!important;
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+.filter-row button.active,
+.feed-v3-filters button.active,
+.map-v3-radii button.active,
+.composer-v3-category-grid button.selected,
+.composer-v3-source-toggle button.selected,
+.composer-v3-market-type button.selected,
+.map-v3-filter-grid button.active{
+  border-color:var(--pd-navy)!important;
+  background:linear-gradient(180deg,#103f5d,var(--pd-navy-deep))!important;
+  color:#fff!important;
+  box-shadow:0 7px 18px rgba(8,47,74,.15)!important;
+}
+
+/* Feed cards: remove the old colour rail and let information hierarchy do the work. */
+.ping-card.feed-v3-card{
+  padding:18px 17px 15px!important;
+  border:1px solid rgba(20,78,107,.07)!important;
+  border-radius:23px!important;
+  background:linear-gradient(155deg,#fff 0%,#fff 66%,#f8fcfd 100%)!important;
+  box-shadow:var(--pd-shadow-card)!important;
+}
+.ping-card.feed-v3-card::before{display:none!important}
+.feed-v3-category>span,
+.category-badge,
+.feed-v3-quiet .quiet-icon{
+  background:linear-gradient(145deg,#f2fafc,#e7f5f9)!important;
+  color:#315f77!important;
+  box-shadow:inset 0 0 0 1px rgba(20,78,107,.055)!important;
+}
+.feed-v3-title-row h2,.ping-card h2{
+  color:var(--pd-navy-deep)!important;
+  font-weight:760!important;
+  letter-spacing:-.035em!important;
+}
+.feed-v3-title-row h2{font-size:21px!important}
+.ping-body{color:#617985!important;line-height:1.55!important}
+.feed-v3-when,.ping-place,.feed-v3-place{color:#8298a4!important}
+.feed-v3-trust{border-top-color:rgba(20,78,107,.07)!important}
+.feed-v3-trust b{color:#31566b!important}
+.feed-v3-yours,.mine-badge{
+  background:rgba(57,181,222,.11)!important;
+  color:#0b7198!important;
+}
+.feed-v3-market-context,.map-v3-market{
+  background:linear-gradient(135deg,#edf9fc,#e5f5fa)!important;
+  box-shadow:inset 0 0 0 1px rgba(28,123,164,.055)!important;
+}
+.feed-v3-market-context>b,.map-v3-market>b{
+  color:#075d80!important;
+  font-weight:820!important;
+  letter-spacing:-.025em!important;
+}
+.feed-v3-listing-link{color:#087ca8!important}
+.ping-photo{
+  border:0!important;
+  border-radius:18px!important;
+  box-shadow:0 7px 22px rgba(8,47,74,.08)!important;
+}
+.ping-actions{gap:7px!important}
+.ping-actions button{
+  min-height:36px!important;
+  border:0!important;
+  border-radius:12px!important;
+  background:#f0f7f9!important;
+  color:#456473!important;
+  padding:9px 12px!important;
+}
+.ping-actions button:first-child{color:#0b6689!important;background:#e9f7fb!important}
+
+/* Marketplace filter blocks should feel like controls, not forms in a box. */
+.feed-v3-market-filters,.map-v3-market-filters{
+  padding:12px!important;
+  border-radius:18px!important;
+  background:rgba(255,255,255,.82)!important;
+  backdrop-filter:blur(18px) saturate(125%);
+  -webkit-backdrop-filter:blur(18px) saturate(125%);
+}
+.feed-v3-market-filters select,.map-v3-market-filters select{
+  border-color:transparent!important;
+  background:#edf7fa!important;
+  box-shadow:inset 0 0 0 1px rgba(20,78,107,.065)!important;
+}
+
+/* Global bottom navigation — frosted, lighter and more legible. */
+.ping-global-nav{
+  height:72px!important;
+  padding:7px 9px!important;
+  border:1px solid rgba(255,255,255,.72)!important;
+  border-radius:25px!important;
+  background:rgba(247,252,254,.84)!important;
+  box-shadow:0 17px 44px rgba(6,38,61,.16),inset 0 0 0 1px rgba(20,78,107,.055)!important;
+  backdrop-filter:blur(30px) saturate(155%)!important;
+  -webkit-backdrop-filter:blur(30px) saturate(155%)!important;
+}
+.ping-global-nav-item{
+  border-radius:16px!important;
+  color:#8496a0!important;
+  font-weight:680!important;
+}
+.ping-global-nav-item.active{
+  color:#086889!important;
+  background:linear-gradient(180deg,rgba(70,190,222,.075),rgba(70,190,222,.025))!important;
+}
+.ping-global-nav-item.active svg{filter:drop-shadow(0 2px 5px rgba(45,150,208,.18))}
+.ping-global-compose{
+  min-height:47px!important;
+  padding:0 18px!important;
+  border:1px solid rgba(255,255,255,.11)!important;
+  border-radius:999px!important;
+  background:linear-gradient(180deg,#0d4567,var(--pd-navy-deep))!important;
+  box-shadow:0 13px 30px rgba(6,38,61,.24),inset 0 1px 0 rgba(255,255,255,.12)!important;
+  font-weight:760!important;
+}
+
+/* Map: floating layers should feel like one coherent glass system. */
+.map-v3-brand,
+.map-v3-top-actions button,
+.map-v3-controls,
+.map-v3-card,
+.map-v3-quiet{
+  border-color:rgba(255,255,255,.72)!important;
+  background:var(--pd-glass)!important;
+  box-shadow:var(--pd-shadow-float)!important;
+  backdrop-filter:blur(24px) saturate(145%)!important;
+  -webkit-backdrop-filter:blur(24px) saturate(145%)!important;
+}
+.map-v3-brand{border-radius:17px!important;padding:8px 12px!important}
+.map-v3-top-actions button{border-radius:15px!important}
+.map-v3-controls{border-radius:20px!important;padding:12px!important}
+.map-v3-radii button{
+  height:34px!important;
+  border-radius:11px!important;
+  background:rgba(226,244,249,.88)!important;
+}
+.map-v3-filter-button{
+  height:34px!important;
+  border-color:rgba(20,78,107,.08)!important;
+  border-radius:11px!important;
+  background:rgba(255,255,255,.78)!important;
+}
+.map-v3-card{border-radius:22px!important;overflow:hidden!important}
+.map-v3-card-main{padding:15px 16px!important}
+.map-v3-card h2{font-size:17px!important;font-weight:760!important;letter-spacing:-.035em!important}
+.map-v3-card-top i{background:#eaf7fb!important;color:#315f77!important}
+.map-v3-card-main footer strong{color:#08779f!important;font-weight:800!important}
+.map-v3-card-pager{background:rgba(236,247,250,.88)!important;border-top-color:rgba(20,78,107,.065)!important}
+.map-v3-filter-backdrop{
+  background:rgba(5,32,50,.34)!important;
+  backdrop-filter:blur(8px)!important;
+  -webkit-backdrop-filter:blur(8px)!important;
+}
+.map-v3-filter-sheet{
+  background:linear-gradient(180deg,#fbfeff,#edf8fb)!important;
+  box-shadow:0 -24px 70px rgba(6,38,61,.20)!important;
+}
+
+/* MapLibre controls + price capsules from the Pindrizzle navy/rain palette. */
+.live-ping-map .maplibregl-ctrl-group{
+  border:1px solid rgba(255,255,255,.74)!important;
+  border-radius:15px!important;
+  overflow:hidden!important;
+  background:rgba(250,254,255,.86)!important;
+  box-shadow:0 10px 28px rgba(6,38,61,.14)!important;
+  backdrop-filter:blur(20px)!important;
+}
+.live-ping-map .maplibregl-ctrl-group button{background-color:transparent!important}
+.ping-user-marker{
+  background:var(--pd-blue)!important;
+  box-shadow:0 0 0 6px rgba(45,150,208,.14),0 5px 14px rgba(20,101,145,.24)!important;
+}
+.ping-map-price-head{
+  border:2px solid rgba(255,255,255,.96)!important;
+  background:linear-gradient(180deg,#0d4567,var(--pd-navy-deep))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12)!important;
+}
+.ping-map-price-tail{background:var(--pd-navy-deep)!important}
+.ping-map-pin.price.selected .ping-map-price-head{
+  box-shadow:0 0 0 4px rgba(57,181,222,.22),0 8px 20px rgba(6,38,61,.18)!important;
+}
+.ping-map-pin.selected .ping-map-pin-head{
+  box-shadow:0 0 0 4px rgba(57,181,222,.20),0 7px 18px rgba(6,38,61,.13)!important;
+}
+
+/* Composer: simple sheet, more whitespace, less form-box visual noise. */
+.composer-backdrop{
+  background:rgba(5,31,49,.36)!important;
+  backdrop-filter:blur(14px) saturate(120%)!important;
+  -webkit-backdrop-filter:blur(14px) saturate(120%)!important;
+}
+.composer-sheet,.composer-v3-sheet{
+  background:linear-gradient(180deg,#ffffff,#f2fafc)!important;
+  box-shadow:0 -26px 74px rgba(6,38,61,.22)!important;
+}
+.sheet-handle{background:#cfdee5!important}
+.composer-sheet h2{color:var(--pd-navy-deep)!important;font-weight:780!important;letter-spacing:-.045em!important}
+.composer-v3-category-grid button,
+.composer-v3-deal-panel,
+.composer-v3-market-panel,
+.composer-photo-picker,
+.composer-v3-expiry{
+  border-color:rgba(20,78,107,.075)!important;
+}
+.composer-v3-category-grid button{
+  border-radius:14px!important;
+  background:rgba(255,255,255,.86)!important;
+}
+.composer-v3-deal-panel,.composer-v3-market-panel{
+  border-radius:18px!important;
+  background:rgba(255,255,255,.82)!important;
+  box-shadow:0 6px 20px rgba(8,47,74,.035)!important;
+}
+.composer-v3-deal-panel{background:linear-gradient(145deg,#fffdf8,#fff)!important}
+.composer-v3-deal-panel input,.composer-v3-deal-panel select,
+.composer-v3-market-panel input,.composer-v3-market-panel select,
+.composer-v3-price-input,.composer-v3-url,
+.composer-sheet textarea,.composer-input{
+  border-color:rgba(20,78,107,.10)!important;
+  background:rgba(255,255,255,.96)!important;
+  box-shadow:inset 0 1px 2px rgba(8,47,74,.025)!important;
+}
+.composer-v3-deal-panel input:focus,.composer-v3-market-panel input:focus,
+.composer-v3-deal-panel select:focus,.composer-v3-market-panel select:focus,
+.composer-sheet textarea:focus,.composer-input:focus{
+  border-color:rgba(45,150,208,.55)!important;
+  box-shadow:0 0 0 4px rgba(57,181,222,.10)!important;
+  outline:none!important;
+}
+.publish-button,.first-run-primary{
+  background:linear-gradient(180deg,#0e486b,var(--pd-navy-deep))!important;
+  box-shadow:0 13px 28px rgba(6,38,61,.22),inset 0 1px 0 rgba(255,255,255,.11)!important;
+}
+
+/* Onboarding: calm first impression; no decorative overload. */
+.first-run-sheet{
+  border-color:rgba(255,255,255,.75)!important;
+  background:linear-gradient(150deg,#ffffff 0%,#f5fcfe 55%,#e9f8fc 100%)!important;
+  box-shadow:0 34px 90px rgba(6,38,61,.22)!important;
+}
+.first-run-kicker{color:#0a6d91!important}
+.first-run-kicker i{background:var(--pd-rain)!important;box-shadow:0 0 0 6px rgba(57,181,222,.10)!important}
+.first-run-radius{
+  border-color:rgba(20,78,107,.075)!important;
+  background:rgba(255,255,255,.70)!important;
+}
+.first-run-radius.selected{
+  border-color:rgba(45,150,208,.26)!important;
+  background:linear-gradient(145deg,#eefafd,#e4f6fb)!important;
+  box-shadow:0 7px 20px rgba(45,150,208,.07)!important;
+}
+
+/* You/settings: flatten list rows and use cards only for identity/trust. */
+.you-page-screen{background:transparent!important}
+.phase12-profile-card,.phase12-reputation-card{
+  border-radius:23px!important;
+  background:linear-gradient(150deg,#fff,#f8fcfd)!important;
+}
+.phase12-profile-card .avatar{
+  background:linear-gradient(145deg,#174f6d,var(--pd-navy-deep))!important;
+  box-shadow:0 8px 18px rgba(6,38,61,.15)!important;
+}
+.phase12-edit-name{border:0!important;background:#edf7fa!important}
+.phase12-progress{background:rgba(20,78,107,.07)!important}
+.phase12-progress>span{background:linear-gradient(90deg,var(--pd-blue),var(--pd-aqua))!important}
+.trust-row{border-color:rgba(20,78,107,.06)!important;background:rgba(20,78,107,.05)!important;box-shadow:var(--pd-shadow-card)!important}
+.settings-list{
+  border-radius:23px!important;
+  background:rgba(255,255,255,.84)!important;
+  overflow:hidden!important;
+}
+.settings-list button,.radius-setting{
+  border-bottom-color:rgba(20,78,107,.06)!important;
+  background:rgba(255,255,255,.72)!important;
+}
+.settings-list button>span,.radius-setting>span{background:#edf7fa!important;color:#3f667a!important}
+.settings-list button:active{background:#eef8fb!important}
+
+/* Universal details */
+button,a,select,input,textarea{-webkit-tap-highlight-color:transparent}
+button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{
+  outline:3px solid rgba(45,150,208,.34)!important;
+  outline-offset:2px!important;
+}
+
+@media(hover:hover) and (pointer:fine){
+  .ping-card.feed-v3-card:hover{transform:translateY(-2px);box-shadow:0 17px 40px rgba(8,47,74,.105)!important}
+  .ping-global-nav-item:hover{background:rgba(57,181,222,.055)!important;color:#426c80!important}
+  .ping-global-compose:hover,.publish-button:hover,.first-run-primary:hover{transform:translateY(-1px);filter:brightness(1.04)}
+  .map-v3-top-actions button:hover{transform:translateY(-1px)}
+}
+
+@media(prefers-reduced-motion:no-preference){
+  .ping-card.feed-v3-card,
+  .ping-global-nav-item,
+  .ping-global-compose,
+  .publish-button,
+  .first-run-primary,
+  .map-v3-top-actions button,
+  .map-v3-radii button,
+  .filter-row button{
+    transition:transform .22s var(--pd-ease),box-shadow .22s var(--pd-ease),background .22s var(--pd-ease),color .22s var(--pd-ease),border-color .22s var(--pd-ease),filter .22s var(--pd-ease)!important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
+
+@media(max-width:380px){
+  .feed-v3-summary{border-radius:20px!important}
+  .ping-card.feed-v3-card{border-radius:21px!important}
+  .ping-global-nav{width:calc(100% - 18px)!important}
+}
