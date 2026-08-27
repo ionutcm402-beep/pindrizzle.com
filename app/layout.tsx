@@ -22,6 +22,7 @@ import Phase23InstallEntry from "@/components/Phase23InstallEntry";
 import Phase24BetaBridge from "@/components/Phase24BetaBridge";
 import Phase25LocationChoiceBridge from "@/components/Phase25LocationChoiceBridge";
 import Phase25PrimaryNavigationBridge from "@/components/Phase25PrimaryNavigationBridge";
+import PindrizzleCopyBridge from "@/components/PindrizzleCopyBridge";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 import "./accessibility.css";
@@ -97,6 +98,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Phase25LocationChoiceBridge />
         <Phase25PrimaryNavigationBridge />
         <Phase21AccessibilityBridge />
+        <PindrizzleCopyBridge />
       </body>
     </html>
   );
