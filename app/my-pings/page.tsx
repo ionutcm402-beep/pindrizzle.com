@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PingIcon from "@/components/PingIcon";
+import EditOwnPingModal from "@/components/EditOwnPingModal";
 import { CATEGORY_DEFINITIONS, type PingCategoryKey } from "@/lib/ping-categories";
 import styles from "./my-pings.module.css";
 
@@ -20,16 +21,29 @@ function emptyCopy(status:PingStatus){if(status==="active")return"Your live loca
 function errorText(value:unknown){if(value instanceof Error)return value.message;if(value&&typeof value==="object"&&"message" in value)return String((value as {message?:unknown}).message||"");return"";}
 
 export default function MyPingsPage(){
-  const [signedIn,setSignedIn]=useState<boolean|null>(null);const [items,setItems]=useState<MyPing[]>([]);const [selected,setSelected]=useState<PingStatus>("active");const [loading,setLoading]=useState(true);const [busyId,setBusyId]=useState<string|null>(null);const [menuId,setMenuId]=useState<string|null>(null);const [confirmRemoveId,setConfirmRemoveId]=useState<string|null>(null);const [message,setMessage]=useState("");
+  const [signedIn,setSignedIn]=useState<boolean|null>(null);
+  const [items,setItems]=useState<MyPing[]>([]);
+  const [selected,setSelected]=useState<PingStatus>("active");
+  const [loading,setLoading]=useState(true);
+  const [busyId,setBusyId]=useState<string|null>(null);
+  const [menuId,setMenuId]=useState<string|null>(null);
+  const [editId,setEditId]=useState<string|null>(null);
+  const [confirmRemoveId,setConfirmRemoveId]=useState<string|null>(null);
+  const [message,setMessage]=useState("");
+
   const load=useCallback(async()=>{setLoading(true);setMessage("");try{const supabase=createClient();const{data:authData}=await supabase.auth.getSession();if(!authData.session?.user){setSignedIn(false);setItems([]);return;}setSignedIn(true);const{data,error}=await supabase.rpc("my_pings");if(error)throw error;setItems((data||[])as MyPing[]);}catch(error){console.error("My Pings failed",error);setMessage("Your Pings could not load right now.");}finally{setLoading(false);}},[]);
   useEffect(()=>{void load();const supabase=createClient();const{data}=supabase.auth.onAuthStateChange(()=>window.setTimeout(()=>void load(),0));const onFocus=()=>{if(document.visibilityState==="visible")void load();};document.addEventListener("visibilitychange",onFocus);return()=>{data.subscription.unsubscribe();document.removeEventListener("visibilitychange",onFocus);};},[load]);
+
   const normalized=useMemo(()=>items.map((item)=>({...item,status:effectiveStatus(item)})),[items]);
   const counts=useMemo(()=>normalized.reduce<Record<PingStatus,number>>((acc,item)=>{acc[item.status]+=1;return acc;},{active:0,resolved:0,expired:0,removed:0}),[normalized]);
   const visible=useMemo(()=>normalized.filter((item)=>item.status===selected),[normalized,selected]);
+
   const resolvePing=async(id:string)=>{setBusyId(id);setMessage("");try{const{error}=await createClient().rpc("resolve_own_ping",{target_ping_id:id});if(error)throw error;setItems((c)=>c.map((i)=>i.id===id?{...i,status:"resolved"}:i));setMenuId(null);setMessage("Ping marked resolved. It is no longer shown as live.");}catch{setMessage("That Ping could not be resolved right now.");}finally{setBusyId(null);}};
   const removePing=async(id:string)=>{setBusyId(id);setMessage("");try{const{error}=await createClient().rpc("remove_own_ping",{target_ping_id:id});if(error)throw error;setItems((c)=>c.map((i)=>i.id===id?{...i,status:"removed",has_open_promotion:false}:i));setConfirmRemoveId(null);setMenuId(null);setMessage("Ping removed from community views. Its audit history is preserved.");}catch(error){const text=errorText(error).toLowerCase();setMessage(text.includes("promotion")?"This Ping has a promotion in progress. Finish that promotion before removing it.":"That Ping could not be removed right now.");}finally{setBusyId(null);}};
   const openAuth=()=>window.dispatchEvent(new CustomEvent("ping:auth-needed",{detail:{message:"Sign in to manage your Pings."}}));
   const openPing=(id:string)=>window.dispatchEvent(new CustomEvent("ping:open-detail",{detail:{id,live:true}}));
+  const openEdit=(id:string)=>{setMenuId(null);setEditId(id);};
+  const savedEdit=async()=>{await load();setMessage("Ping updated. Feed and Map will use the new details.");};
 
   return <div className="page-shell"><div className="app-shell"><main className={`${styles.screen} my-pings-v3`}>
     <header className="my-pings-v3-header"><div className="brand small">ping<span>.</span></div><h1>My Pings</h1><p>What you’ve shared, what is still live, and what has finished.</p></header>
@@ -40,10 +54,20 @@ export default function MyPingsPage(){
         <h2>{item.title}</h2><p className={styles.body}>{item.body}</p>
         <div className={styles.meta}><span><PingIcon name="location" size={14}/>{item.place_label||"Approximate area"}</span><span><PingIcon name="confirmations" size={14}/>{item.confirmation_count}</span><span><PingIcon name="replies" size={14}/>{item.comment_count}</span></div>
         <div className={styles.timeRow}><span>Posted {relativeTime(item.created_at)}</span><span>{expiryLabel(item)}</span></div>
-        {item.has_open_promotion&&<div className={styles.promotionNote}><PingIcon name="promote" size={14}/><span>Promotion in progress — removal is unavailable until it finishes.</span></div>}
-        <div className="my-pings-v3-actions">{item.status==="active"&&<button type="button" className="my-pings-v3-open" onClick={()=>openPing(item.id)}>Open</button>}{item.status!=="removed"&&<div className="my-pings-v3-menu-wrap"><button type="button" className="my-pings-v3-more" aria-label="More Ping actions" onClick={()=>setMenuId(menuOpen?null:item.id)}><PingIcon name="more" size={18}/></button>{menuOpen&&<div className="my-pings-v3-menu">{item.status==="active"&&<button type="button" className="my-pings-v3-resolve-menu" disabled={busyId===item.id} onClick={()=>void resolvePing(item.id)}><PingIcon name="check" size={14}/>{busyId===item.id?"Working…":"Mark as resolved"}</button>}<button type="button" className="my-pings-v3-remove-menu" disabled={item.has_open_promotion||busyId===item.id} onClick={()=>setConfirmRemoveId(item.id)}><PingIcon name="remove" size={14}/>Remove Ping</button>{item.has_open_promotion&&<small>Removal unavailable during promotion</small>}</div>}</div>}</div>
+        {item.has_open_promotion&&<div className={styles.promotionNote}><PingIcon name="promote" size={14}/><span>Promotion in progress — editing and removal are unavailable until it finishes.</span></div>}
+        <div className="my-pings-v3-actions">
+          {item.status==="active"&&<button type="button" className="my-pings-v3-open" onClick={()=>openPing(item.id)}>Open</button>}
+          {item.status!=="removed"&&<div className="my-pings-v3-menu-wrap"><button type="button" className="my-pings-v3-more" aria-label="More Ping actions" onClick={()=>setMenuId(menuOpen?null:item.id)}><PingIcon name="more" size={18}/></button>{menuOpen&&<div className="my-pings-v3-menu">
+            {item.status==="active"&&<button type="button" className="my-pings-v3-edit-menu" disabled={item.has_open_promotion||busyId===item.id} onClick={()=>openEdit(item.id)}><PingIcon name="edit" size={14}/>Edit Ping</button>}
+            {item.status==="active"&&<button type="button" className="my-pings-v3-resolve-menu" disabled={busyId===item.id} onClick={()=>void resolvePing(item.id)}><PingIcon name="check" size={14}/>{busyId===item.id?"Working…":"Mark as resolved"}</button>}
+            <button type="button" className="my-pings-v3-remove-menu" disabled={item.has_open_promotion||busyId===item.id} onClick={()=>setConfirmRemoveId(item.id)}><PingIcon name="remove" size={14}/>Remove Ping</button>
+            {item.has_open_promotion&&<small>Editing and removal unavailable during promotion</small>}
+          </div>}</div>}
+        </div>
         {confirming&&!item.has_open_promotion&&<div className={styles.confirmRemove} role="alert"><div><strong>Remove this Ping?</strong><p>It disappears from community views, but replies, reports and audit history are preserved.</p></div><div><button type="button" onClick={()=>setConfirmRemoveId(null)}>Keep</button><button type="button" onClick={()=>void removePing(item.id)} disabled={busyId===item.id}>{busyId===item.id?"Removing…":"Remove"}</button></div></div>}
       </article>;})}</section>:<section className={styles.empty}><span><PingIcon name={selected==="active"?"myPings":selected==="resolved"?"check":selected==="expired"?"clock":"remove"} size={25}/></span><h2>No {selected} Pings.</h2><p>{emptyCopy(selected)}</p>{selected==="active"&&<a href="/#ping">Create a Ping</a>}</section>}
     </>}{message&&<div className={styles.message} role="status">{message}</div>}
-  </main></div><style jsx global>{`.my-pings-v3{padding-bottom:120px!important}.my-pings-v3-header{padding:25px 20px 14px}.my-pings-v3-header h1{margin:12px 0 4px;font-size:30px;letter-spacing:-1px}.my-pings-v3-header p{margin:0;color:var(--ping-muted);font-size:10.5px;line-height:1.45}.my-pings-v3-tabs{margin-top:4px!important}.my-pings-v3-card{border-radius:17px!important}.my-pings-v3-actions{display:flex;align-items:center;gap:7px;margin-top:11px}.my-pings-v3-actions>button{min-height:38px;border:1px solid var(--ping-line);border-radius:10px;background:#fff;color:var(--ping-ink-2);padding:0 14px;font-size:9px;font-weight:760}.my-pings-v3-open{background:var(--ping-ink)!important;color:#fff!important;border-color:var(--ping-ink)!important}.my-pings-v3-menu-wrap{position:relative;margin-left:auto}.my-pings-v3-more{width:38px;height:38px;display:grid;place-items:center;border:1px solid var(--ping-line);border-radius:10px;background:#fff;color:var(--ping-muted)}.my-pings-v3-menu{position:absolute;z-index:5;right:0;bottom:45px;width:190px;padding:7px;border:1px solid var(--ping-line);border-radius:12px;background:#fff;box-shadow:0 12px 30px rgba(16,25,18,.14)}.my-pings-v3-menu button{width:100%;min-height:40px;display:flex;align-items:center;gap:8px;border:0;border-radius:9px;background:transparent;padding:0 9px;text-align:left;font-size:9px;font-weight:750}.my-pings-v3-menu button:hover{background:var(--ping-surface-soft)}.my-pings-v3-resolve-menu{color:var(--ping-ink-2)}.my-pings-v3-remove-menu{color:var(--ping-danger)}.my-pings-v3-menu button:disabled{opacity:.45}.my-pings-v3-menu small{display:block;padding:3px 9px 6px;color:var(--ping-muted);font-size:7.5px}`}</style></div>;
+  </main></div>
+  {editId&&<EditOwnPingModal pingId={editId} onClose={()=>setEditId(null)} onSaved={savedEdit}/>} 
+  <style jsx global>{`.my-pings-v3{padding-bottom:120px!important}.my-pings-v3-header{padding:25px 20px 14px}.my-pings-v3-header h1{margin:12px 0 4px;font-size:30px;letter-spacing:-1px}.my-pings-v3-header p{margin:0;color:var(--ping-muted);font-size:10.5px;line-height:1.45}.my-pings-v3-tabs{margin-top:4px!important}.my-pings-v3-card{border-radius:17px!important}.my-pings-v3-actions{display:flex;align-items:center;gap:7px;margin-top:11px}.my-pings-v3-actions>button{min-height:38px;border:1px solid var(--ping-line);border-radius:10px;background:#fff;color:var(--ping-ink-2);padding:0 14px;font-size:9px;font-weight:760}.my-pings-v3-open{background:var(--ping-ink)!important;color:#fff!important;border-color:var(--ping-ink)!important}.my-pings-v3-menu-wrap{position:relative;margin-left:auto}.my-pings-v3-more{width:38px;height:38px;display:grid;place-items:center;border:1px solid var(--ping-line);border-radius:10px;background:#fff;color:var(--ping-muted)}.my-pings-v3-menu{position:absolute;z-index:5;right:0;bottom:45px;width:190px;padding:7px;border:1px solid var(--ping-line);border-radius:12px;background:#fff;box-shadow:0 12px 30px rgba(16,25,18,.14)}.my-pings-v3-menu button{width:100%;min-height:40px;display:flex;align-items:center;gap:8px;border:0;border-radius:9px;background:transparent;padding:0 9px;text-align:left;font-size:9px;font-weight:750}.my-pings-v3-menu button:hover{background:var(--ping-surface-soft)}.my-pings-v3-edit-menu,.my-pings-v3-resolve-menu{color:var(--ping-ink-2)}.my-pings-v3-remove-menu{color:var(--ping-danger)}.my-pings-v3-menu button:disabled{opacity:.45}.my-pings-v3-menu small{display:block;padding:3px 9px 6px;color:var(--ping-muted);font-size:7.5px}`}</style></div>;
 }
