@@ -78,6 +78,29 @@
 }
 .bottom-nav i{font-style:normal}
 
+/* Phase 25.5 composer + map hierarchy: the primary CTA is ink, while green
+   stays an accent; native map zoom controls live below Ping's own panel. */
+.composer-v3-sheet .publish-button{
+  background:var(--ping-ink)!important;
+  color:#fff!important;
+  box-shadow:0 10px 24px rgba(16,19,17,.16)!important;
+}
+.composer-v3-sheet .publish-button:hover{background:#202421!important}
+.composer-v3-sheet .publish-button:disabled{
+  background:#d9ded6!important;
+  color:#8f968f!important;
+  box-shadow:none!important;
+}
+.map-v3-screen .maplibregl-ctrl-top-right{
+  top:172px!important;
+  right:10px!important;
+}
+.map-v3-screen .maplibregl-ctrl-group{
+  border-radius:12px!important;
+  overflow:hidden;
+  box-shadow:0 8px 22px rgba(16,25,18,.10)!important;
+}
+
 /* Long-content resilience. */
 :where(.ping-card,.phase5-detail-sheet,.search14-card,.phase8-follow-card,.phase18-card,.phase9-builder,.profile-card,.settings-list,.notification-setting-row,.ops-case,.ops-history){
   overflow-wrap:anywhere;
