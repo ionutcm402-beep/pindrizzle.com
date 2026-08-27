@@ -78,6 +78,24 @@ async function reencodePingPhoto(blob: Blob) {
   }
 }
 
+async function sanitizePingUploadBody(body: BodyInit | null | undefined) {
+  if (body instanceof Blob && PING_PHOTO_TYPES.has(body.type)) {
+    return reencodePingPhoto(body);
+  }
+
+  if (body instanceof FormData) {
+    for (const [key, value] of body.entries()) {
+      if (!(value instanceof Blob) || !PING_PHOTO_TYPES.has(value.type)) continue;
+      const sanitized = await reencodePingPhoto(value);
+      const filename = value instanceof File && value.name ? value.name : "pindrizzle-photo";
+      body.set(key, sanitized, filename);
+      break;
+    }
+  }
+
+  return body;
+}
+
 const pingAwareFetch: typeof fetch = async (input, init) => {
   const baseFetch = globalThis.fetch.bind(globalThis);
   if (typeof window === "undefined") return baseFetch(input, init);
@@ -86,18 +104,8 @@ const pingAwareFetch: typeof fetch = async (input, init) => {
   const method = String(init?.method || (input instanceof Request ? input.method : "GET")).toUpperCase();
 
   if ((method === "POST" || method === "PUT") && url.includes("/storage/v1/object/ping-media/")) {
-    const uploadBody = init?.body instanceof Blob
-      ? init.body
-      : input instanceof Request
-        ? await input.clone().blob()
-        : null;
-
-    if (uploadBody && PING_PHOTO_TYPES.has(uploadBody.type)) {
-      const sanitizedBody = await reencodePingPhoto(uploadBody);
-      if (input instanceof Request) {
-        const nextRequest = new Request(input, { body: sanitizedBody });
-        return baseFetch(nextRequest, init ? { ...init, body: sanitizedBody } : undefined);
-      }
+    const sanitizedBody = await sanitizePingUploadBody(init?.body);
+    if (sanitizedBody !== init?.body || sanitizedBody instanceof FormData) {
       return baseFetch(input, { ...init, body: sanitizedBody });
     }
   }
