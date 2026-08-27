@@ -36,7 +36,7 @@ export default function Phase6NotificationBadge() {
         const row = payload.new as Record<string, unknown>;
         const rawKind = String(row.kind || "reply") as ToastNotification["kind"];
         const kind: ToastNotification["kind"] = rawKind in toastIcon ? rawKind : "reply";
-        setToast({ id:String(row.id || ""), title:String(row.title || "New Ping activity"), body:String(row.body || ""), pingId:row.ping_id ? String(row.ping_id) : null, kind });
+        setToast({ id:String(row.id || ""), title:String(row.title || "New pin activity"), body:String(row.body || ""), pingId:row.ping_id ? String(row.ping_id) : null, kind });
       }
       void loadUnread(userId);
     }).subscribe();
@@ -67,12 +67,26 @@ export default function Phase6NotificationBadge() {
 
   const openToast = async () => {
     if (!toast) return;
-    const selected = toast; setToast(null);
-    try { await createClient().from("notifications").update({ read_at:new Date().toISOString() }).eq("id", selected.id); void loadUnread(userId); } catch {}
+    const selected = toast;
+    setToast(null);
+    try {
+      await createClient().from("notifications").update({ read_at:new Date().toISOString() }).eq("id", selected.id);
+      void loadUnread(userId);
+    } catch {}
     if (selected.pingId) window.dispatchEvent(new CustomEvent("ping:open-detail", { detail:{ id:selected.pingId, live:true } }));
     else window.location.assign("/alerts");
   };
 
-  return <>{toast && <button type="button" className="phase6-live-toast" onClick={() => void openToast()}><span className="phase6-live-toast-icon"><PingIcon name={toastIcon[toast.kind]} size={19} /></span><span className="phase6-live-toast-copy"><strong>{toast.title}</strong>{toast.body && <small>{toast.body}</small>}</span><span className="phase6-live-toast-arrow">›</span></button>}
-    <style jsx global>{`.phase6-live-toast{position:fixed;z-index:170;left:50%;bottom:max(146px,calc(134px + env(safe-area-inset-bottom)));transform:translateX(-50%);width:min(calc(100% - 28px),410px);border:1px solid var(--ping-line);border-radius:16px;background:rgba(255,255,255,.98);box-shadow:0 18px 45px rgba(20,39,23,.18);backdrop-filter:blur(12px);padding:12px 13px;display:grid;grid-template-columns:40px 1fr auto;gap:10px;align-items:center;text-align:left;color:var(--ping-ink)}.phase6-live-toast-icon{width:40px;height:40px;border-radius:12px;background:var(--ping-surface-soft);display:grid;place-items:center;color:var(--ping-ink-2)}.phase6-live-toast-copy{min-width:0}.phase6-live-toast-copy strong{display:block;font-size:12px}.phase6-live-toast-copy small{display:block;margin-top:3px;color:var(--ping-muted);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.phase6-live-toast-arrow{font-size:24px;color:var(--ping-muted)}`}</style></>;
+  return <>{toast && <button type="button" className="phase6-live-toast" onClick={() => void openToast()} aria-label={`Open activity: ${toast.title}`}>
+    <span className="phase6-live-toast-icon"><PingIcon name={toastIcon[toast.kind]} size={19} /></span>
+    <span className="phase6-live-toast-copy"><strong>{toast.title}</strong>{toast.body && <small>{toast.body}</small>}</span>
+    <span className="phase6-live-toast-arrow">›</span>
+  </button>}
+    <style jsx global>{`
+      .phase6-live-toast{position:fixed;z-index:170;left:50%;bottom:max(108px,calc(96px + env(safe-area-inset-bottom)));transform:translateX(-50%);width:min(calc(100% - 28px),410px);border:1px solid rgba(255,255,255,.76);border-radius:20px;background:rgba(247,252,254,.91);box-shadow:0 18px 46px rgba(7,43,68,.18),inset 0 0 0 1px rgba(20,78,107,.055);backdrop-filter:blur(28px) saturate(155%);-webkit-backdrop-filter:blur(28px) saturate(155%);padding:12px 13px;display:grid;grid-template-columns:40px 1fr auto;gap:10px;align-items:center;text-align:left;color:var(--ping-ink);cursor:pointer}
+      .phase6-live-toast:active{transform:translateX(-50%) scale(.985)}
+      .phase6-live-toast-icon{width:40px;height:40px;border-radius:13px;background:linear-gradient(145deg,#edf9fc,#dff4f9);display:grid;place-items:center;color:#0a7399;box-shadow:inset 0 0 0 1px rgba(20,78,107,.06)}
+      .phase6-live-toast-copy{min-width:0}.phase6-live-toast-copy strong{display:block;color:#082f4a;font-size:12px;font-weight:780;letter-spacing:-.015em}.phase6-live-toast-copy small{display:block;margin-top:3px;color:#708896;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.phase6-live-toast-arrow{font-size:24px;color:#2d96d0}
+      @media(prefers-reduced-motion:reduce){.phase6-live-toast:active{transform:translateX(-50%)}}
+    `}</style></>;
 }
