@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import PingIcon from "@/components/PingIcon";
 
@@ -46,6 +46,7 @@ export default function Phase25PrimaryNavigationBridge() {
   const pathname = usePathname();
   const visible = isAppPath(pathname);
   const active = sectionFor(pathname);
+  const [composerOpen, setComposerOpen] = useState(false);
 
   useEffect(() => {
     if (!visible) return;
@@ -53,21 +54,30 @@ export default function Phase25PrimaryNavigationBridge() {
     return () => { delete document.body.dataset.pingGlobalNavActive; };
   }, [visible, pathname]);
 
+  useEffect(() => {
+    if (!visible) return;
+    const sync = () => setComposerOpen(Boolean(document.querySelector(".composer-backdrop")));
+    sync();
+    const observer = new MutationObserver(sync);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [visible, pathname]);
+
   if (!visible) return null;
 
   const itemClass = (section: string) => `ping-global-nav-item${active === section ? " active" : ""}`;
   const createPing = () => window.location.assign("/?compose=1#ping");
-  const showCompose = active !== "you";
+  const showCompose = active !== "you" && !composerOpen;
 
   return <>
     {showCompose && <button type="button" className="ping-global-compose" onClick={createPing} aria-label="Create a Ping"><PingIcon name="plus" size={18}/><span>Ping</span></button>}
-    <nav className="ping-global-nav" data-ping-global-nav="true" aria-label="Primary navigation">
+    {!composerOpen && <nav className="ping-global-nav" data-ping-global-nav="true" aria-label="Primary navigation">
       <a href="/" className={itemClass("feed")} aria-current={active === "feed" ? "page" : undefined}><PingIcon name="feed" size={21}/><span>Feed</span></a>
       <a href="/map" className={itemClass("map")} aria-current={active === "map" ? "page" : undefined}><PingIcon name="map" size={21}/><span>Map</span></a>
       <a href="/my-pings" className={itemClass("mine")} aria-current={active === "mine" ? "page" : undefined}><PingIcon name="myPings" size={21}/><span>My Pings</span></a>
       <a href="/alerts" className={itemClass("activity")} data-ping-nav-role="activity" aria-current={active === "activity" ? "page" : undefined}><PingIcon name="alerts" size={21}/><span>Activity</span></a>
       <a href="/you" className={itemClass("you")} aria-current={active === "you" ? "page" : undefined}><PingIcon name="user" size={21}/><span>You</span></a>
-    </nav>
+    </nav>}
     <style jsx global>{`
       body[data-ping-global-nav-active="true"] nav[aria-label="Primary navigation"]:not([data-ping-global-nav="true"]){display:none!important}
       body[data-ping-global-nav-active="true"] .screen-content{padding-bottom:max(108px,calc(94px + env(safe-area-inset-bottom)))}
