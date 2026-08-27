@@ -71,6 +71,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Your session has expired. Please sign in again." }, { status: 401 });
     }
 
+    // Defence in depth: the environment kill-switch is necessary but not sufficient
+    // for live money. Live Checkout also fails closed until the database release stage
+    // has been explicitly moved from closed_beta to public.
+    if (mode === "live") {
+      const { data: stageData, error: stageError } = await supabase.rpc("public_release_stage");
+      const stage = Array.isArray(stageData) ? stageData[0] : stageData;
+      if (stageError || stage !== "public") {
+        return NextResponse.json({ error: "Live payments remain locked while Pindrizzle is in closed beta." }, { status: 503 });
+      }
+    }
+
     claimToken = randomUUID();
     const { data, error } = await supabase.rpc("claim_promotion_checkout", {
       target_promotion_id: promotionId,
