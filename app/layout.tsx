@@ -37,12 +37,22 @@ import "./ping-onboarding-system.css";
 import "./ping-utility-system.css";
 import "./ping-internal-system.css";
 import "./ping-polish-system.css";
+import "./pindrizzle-brand.css";
 
 export const metadata: Metadata = {
-  title: "Ping — Know what's happening in your mile",
-  description: "Real-time, useful local updates from people near you.",
-  applicationName: "Ping",
+  metadataBase: new URL("https://pindrizzle.com"),
+  title: "Pindrizzle — Drop in daily",
+  description: "Drop in daily for useful local pins, deals, Marketplace listings and real-time updates around you.",
+  applicationName: "Pindrizzle",
   manifest: "/manifest.webmanifest",
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "Pindrizzle — Drop in daily",
+    description: "Useful local pins and real-time updates around you.",
+    url: "https://pindrizzle.com",
+    siteName: "Pindrizzle",
+    type: "website",
+  },
   icons: {
     icon: [
       { url: "/pwa-icon-192", type: "image/png", sizes: "192x192" },
@@ -56,7 +66,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#f4f5f2",
+  themeColor: "#edf7fb",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
