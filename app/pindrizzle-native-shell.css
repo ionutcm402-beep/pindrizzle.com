@@ -1,8 +1,7 @@
 /*
- * Pindrizzle native-shell hardening.
- * Layout behaviour only: branding/copy/design tokens remain owned by the existing system.
- * This layer is intentionally last in the global CSS import order so the same WebView
- * geometry can be used later by Capacitor without a second layout rewrite.
+ * Pindrizzle viewport-shell hardening.
+ * Layout behaviour only: branding, copy and design tokens remain owned by the existing system.
+ * This layer overrides the legacy mock-phone geometry at every viewport size.
  */
 
 :root{
@@ -12,12 +11,16 @@
   --pd-safe-left:env(safe-area-inset-left,0px);
   --pd-tabbar-core:68px;
   --pd-tabbar-total:calc(var(--pd-tabbar-core) + var(--pd-safe-bottom));
+  --pd-readable-content:960px;
 }
 
-html{
+html,
+body{
   width:100%;
   height:100%;
   min-height:100%;
+  margin:0;
+  padding:0;
   overflow:hidden;
   overscroll-behavior:none;
   background:var(--ping-canvas,#eef8fb);
@@ -25,14 +28,10 @@ html{
 }
 
 body{
-  width:100%;
   height:100dvh;
   min-height:100svh;
   max-height:100dvh;
-  overflow:hidden;
-  overscroll-behavior:none;
   touch-action:manipulation;
-  background:var(--ping-canvas,#eef8fb);
 }
 
 button,a,[role="button"]{
@@ -43,21 +42,45 @@ button,input,textarea,select{
   touch-action:manipulation;
 }
 
+/*
+ * Root invariant: the app is the viewport. Never restore the legacy centered
+ * 430px card, even on tablet/desktop.
+ */
 .page-shell{
-  height:100dvh;
-  min-height:100svh;
-  max-height:100dvh;
-  overflow:hidden;
+  display:block!important;
+  width:100%!important;
+  max-width:none!important;
+  height:100dvh!important;
+  min-height:100svh!important;
+  max-height:100dvh!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:hidden!important;
+  background:var(--ping-canvas,#eef8fb)!important;
 }
 
 .app-shell{
-  max-height:100dvh;
-  overflow:hidden;
+  position:relative;
+  width:100%!important;
+  max-width:none!important;
+  height:100dvh!important;
+  min-height:100svh!important;
+  max-height:100dvh!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:var(--ping-canvas,#eef8fb)!important;
+  box-shadow:none!important;
+  overflow:hidden!important;
 }
 
-/* All ordinary screens scroll inside the installed-app shell; the document never does. */
+/* Ordinary routes scroll inside the viewport shell; the document never does. */
 .app-shell main:not(.map-v3-screen){
+  width:100%!important;
+  max-width:none!important;
+  height:100dvh;
   max-height:100dvh;
+  margin:0!important;
   overflow-x:hidden;
   overflow-y:auto;
   overscroll-behavior-x:none;
@@ -65,16 +88,43 @@ button,input,textarea,select{
   -webkit-overflow-scrolling:touch;
   scroll-behavior:smooth;
   scroll-padding-bottom:calc(var(--pd-tabbar-total) + 16px);
+  border-top:var(--pd-safe-top) solid transparent;
+  border-left:var(--pd-safe-left) solid transparent;
+  border-right:var(--pd-safe-right) solid transparent;
 }
 
-/* Keep content clear of fixed native chrome without changing the visual system. */
 body[data-ping-global-nav-active="true"] .app-shell main:not(.map-v3-screen){
   padding-bottom:calc(var(--pd-tabbar-total) + 18px)!important;
 }
 
-/* Native tab shell stays above every sheet/banner and owns the home-indicator safe area. */
+/*
+ * On wide displays the canvas still fills the viewport. Content may stay
+ * readable, but it is never enclosed by a phone-shaped outer card.
+ */
+@media(min-width:1025px){
+  .app-shell main:not(.map-v3-screen) > :where(header,section,article,div):not(.composer-backdrop):not(.detail-v3-backdrop):not(.phase5-privacy-backdrop){
+    max-width:var(--pd-readable-content);
+    margin-left:auto;
+    margin-right:auto;
+  }
+}
+
+/* Fixed navigation is part of the viewport, not a floating phone-card footer. */
 .ping-global-nav{
   z-index:1000!important;
+  left:0!important;
+  right:0!important;
+  bottom:0!important;
+  transform:none!important;
+  width:100%!important;
+  max-width:none!important;
+  height:var(--pd-tabbar-total)!important;
+  min-height:var(--pd-tabbar-total)!important;
+  padding:6px max(8px,var(--pd-safe-right)) max(6px,var(--pd-safe-bottom)) max(8px,var(--pd-safe-left))!important;
+  border-left:0!important;
+  border-right:0!important;
+  border-bottom:0!important;
+  border-radius:20px 20px 0 0!important;
 }
 
 .ping-global-nav-item{
@@ -82,13 +132,14 @@ body[data-ping-global-nav-active="true"] .app-shell main:not(.map-v3-screen){
   touch-action:manipulation;
 }
 
-/* The main create action remains a native-sized target. */
 .ping-global-create{
   min-height:44px!important;
+  right:calc(14px + var(--pd-safe-right))!important;
+  bottom:calc(var(--pd-tabbar-total) + 12px)!important;
   touch-action:manipulation;
 }
 
-/* Bottom sheets stop above the persistent tab bar instead of covering it. */
+/* Bottom sheets stop above the persistent tab bar. */
 .composer-backdrop,
 .map-v3-filter-backdrop{
   bottom:var(--pd-tabbar-total)!important;
@@ -101,7 +152,6 @@ body[data-ping-global-nav-active="true"] .app-shell main:not(.map-v3-screen){
   -webkit-overflow-scrolling:touch;
 }
 
-/* Native-sized controls in sheets/forms. Map markers are intentionally excluded. */
 .composer-sheet button,
 .composer-sheet input,
 .composer-sheet select,
@@ -114,9 +164,14 @@ body[data-ping-global-nav-active="true"] .app-shell main:not(.map-v3-screen){
   min-height:44px;
 }
 
-/* Keep fixed map chrome clear of a status bar/notch. */
+/* Map always owns the entire viewport above the fixed tab bar. */
 .map-v3-screen{
-  top:0!important;
+  inset:0 0 var(--pd-tabbar-total) 0!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  max-width:none!important;
+  margin:0!important;
 }
 
 .map-v3-screen .map-v3-topbar{
@@ -131,7 +186,6 @@ body[data-ping-global-nav-active="true"] .app-shell main:not(.map-v3-screen){
   top:calc(var(--pd-safe-top) + 88px)!important;
 }
 
-/* Compact Map controls keep their visual size but get native-sized hit areas. */
 .map-v3-top-actions button,
 .map-v3-radii button,
 .map-v3-filter-button{
@@ -152,7 +206,36 @@ body[data-ping-global-nav-active="true"] .app-shell main:not(.map-v3-screen){
   transform:translateY(-50%);
 }
 
-/* Quick, restrained mount transition: client navigation remains Next router-driven. */
+/* Full-width true bottom sheets on phone/tablet. */
+@media(max-width:1024px){
+  .composer-backdrop,
+  .map-v3-filter-backdrop{
+    left:0!important;
+    right:0!important;
+    top:0!important;
+    bottom:var(--pd-tabbar-total)!important;
+    width:100%!important;
+    padding:0!important;
+    align-items:flex-end!important;
+    justify-content:stretch!important;
+  }
+
+  .composer-sheet,
+  .map-v3-filter-sheet{
+    width:100%!important;
+    max-width:none!important;
+    max-height:calc(100dvh - var(--pd-tabbar-total) - var(--pd-safe-top) - 8px)!important;
+    margin:0!important;
+    border-radius:24px 24px 0 0!important;
+  }
+
+  .filter-row,
+  .map-v3-radii,
+  .ping-global-nav{
+    overscroll-behavior:none;
+  }
+}
+
 @keyframes pdNativeScreenIn{
   from{opacity:.72;transform:translate3d(0,3px,0)}
   to{opacity:1;transform:translate3d(0,0,0)}
@@ -177,105 +260,7 @@ body[data-ping-global-nav-active="true"] .app-shell main:not(.map-v3-screen){
 @keyframes pdNativeFadeIn{from{opacity:0}to{opacity:1}}
 @keyframes pdNativeSheetIn{from{transform:translate3d(0,18px,0)}to{transform:translate3d(0,0,0)}}
 
-/* Phone/tablet WebView geometry: edge-to-edge, no floating website card. */
-@media(max-width:1024px){
-  html,body{
-    width:100%;
-    height:100dvh;
-    min-height:100svh;
-    max-height:100dvh;
-  }
-
-  .page-shell{
-    width:100%;
-    height:100dvh!important;
-    min-height:100svh!important;
-    max-height:100dvh!important;
-    padding:0!important;
-    display:block!important;
-    overflow:hidden!important;
-    background:var(--ping-canvas,#eef8fb)!important;
-  }
-
-  .app-shell{
-    width:100%!important;
-    max-width:none!important;
-    height:100dvh!important;
-    min-height:100svh!important;
-    max-height:100dvh!important;
-    border:0!important;
-    border-radius:0!important;
-    box-shadow:none!important;
-    overflow:hidden!important;
-  }
-
-  /* Transparent safe-area borders preserve each screen's own padding and typography. */
-  .app-shell main:not(.map-v3-screen){
-    border-top:var(--pd-safe-top) solid transparent;
-    border-left:var(--pd-safe-left) solid transparent;
-    border-right:var(--pd-safe-right) solid transparent;
-  }
-
-  /* True native tab bar: flush to the screen bottom, including home-indicator space. */
-  .ping-global-nav{
-    left:0!important;
-    right:0!important;
-    bottom:0!important;
-    transform:none!important;
-    width:100%!important;
-    max-width:none!important;
-    height:var(--pd-tabbar-total)!important;
-    min-height:var(--pd-tabbar-total)!important;
-    padding:6px max(8px,var(--pd-safe-right)) max(6px,var(--pd-safe-bottom)) max(8px,var(--pd-safe-left))!important;
-    border-left:0!important;
-    border-right:0!important;
-    border-bottom:0!important;
-    border-radius:20px 20px 0 0!important;
-  }
-
-  .ping-global-create{
-    right:calc(14px + var(--pd-safe-right))!important;
-    bottom:calc(var(--pd-tabbar-total) + 12px)!important;
-  }
-
-  /* Map itself fills everything above the fixed native tab bar. */
-  .map-v3-screen{
-    inset:0 0 var(--pd-tabbar-total) 0!important;
-    height:auto!important;
-    min-height:0!important;
-  }
-
-  /* True bottom sheets, full device width, with no centered-card constraint. */
-  .composer-backdrop,
-  .map-v3-filter-backdrop{
-    left:0!important;
-    right:0!important;
-    top:0!important;
-    bottom:var(--pd-tabbar-total)!important;
-    width:100%!important;
-    padding:0!important;
-    align-items:flex-end!important;
-    justify-content:stretch!important;
-  }
-
-  .composer-sheet,
-  .map-v3-filter-sheet{
-    width:100%!important;
-    max-width:none!important;
-    max-height:calc(100dvh - var(--pd-tabbar-total) - var(--pd-safe-top) - 8px)!important;
-    margin:0!important;
-    border-radius:24px 24px 0 0!important;
-  }
-
-  /* Prevent native browser pull-to-refresh/rubber-band feel inside horizontal rails. */
-  .filter-row,
-  .map-v3-radii,
-  .ping-global-nav{
-    overscroll-behavior:none;
-  }
-}
-
-/* Real-phone geometry guards used by iPhone SE / modern iPhone / common Android widths. */
+/* Phone geometry guards. */
 @media(max-width:375px){
   :root{--pd-tabbar-core:66px}
   .ping-global-nav-item{font-size:8px!important}
@@ -285,6 +270,6 @@ body[data-ping-global-nav-active="true"] .app-shell main:not(.map-v3-screen){
   :root{--pd-tabbar-core:68px}
 }
 
-@media(min-width:431px) and (max-width:1024px){
+@media(min-width:431px){
   :root{--pd-tabbar-core:70px}
 }
