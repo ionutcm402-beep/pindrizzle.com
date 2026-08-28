@@ -47,6 +47,7 @@ body[data-ping-global-nav-active="true"] {
 }
 
 .site-logo {
+  min-height: 44px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -65,6 +66,9 @@ body[data-ping-global-nav-active="true"] {
 }
 
 .site-nav-link {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
   padding: 8px 14px;
   border-radius: 8px;
   font-size: 14px;
@@ -91,6 +95,7 @@ body[data-ping-global-nav-active="true"] {
 }
 
 .site-cta {
+  min-height: 44px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -189,6 +194,8 @@ main:not(.site-full-bleed):not(.launch-map-screen):not(.compose-start-screen) {
   }
 
   .site-nav-mobile .site-nav-link {
+    width: 100%;
+    min-height: 44px;
     padding: 12px 8px;
   }
 }
