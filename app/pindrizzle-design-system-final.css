@@ -1,0 +1,104 @@
+/* Final invariants that must win even over legacy component-local global styles. */
+
+/* One exact visual wordmark everywhere, including the compact Map header. */
+body .map-v3-topbar .map-v3-brand .brand::before{
+  content:"pindrizzle"!important;
+  font-family:Inter,ui-rounded,"SF Pro Rounded",system-ui,-apple-system,sans-serif!important;
+  font-size:var(--pd-wordmark-size)!important;
+  line-height:.95!important;
+  font-weight:var(--pd-wordmark-weight)!important;
+  letter-spacing:var(--pd-wordmark-tracking)!important;
+  text-transform:lowercase!important;
+  background:var(--pd-wordmark-gradient)!important;
+  -webkit-background-clip:text!important;
+  background-clip:text!important;
+  color:transparent!important;
+}
+
+/* Onboarding is a Moment flow: centered visual, headline, support copy and one action. */
+.first-run-step-one .first-run-benefits{display:none!important}
+.first-run-step-one .first-run-content-grid{
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  justify-items:center!important;
+  margin:var(--pd-space-4) 0!important;
+}
+.first-run-step-one .first-run-local-visual{margin:0 auto!important}
+.first-run-intro,.first-run-actions{justify-items:center!important;text-align:center!important}
+.first-run-actions{display:grid!important}
+.first-run-actions:not(.two) .first-run-primary{width:min(100%,320px)!important}
+
+/* Business intro uses a simplified flat Pindrizzle pin rather than a generic arrow glyph. */
+.phase18-business-intro>div:first-child{
+  font-size:0!important;
+  display:grid!important;
+  place-items:center!important;
+}
+.phase18-business-intro>div:first-child::before{
+  content:"";
+  width:20px;
+  height:20px;
+  border:2px solid rgba(255,255,255,.92);
+  border-radius:50% 50% 50% 6px;
+  background:linear-gradient(135deg,var(--pd-blue-600),var(--pd-aqua-500));
+  transform:rotate(-45deg);
+  box-shadow:0 4px 10px rgba(8,43,73,.12);
+}
+
+/* Legacy text chevrons become one consistent CSS chevron. */
+.phase18-business-header>a,
+.phase23-install-header>a,
+.legal-back,
+.phase12-public-back{
+  font-size:0!important;
+}
+.phase18-business-header>a::before,
+.phase23-install-header>a::before,
+.legal-back::before,
+.phase12-public-back::before{
+  content:"";
+  width:9px;
+  height:9px;
+  border-left:1.75px solid currentColor;
+  border-bottom:1.75px solid currentColor;
+  transform:rotate(45deg);
+  margin-left:4px;
+}
+
+/* Product-level navigation never inherits legacy unicode symbols. */
+body[data-ping-global-nav-active="true"] .bottom-nav{display:none!important}
+
+/* Exact app icon asset is the only install icon artwork. */
+.phase23-install-icon{
+  background:#fff url('/pindrizzle-icon-192.png') center/cover no-repeat!important;
+}
+.phase23-install-icon>*{display:none!important}
+
+/* Keep elevation vocabulary strictly to the three system levels. */
+.phase9-builder,
+.phase9-request-history article,
+.phase18-card,
+.phase18-overview div,
+.activity-list,
+.following-v3-card,
+.following-v3-intro,
+.phase23-install-card,
+.legal-card,
+.phase12-public-signals div,
+.phase12-public-privacy{
+  box-shadow:var(--pd-elevation-1)!important;
+}
+.phase23-install-hero,
+.phase12-public-reputation,
+.map-v3-topbar,
+.map-v3-controls,
+.ping-global-nav{
+  box-shadow:var(--pd-elevation-2)!important;
+}
+.password-auth-sheet,
+.composer-sheet,
+.composer-v3-sheet,
+.map-v3-filter-sheet,
+.first-run-sheet{
+  box-shadow:var(--pd-elevation-3)!important;
+}
