@@ -24,6 +24,7 @@ await update("ios/App/App/Info.plist", (content) => {
   let next = content;
 
   next = replacePlistString(next, "CFBundleDisplayName", "Pindrizzle");
+  next = replacePlistString(next, "UIStatusBarStyle", "UIStatusBarStyleLightContent");
   next = replacePlistString(
     next,
     "NSCameraUsageDescription",
@@ -57,6 +58,13 @@ await update("ios/App/App/Info.plist", (content) => {
     /\s*<key>UISupportedInterfaceOrientations<\/key>\s*<array>[\s\S]*?<\/array>\s*<key>UISupportedInterfaceOrientations~ipad<\/key>\s*<array>[\s\S]*?<\/array>/,
     portraitOnly,
   );
+
+  if (!next.includes("<key>UIStatusBarStyle</key>")) {
+    next = next.replace(
+      /\s*<key>UIViewControllerBasedStatusBarAppearance<\/key>/,
+      `\n\t<key>UIStatusBarStyle</key>\n\t<string>UIStatusBarStyleLightContent</string>\n\t<key>UIViewControllerBasedStatusBarAppearance</key>`,
+    );
+  }
 
   if (!next.includes("NSCameraUsageDescription")) {
     const permissions = `
