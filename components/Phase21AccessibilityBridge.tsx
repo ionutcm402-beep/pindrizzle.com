@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const routeNames: Record<string, string> = {
   "/": "Feed",
   "/map": "Map",
+  "/chat": "Local Chat",
   "/search": "Search",
   "/place": "Local area",
   "/my-pings": "My Pins",
