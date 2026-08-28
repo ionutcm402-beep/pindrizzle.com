@@ -11,6 +11,7 @@ type Stage = "checking-auth" | "waiting-auth" | "locating" | "error";
 
 const COMPOSE_LOCATION_TIMEOUT_MS = 13500;
 const COMPOSE_AUTH_TIMEOUT_MS = 8000;
+const COMPOSE_HANDOFF_FALLBACK_MS = 1500;
 
 function requestLocationWithTimeout(): Promise<PingLocationResult> {
   return new Promise((resolve) => {
@@ -32,6 +33,14 @@ export default function ComposeStartPage() {
   const [message, setMessage] = useState("");
   const requestIdRef = useRef(0);
   const locationInProgressRef = useRef(false);
+  const handoffTimerRef = useRef<number | null>(null);
+
+  const clearHandoffTimer = useCallback(() => {
+    if (handoffTimerRef.current !== null) {
+      window.clearTimeout(handoffTimerRef.current);
+      handoffTimerRef.current = null;
+    }
+  }, []);
 
   const startLocation = useCallback(async () => {
     if (locationInProgressRef.current) return;
@@ -45,7 +54,12 @@ export default function ComposeStartPage() {
       if (requestIdRef.current !== requestId) return;
 
       if (result.state === "granted" && result.coordinates) {
+        clearHandoffTimer();
         router.replace("/#ping");
+        handoffTimerRef.current = window.setTimeout(() => {
+          handoffTimerRef.current = null;
+          if (window.location.pathname === "/compose-start") window.location.assign("/#ping");
+        }, COMPOSE_HANDOFF_FALLBACK_MS);
         return;
       }
 
@@ -58,9 +72,10 @@ export default function ComposeStartPage() {
     } finally {
       if (requestIdRef.current === requestId) locationInProgressRef.current = false;
     }
-  }, [router]);
+  }, [clearHandoffTimer, router]);
 
   const checkAuthAndStart = useCallback(async () => {
+    clearHandoffTimer();
     const requestId = ++requestIdRef.current;
     locationInProgressRef.current = false;
     setStage("checking-auth");
@@ -81,7 +96,7 @@ export default function ComposeStartPage() {
       setStage("error");
       setMessage("Pin creation couldn’t start. Check your connection and try again.");
     }
-  }, [startLocation]);
+  }, [clearHandoffTimer, startLocation]);
 
   useEffect(() => {
     let active = true;
@@ -90,6 +105,7 @@ export default function ComposeStartPage() {
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       if (!active || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") return;
       if (!session?.user) {
+        clearHandoffTimer();
         locationInProgressRef.current = false;
         requestIdRef.current += 1;
         setStage("waiting-auth");
@@ -100,11 +116,12 @@ export default function ComposeStartPage() {
 
     return () => {
       active = false;
+      clearHandoffTimer();
       locationInProgressRef.current = false;
       requestIdRef.current += 1;
       data.subscription.unsubscribe();
     };
-  }, [checkAuthAndStart, startLocation]);
+  }, [checkAuthAndStart, clearHandoffTimer, startLocation]);
 
   const locating = stage === "checking-auth" || stage === "locating";
 
