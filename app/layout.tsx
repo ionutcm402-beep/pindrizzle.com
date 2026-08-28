@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import FirstRunOnboarding from "@/components/FirstRunOnboarding";
 import PasswordAuthOverlay from "@/components/PasswordAuthOverlay";
+import NativeRuntimeBridge from "@/components/NativeRuntimeBridge";
 import Phase5PingDetail from "@/components/Phase5PingDetail";
 import PrivacySafetyCenter from "@/components/PrivacySafetyCenter";
 import Phase6NotificationBadge from "@/components/Phase6NotificationBadge";
@@ -88,6 +89,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body>
+        <NativeRuntimeBridge />
         <PindrizzleSplash />
         {children}
         <PindrizzleSignatureBridge />
