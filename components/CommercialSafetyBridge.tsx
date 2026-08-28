@@ -3,10 +3,13 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
-const COMMERCIAL_PATHS = new Set(["/promote", "/business"]);
+const POLISHED_PATHS = new Set(["/promote", "/business", "/search"]);
+const ATTRIBUTES = ["aria-label", "title", "placeholder"] as const;
 
 const COPY_RULES: Array<[RegExp, string]> = [
   [/^pindrizzle$/g, "Pindrizzle"],
+
+  // Business and promotions
   [/Know what your local promotion is doing\./g, "Promotion performance"],
   [/See campaign status, spend and privacy-minimal performance\. Browser sessions are estimates, not a count of unique people\./g, "See campaign status and privacy-minimal performance. Browser sessions are estimates, not unique people."],
   [/Sign in to manage promotions\./g, "Sign in to view promotions"],
@@ -32,6 +35,21 @@ const COPY_RULES: Array<[RegExp, string]> = [
   [/Promotion request submitted for [^.]+\. No payment has been taken\./g, "Promotion request submitted. No payment has been taken."],
   [/Not paid/g, "Payment unavailable"],
   [/No promotion requests yet\./g, "No promotion requests"],
+
+  // Search
+  [/Search & discover/g, "Search nearby"],
+  [/Find what matters nearby/g, "Find nearby pins"],
+  [/Deals, outages, traffic, Marketplace and useful local pins — never a global feed\./g, "Search active local pins within your selected radius."],
+  [/Nearby search is temporarily unavailable\./g, "Nearby search is unavailable."],
+  [/Location is blocked/g, "Location is off"],
+  [/Search starts with your location/g, "Search nearby"],
+  [/Search reuses the same Pindrizzle location permission as Feed and Map\./g, "Location is shared with Feed and Map."],
+  [/Searching nearby…/g, "Searching…"],
+  [/available to discover/g, "nearby"],
+  [/Search couldn’t load/g, "Search is unavailable"],
+  [/Quiet around here/g, "No active pins"],
+  [/There are no active pins in this area right now\./g, "No active pins within this radius."],
+  [/Try “road closed”, “deal”, “room”…/g, "Search nearby pins"],
 ];
 
 function rewrite(value: string) {
@@ -41,7 +59,7 @@ function rewrite(value: string) {
 }
 
 function isProtectedContent(element: Element | null) {
-  return Boolean(element?.closest("[data-user-content],input,textarea,[contenteditable='true'],script,style,noscript"));
+  return Boolean(element?.closest("[data-user-content],[contenteditable='true'],script,style,noscript"));
 }
 
 function updateText(node: Text) {
@@ -51,16 +69,29 @@ function updateText(node: Text) {
   if (next !== current) node.nodeValue = next;
 }
 
+function updateElement(element: Element) {
+  if (isProtectedContent(element)) return;
+  for (const attribute of ATTRIBUTES) {
+    const current = element.getAttribute(attribute);
+    if (!current) continue;
+    const next = rewrite(current);
+    if (next !== current) element.setAttribute(attribute, next);
+  }
+}
+
 function updateSubtree(root: Node) {
   if (root.nodeType === Node.TEXT_NODE) {
     updateText(root as Text);
     return;
   }
   if (!(root instanceof Element) && root !== document.body) return;
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+
+  if (root instanceof Element) updateElement(root);
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
   let current = walker.nextNode();
   while (current) {
-    updateText(current as Text);
+    if (current.nodeType === Node.TEXT_NODE) updateText(current as Text);
+    else if (current instanceof Element) updateElement(current);
     current = walker.nextNode();
   }
 }
@@ -80,7 +111,7 @@ export default function CommercialSafetyBridge() {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!COMMERCIAL_PATHS.has(pathname)) return;
+    if (!POLISHED_PATHS.has(pathname)) return;
 
     const apply = (root: Node = document.body) => {
       updateSubtree(root);
@@ -91,12 +122,19 @@ export default function CommercialSafetyBridge() {
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         if (mutation.type === "characterData") updateText(mutation.target as Text);
+        if (mutation.type === "attributes" && mutation.target instanceof Element) updateElement(mutation.target);
         if (mutation.type === "childList") mutation.addedNodes.forEach((node) => apply(node));
       }
       lockPaymentLinks();
     });
 
-    observer.observe(document.body, { subtree: true, childList: true, characterData: true });
+    observer.observe(document.body, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: [...ATTRIBUTES],
+    });
     return () => observer.disconnect();
   }, [pathname]);
 

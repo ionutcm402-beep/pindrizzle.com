@@ -4,7 +4,9 @@ import { getPublicOperatorConfig } from "@/lib/launchReadiness";
 export default function TermsPage() {
   const operator = getPublicOperatorConfig();
   const operatorPublished = Boolean(operator.operatorName && operator.operatorAddress && operator.supportEmail && operator.governingLaw);
-  const livePayments = process.env.PING_LIVE_PAYMENTS_ENABLED === "true" && process.env.STRIPE_SECRET_KEY?.startsWith("sk_live_");
+  const livePayments = process.env.PING_STRIPE_ACCOUNT_READY === "true"
+    && process.env.PING_LIVE_PAYMENTS_ENABLED === "true"
+    && process.env.STRIPE_SECRET_KEY?.startsWith("sk_live_");
 
   return (
     <LegalPageShell title="Terms of Use" kicker="COMMUNITY RULES" active="terms">
@@ -63,10 +65,10 @@ export default function TermsPage() {
 
       <section className="legal-card">
         <h2>6. Promoted pins and payments</h2>
-        <p>Promoted pins are labelled paid local placement and remain subject to moderation. Payment does not guarantee views, clicks, replies, sales or other business results. The price, radius and duration are shown before Checkout.</p>
-        <p>You can abandon Checkout before payment without charge. Once a paid placement has started, poor performance or a change of mind does not by itself create a refund entitlement. If Pindrizzle receives payment but cannot safely activate the promised placement, the payment flow is designed to request a Stripe refund. Other refunds or corrections may be made where required by law or where Pindrizzle determines the paid service was not supplied as agreed.</p>
+        <p>Promoted pins are labelled local placements and remain subject to moderation. Payment, when enabled, does not guarantee views, opens, replies, sales or other business results. The price, radius and duration are shown before any payment step.</p>
+        <p>When paid promotions are enabled, you can leave Checkout before payment without charge. Once a paid placement has started, poor performance or a change of mind does not by itself create a refund entitlement. If Pindrizzle receives payment but cannot safely activate the promised placement, the payment flow is designed to request a Stripe refund. Other refunds or corrections may be made where required by law or where Pindrizzle determines the paid service was not supplied as agreed.</p>
         <p>Nothing in these terms excludes rights or remedies that cannot lawfully be excluded.</p>
-        {!livePayments && <p><b>Current status:</b> real-money promotion payments remain disabled during the launch-readiness stage.</p>}
+        {!livePayments && <p><b>Current status:</b> real-money promotion payments are disabled. A dedicated Pindrizzle Stripe account and the production payment gates must be enabled before payments can be accepted.</p>}
       </section>
 
       <section className="legal-card">

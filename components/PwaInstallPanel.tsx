@@ -104,7 +104,7 @@ export default function PwaInstallPanel() {
       (window as Window & { __pindrizzleInstallPrompt?: BeforeInstallPromptEvent | null }).__pindrizzleInstallPrompt = null;
       setDeferredPrompt(null);
       setMode("manual");
-      setMessage("Your browser did not open the install dialog. Use its Install app or Add to Home Screen option instead.");
+      setMessage("The install dialog did not open. Use Install app or Add to Home Screen from your browser menu.");
     }
   };
 
@@ -113,24 +113,24 @@ export default function PwaInstallPanel() {
       <div className="phase23-install-shell">
         <header className="phase23-install-header">
           <a href="/you" aria-label="Back to You">‹</a>
-          <div><span>DROP IN DAILY</span><h1>Install Pindrizzle</h1></div>
+          <div><span>INSTALL</span><h1>Install Pindrizzle</h1></div>
         </header>
         <main className="phase23-install-main">
           <section className="phase23-install-hero">
             <div className="phase23-install-icon" aria-hidden="true"><i>pd</i></div>
             <div>
-              <h2>Your local area, one tap away.</h2>
-              <p>Install Pindrizzle on your phone or computer for direct home-screen access. It remains the same secure web app and updates automatically.</p>
+              <h2>Pindrizzle on your device</h2>
+              <p>Add Pindrizzle to your home screen or computer for direct access. The web app updates automatically.</p>
             </div>
           </section>
 
-          {mode === "checking" && <section className="phase23-install-card"><h2>Checking this device…</h2><p>Pindrizzle is checking which install method your browser supports.</p></section>}
+          {mode === "checking" && <section className="phase23-install-card"><h2>Checking install options…</h2><p>Checking what this browser supports.</p></section>}
 
           {mode === "installed" && (
             <section className="phase23-install-card success">
               <span className="phase23-install-status">INSTALLED</span>
-              <h2>Pindrizzle is already installed.</h2>
-              <p>Open it from your home screen, app launcher, dock or Start menu. You can keep using the browser version too.</p>
+              <h2>Pindrizzle is installed</h2>
+              <p>Open it from your home screen, app launcher, dock or Start menu. The browser version remains available.</p>
               <div className="phase23-install-actions"><a className="primary" href="/">Open Feed</a></div>
             </section>
           )}
@@ -138,8 +138,8 @@ export default function PwaInstallPanel() {
           {mode === "prompt" && (
             <section className="phase23-install-card success">
               <span className="phase23-install-status">READY</span>
-              <h2>This browser can install Pindrizzle directly.</h2>
-              <p>The next button opens your browser’s own install confirmation. Pindrizzle does not install anything without that confirmation.</p>
+              <h2>Install from this browser</h2>
+              <p>The button opens your browser’s install confirmation. Nothing is installed until you confirm.</p>
               <div className="phase23-install-actions"><button type="button" className="primary" onClick={install}>Install Pindrizzle</button></div>
             </section>
           )}
@@ -147,21 +147,21 @@ export default function PwaInstallPanel() {
           {mode === "ios" && (
             <section className="phase23-install-card">
               <span className="phase23-install-status">IPHONE / IPAD</span>
-              <h2>Add Pindrizzle from Safari.</h2>
+              <h2>Add Pindrizzle to your Home Screen</h2>
               <ol>
-                <li>Open Pindrizzle in Safari if you are currently using another browser.</li>
+                <li>Open Pindrizzle in Safari.</li>
                 <li>Tap the Share button.</li>
                 <li>Choose <b>Add to Home Screen</b>, then confirm Add.</li>
               </ol>
-              <p>Once installed, Pindrizzle opens like an app. Web push on iPhone/iPad is available for supported home-screen web apps when you choose to enable it.</p>
+              <p>Home-screen web apps can also use web push on supported iPhone and iPad versions when you choose to enable it.</p>
             </section>
           )}
 
           {mode === "manual" && (
             <section className="phase23-install-card">
               <span className="phase23-install-status">BROWSER INSTALL</span>
-              <h2>Use your browser’s install option.</h2>
-              <p>Look for <b>Install app</b>, <b>Install Pindrizzle</b> or <b>Add to Home Screen</b> in the browser menu. On desktop Chrome or Edge, an install icon may also appear in the address bar after Pindrizzle becomes eligible.</p>
+              <h2>Use your browser’s install option</h2>
+              <p>Look for <b>Install app</b>, <b>Install Pindrizzle</b> or <b>Add to Home Screen</b> in the browser menu. Chrome or Edge may also show an install icon in the address bar.</p>
             </section>
           )}
 
@@ -170,16 +170,16 @@ export default function PwaInstallPanel() {
           <section className="phase23-install-card">
             <h2>What installation changes</h2>
             <ul>
-              <li>Pindrizzle gets its own home-screen or desktop app icon.</li>
-              <li>It opens in a cleaner standalone window where the platform supports it.</li>
+              <li>Pindrizzle gets its own home-screen or desktop icon.</li>
+              <li>It opens in a standalone window where supported.</li>
               <li>Your account, privacy controls and notification choices stay the same.</li>
-              <li>Pindrizzle still requires a live connection for Feed, Map, Search, posting and Activity.</li>
+              <li>Feed, Map, Search, posting and Activity still require a connection.</li>
             </ul>
           </section>
 
           <section className="phase23-install-card offline-note">
-            <h2>Offline is deliberately limited.</h2>
-            <p>If the network disappears, Pindrizzle shows a clear offline screen instead of serving cached nearby activity that could be old or misleading. Live local information resumes when you reconnect.</p>
+            <h2>Live data needs a connection</h2>
+            <p>When you are offline, Pindrizzle shows an offline screen instead of cached nearby activity that may be out of date. Live local information returns when you reconnect.</p>
           </section>
 
           <div className="phase23-install-footer"><a href="/">Feed</a><span>·</span><a href="/privacy">Privacy</a><span>·</span><a href="/you">You</a></div>
