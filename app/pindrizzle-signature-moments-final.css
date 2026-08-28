@@ -1,0 +1,63 @@
+/* Final signature-moment overrides: these intentionally load after all existing route styles. */
+
+/* Feed keeps the icon well but swaps only the glyph for the static droplet. */
+.feed-v3-quiet .quiet-icon{
+  display:grid!important;
+  width:54px!important;
+  height:54px!important;
+}
+.feed-v3-quiet .quiet-icon>svg{display:none!important}
+.feed-v3-quiet .quiet-icon::before{
+  content:"";
+  width:24px;
+  height:29px;
+  display:block;
+  margin:0;
+  background:linear-gradient(160deg,rgba(47,131,214,.72),rgba(37,189,200,.66));
+  clip-path:polygon(50% 0,88% 48%,95% 68%,88% 84%,72% 96%,50% 100%,28% 96%,12% 84%,5% 68%,12% 48%);
+  box-shadow:0 7px 14px rgba(8,43,73,.08);
+}
+
+/* Notification empty state uses the same single static motif. */
+.notification-settings-empty-icon{display:none!important}
+.notification-settings-empty::before{
+  content:"";
+  width:24px;
+  height:29px;
+  display:block;
+  margin:0 auto;
+  background:linear-gradient(160deg,rgba(47,131,214,.72),rgba(37,189,200,.66));
+  clip-path:polygon(50% 0,88% 48%,95% 68%,88% 84%,72% 96%,50% 100%,28% 96%,12% 84%,5% 68%,12% 48%);
+  box-shadow:0 7px 14px rgba(8,43,73,.08);
+}
+
+/* My Pins empty/signed-out/loading Moment cards have no stable module class, so target only direct non-list sections. */
+.my-pings-v3>section:not(.my-pings-v3-list)::before{
+  content:"";
+  width:24px;
+  height:29px;
+  display:block;
+  margin:0 auto var(--pd-space-2);
+  background:linear-gradient(160deg,rgba(47,131,214,.72),rgba(37,189,200,.66));
+  clip-path:polygon(50% 0,88% 48%,95% 68%,88% 84%,72% 96%,50% 100%,28% 96%,12% 84%,5% 68%,12% 48%);
+  box-shadow:0 7px 14px rgba(8,43,73,.08);
+}
+.my-pings-v3>section:not(.my-pings-v3-list)>span:first-child{display:none!important}
+
+/* Replace the Map's generic refresh glyph with the brand droplet. */
+.map-v3-top-actions button[aria-label="Refresh nearby Pings"]{
+  font-size:0!important;
+}
+.map-v3-top-actions button[aria-label="Refresh nearby Pings"]::before{
+  content:"";
+  width:10px;
+  height:13px;
+  display:block;
+  background:linear-gradient(160deg,var(--pd-blue-600),var(--pd-aqua-500));
+  clip-path:polygon(50% 0,88% 48%,95% 68%,88% 84%,72% 96%,50% 100%,28% 96%,12% 84%,5% 68%,12% 48%);
+}
+@media(prefers-reduced-motion:no-preference){
+  .map-v3-top-actions button[aria-label="Refresh nearby Pings"]:disabled::before{
+    animation:pdRefreshDroplet 720ms ease-in-out infinite;
+  }
+}
