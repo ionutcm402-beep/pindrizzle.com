@@ -1,0 +1,13 @@
+/* iOS-only native chrome. The WebView stays edge-to-edge; this paints only the
+   physical status-bar safe area so white iOS status icons remain readable. */
+html.pindrizzle-native-ios body::before{
+  content:"";
+  position:fixed;
+  z-index:1300;
+  top:0;
+  left:0;
+  right:0;
+  height:env(safe-area-inset-top,0px);
+  background:#082b49;
+  pointer-events:none;
+}
