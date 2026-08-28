@@ -20,47 +20,78 @@ function iosDevice() {
     || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 }
 
+function savedInstallPrompt() {
+  return (window as Window & { __pindrizzleInstallPrompt?: BeforeInstallPromptEvent | null }).__pindrizzleInstallPrompt || null;
+}
+
 export default function PwaInstallPanel() {
   const [mode, setMode] = useState<InstallMode>("checking");
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    if (standaloneMode()) {
-      setMode("installed");
-    } else if (iosDevice()) {
-      setMode("ios");
-    } else {
-      setMode("manual");
-    }
+    const syncMode = () => {
+      if (standaloneMode()) {
+        setDeferredPrompt(null);
+        setMode("installed");
+        return;
+      }
+      if (iosDevice()) {
+        setDeferredPrompt(null);
+        setMode("ios");
+        return;
+      }
+      const saved = savedInstallPrompt();
+      if (saved) {
+        setDeferredPrompt(saved);
+        setMode("prompt");
+      } else {
+        setDeferredPrompt(null);
+        setMode("manual");
+      }
+    };
 
     const beforeInstall = (event: Event) => {
       const promptEvent = event as BeforeInstallPromptEvent;
       promptEvent.preventDefault();
+      (window as Window & { __pindrizzleInstallPrompt?: BeforeInstallPromptEvent | null }).__pindrizzleInstallPrompt = promptEvent;
       setDeferredPrompt(promptEvent);
       setMode("prompt");
     };
 
+    const installAvailable = () => syncMode();
     const installed = () => {
+      (window as Window & { __pindrizzleInstallPrompt?: BeforeInstallPromptEvent | null }).__pindrizzleInstallPrompt = null;
       setDeferredPrompt(null);
       setMode("installed");
       setMessage("Pindrizzle is installed on this device.");
     };
 
+    syncMode();
     window.addEventListener("beforeinstallprompt", beforeInstall);
+    window.addEventListener("pindrizzle:install-available", installAvailable);
     window.addEventListener("appinstalled", installed);
+    window.addEventListener("pindrizzle:installed", installed);
     return () => {
       window.removeEventListener("beforeinstallprompt", beforeInstall);
+      window.removeEventListener("pindrizzle:install-available", installAvailable);
       window.removeEventListener("appinstalled", installed);
+      window.removeEventListener("pindrizzle:installed", installed);
     };
   }, []);
 
   const install = async () => {
-    if (!deferredPrompt) return;
+    const prompt = deferredPrompt || savedInstallPrompt();
+    if (!prompt) {
+      setMode("manual");
+      setMessage("Use your browser’s Install app or Add to Home Screen option.");
+      return;
+    }
     setMessage("");
     try {
-      await deferredPrompt.prompt();
-      const choice = await deferredPrompt.userChoice;
+      await prompt.prompt();
+      const choice = await prompt.userChoice;
+      (window as Window & { __pindrizzleInstallPrompt?: BeforeInstallPromptEvent | null }).__pindrizzleInstallPrompt = null;
       setDeferredPrompt(null);
       if (choice.outcome === "accepted") {
         setMode("installed");
@@ -70,6 +101,8 @@ export default function PwaInstallPanel() {
         setMessage("Installation was cancelled. You can install Pindrizzle later from this page or your browser menu.");
       }
     } catch {
+      (window as Window & { __pindrizzleInstallPrompt?: BeforeInstallPromptEvent | null }).__pindrizzleInstallPrompt = null;
+      setDeferredPrompt(null);
       setMode("manual");
       setMessage("Your browser did not open the install dialog. Use its Install app or Add to Home Screen option instead.");
     }
