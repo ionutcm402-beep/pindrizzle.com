@@ -227,3 +227,61 @@ main:not(.site-full-bleed):not(.launch-map-screen):not(.compose-start-screen) {
     padding: 12px 8px;
   }
 }
+
+/* -------------------- Website scroll model -------------------- */
+/*
+   The legacy native-shell layer deliberately turns the document into a
+   fixed 100dvh app viewport. Pindrizzle is a website now, with a sticky
+   browser-style header outside the old app shell, so ordinary routes must
+   use normal document scrolling. Keep the dedicated Map viewport isolated.
+*/
+html,
+body {
+  height: auto !important;
+  min-height: 100% !important;
+  max-height: none !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior-y: auto !important;
+}
+
+body {
+  min-height: 100vh !important;
+  touch-action: auto !important;
+}
+
+.page-shell:not(:has(.map-v3-screen)),
+.page-shell:not(:has(.map-v3-screen)) .app-shell {
+  height: auto !important;
+  min-height: calc(100vh - var(--site-header-height)) !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.page-shell:not(:has(.map-v3-screen)) .app-shell main:not(.map-v3-screen) {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+  overscroll-behavior: auto !important;
+  -webkit-overflow-scrolling: auto;
+  scroll-padding-bottom: 0 !important;
+  border-top: 0 !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+}
+
+/* Map remains an intentional viewport surface rather than a document page. */
+html:has(.map-v3-screen),
+body:has(.map-v3-screen) {
+  height: 100% !important;
+  min-height: 100% !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+}
+
+body:has(.map-v3-screen) {
+  height: 100dvh !important;
+  min-height: 100svh !important;
+}
