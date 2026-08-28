@@ -1,3 +1,6 @@
+import { Capacitor } from "@capacitor/core";
+import { Geolocation } from "@capacitor/geolocation";
+
 export type PingLocationState = "idle" | "checking" | "requesting" | "granted" | "denied" | "unavailable" | "error";
 export type PingCoordinates = { lat: number; lng: number };
 export type PingLocationResult = { state: PingLocationState; coordinates: PingCoordinates | null };
@@ -35,18 +38,74 @@ function cachedLocation(): PingLocationResult | null {
   return { state: "granted", coordinates: lastGranted.coordinates };
 }
 
-function currentPosition(markEnabled: boolean): Promise<PingLocationResult> {
+function rememberCoordinates(coordinates: PingCoordinates, markEnabled: boolean) {
+  if (markEnabled) rememberLocationEnabled(true);
+  lastGranted = { coordinates, at: Date.now() };
+  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("ping:location-changed", { detail: coordinates }));
+  return { state: "granted", coordinates } as PingLocationResult;
+}
+
+async function nativePermissionState() {
+  try {
+    const permissions = await Geolocation.checkPermissions();
+    const value = String(permissions.location || permissions.coarseLocation || "prompt");
+    if (value === "granted") return "granted" as const;
+    if (value === "denied") return "denied" as const;
+    return "prompt" as const;
+  } catch {
+    return null;
+  }
+}
+
+async function nativeCurrentPosition(markEnabled: boolean): Promise<PingLocationResult> {
+  const cached = cachedLocation();
+  if (cached) {
+    if (markEnabled) rememberLocationEnabled(true);
+    return cached;
+  }
+
+  try {
+    if (markEnabled) {
+      const state = await nativePermissionState();
+      if (state !== "granted") {
+        const requested = await Geolocation.requestPermissions({ permissions: ["location", "coarseLocation"] });
+        const granted = requested.location === "granted" || requested.coarseLocation === "granted";
+        if (!granted) {
+          rememberLocationEnabled(false);
+          lastGranted = null;
+          return { state: "denied", coordinates: null };
+        }
+      }
+    }
+
+    const position = await Geolocation.getCurrentPosition({
+      enableHighAccuracy: false,
+      timeout: POSITION_SAFETY_TIMEOUT_MS,
+      maximumAge: POSITION_OPTIONS.maximumAge,
+    });
+    return rememberCoordinates({ lat: position.coords.latitude, lng: position.coords.longitude }, markEnabled);
+  } catch (error) {
+    const message = error instanceof Error ? error.message.toLowerCase() : "";
+    if (message.includes("denied") || message.includes("permission")) {
+      rememberLocationEnabled(false);
+      lastGranted = null;
+      return { state: "denied", coordinates: null };
+    }
+    return { state: "error", coordinates: null };
+  }
+}
+
+function browserCurrentPosition(markEnabled: boolean): Promise<PingLocationResult> {
   const cached = cachedLocation();
   if (cached) {
     if (markEnabled) rememberLocationEnabled(true);
     return Promise.resolve(cached);
   }
-  if (inFlightPosition) return inFlightPosition;
   if (typeof navigator === "undefined" || !navigator.geolocation) {
     return Promise.resolve({ state: "error", coordinates: null });
   }
 
-  const request = new Promise<PingLocationResult>((resolve) => {
+  return new Promise<PingLocationResult>((resolve) => {
     let settled = false;
     const finish = (result: PingLocationResult) => {
       if (settled) return;
@@ -54,18 +113,10 @@ function currentPosition(markEnabled: boolean): Promise<PingLocationResult> {
       clearTimeout(safetyTimer);
       resolve(result);
     };
-    const safetyTimer = setTimeout(() => {
-      finish({ state: "error", coordinates: null });
-    }, POSITION_SAFETY_TIMEOUT_MS);
+    const safetyTimer = setTimeout(() => finish({ state: "error", coordinates: null }), POSITION_SAFETY_TIMEOUT_MS);
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        if (markEnabled) rememberLocationEnabled(true);
-        const coordinates: PingCoordinates = { lat: position.coords.latitude, lng: position.coords.longitude };
-        lastGranted = { coordinates, at: Date.now() };
-        if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("ping:location-changed", { detail: coordinates }));
-        finish({ state: "granted", coordinates });
-      },
+      (position) => finish(rememberCoordinates({ lat: position.coords.latitude, lng: position.coords.longitude }, markEnabled)),
       (error) => {
         if (error.code === 1) {
           rememberLocationEnabled(false);
@@ -76,7 +127,17 @@ function currentPosition(markEnabled: boolean): Promise<PingLocationResult> {
       POSITION_OPTIONS,
     );
   });
+}
 
+function currentPosition(markEnabled: boolean): Promise<PingLocationResult> {
+  const cached = cachedLocation();
+  if (cached) {
+    if (markEnabled) rememberLocationEnabled(true);
+    return Promise.resolve(cached);
+  }
+  if (inFlightPosition) return inFlightPosition;
+
+  const request = Capacitor.isNativePlatform() ? nativeCurrentPosition(markEnabled) : browserCurrentPosition(markEnabled);
   inFlightPosition = request;
   void request.finally(() => {
     if (inFlightPosition === request) inFlightPosition = null;
@@ -84,7 +145,7 @@ function currentPosition(markEnabled: boolean): Promise<PingLocationResult> {
   return request;
 }
 
-async function permissionState(): Promise<PermissionState | null> {
+async function browserPermissionState(): Promise<PermissionState | null> {
   if (!navigator.permissions?.query) return null;
   try {
     return await Promise.race([
@@ -97,29 +158,33 @@ async function permissionState(): Promise<PermissionState | null> {
 }
 
 /**
- * Reuses the current in-memory position during normal Ping navigation. Exact
- * coordinates are never persisted. After a hard reload it only re-reads a
- * browser permission that is already granted and never intentionally opens a
- * new permission prompt.
+ * Reuses the current in-memory position during normal navigation. Exact
+ * coordinates are never persisted. A native build checks the OS permission
+ * without prompting; the explicit request action is still the only place that
+ * may open the system permission dialog.
  */
 export async function getPingLocationSilently(): Promise<PingLocationResult> {
   const cached = cachedLocation();
   if (cached) return cached;
-  if (typeof navigator === "undefined" || !navigator.geolocation) return { state: "unavailable", coordinates: null };
 
-  const state = await permissionState();
+  if (Capacitor.isNativePlatform()) {
+    const state = await nativePermissionState();
+    if (state === "granted") return currentPosition(false);
+    if (state === "denied") return { state: "denied", coordinates: null };
+    return { state: "idle", coordinates: null };
+  }
+
+  if (typeof navigator === "undefined" || !navigator.geolocation) return { state: "unavailable", coordinates: null };
+  const state = await browserPermissionState();
   if (state === "granted") return currentPosition(false);
   if (state === "denied") return { state: "denied", coordinates: null };
   if (state === "prompt") return { state: "idle", coordinates: null };
 
-  // Safari and some embedded browsers do not consistently expose geolocation
-  // through Permissions API. Only retry silently after the user explicitly
-  // enabled Ping location before.
   if (hasRememberedLocationChoice()) return currentPosition(false);
   return { state: "idle", coordinates: null };
 }
 
-/** The single explicit Ping-wide location permission action. */
+/** The single explicit Pindrizzle-wide location permission action. */
 export async function requestPingLocation(): Promise<PingLocationResult> {
   return currentPosition(true);
 }
