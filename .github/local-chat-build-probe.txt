@@ -1,0 +1,1 @@
+Temporary verification probe for Local Chat build diagnostics. No production behavior.
