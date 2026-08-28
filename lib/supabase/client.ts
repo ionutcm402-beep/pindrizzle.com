@@ -16,6 +16,37 @@ let browserClient: SupabaseClient | null = null;
 
 const PING_PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const PING_PHOTO_MAX_BYTES = 6 * 1024 * 1024;
+const DEFAULT_REQUEST_TIMEOUT_MS = 20_000;
+const PHOTO_UPLOAD_TIMEOUT_MS = 60_000;
+
+async function fetchWithDeadline(
+  baseFetch: typeof fetch,
+  input: RequestInfo | URL,
+  init: RequestInit | undefined,
+  timeoutMs: number,
+) {
+  const controller = new AbortController();
+  const sourceSignal = init?.signal || (input instanceof Request ? input.signal : null);
+  const forwardAbort = () => controller.abort();
+
+  if (sourceSignal?.aborted) controller.abort();
+  else sourceSignal?.addEventListener("abort", forwardAbort, { once: true });
+
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await baseFetch(input, { ...init, signal: controller.signal });
+  } finally {
+    window.clearTimeout(timer);
+    sourceSignal?.removeEventListener("abort", forwardAbort);
+  }
+}
+
+function timeoutForRequest(url: string, method: string) {
+  if ((method === "POST" || method === "PUT") && url.includes("/storage/v1/object/ping-media/")) {
+    return PHOTO_UPLOAD_TIMEOUT_MS;
+  }
+  return DEFAULT_REQUEST_TIMEOUT_MS;
+}
 
 async function decodePingPhoto(blob: Blob) {
   if (typeof createImageBitmap === "function") {
@@ -111,42 +142,43 @@ const pingAwareFetch: typeof fetch = async (input, init) => {
 
   const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
   const method = String(init?.method || (input instanceof Request ? input.method : "GET")).toUpperCase();
+  const timeoutMs = timeoutForRequest(url, method);
 
   if ((method === "POST" || method === "PUT") && url.includes("/storage/v1/object/ping-media/")) {
     const sanitizedBody = await sanitizePingUploadBody(init?.body);
     if (sanitizedBody !== init?.body || sanitizedBody instanceof FormData) {
-      return baseFetch(input, { ...init, body: sanitizedBody });
+      return fetchWithDeadline(baseFetch, input, { ...init, body: sanitizedBody }, timeoutMs);
     }
   }
 
   const choice = window.__pingLocationPublishChoice;
-  if (!choice?.active || !url.includes("/rest/v1/rpc/create_ping_v3")) return baseFetch(input, init);
+  if (!choice?.active || !url.includes("/rest/v1/rpc/create_ping_v3")) {
+    return fetchWithDeadline(baseFetch, input, init, timeoutMs);
+  }
 
+  let body: Record<string, unknown>;
   try {
     let bodyText = typeof init?.body === "string" ? init.body : "";
     if (!bodyText && input instanceof Request) bodyText = await input.clone().text();
-    if (!bodyText) return baseFetch(input, init);
-
-    const body = JSON.parse(bodyText) as Record<string, unknown>;
-    body.ping_location_precision = choice.precision;
-    if (choice.coordinates) {
-      body.ping_lat = choice.coordinates.lat;
-      body.ping_lng = choice.coordinates.lng;
-    }
-
-    const nextUrl = url.replace("/rest/v1/rpc/create_ping_v3", "/rest/v1/rpc/create_ping_v4");
-    const nextInit = { ...init, body: JSON.stringify(body) };
-    if (input instanceof Request) {
-      const nextRequest = new Request(nextUrl, input);
-      const response = await baseFetch(nextRequest, nextInit);
-      return announcePublishedPin(response, choice);
-    }
-    const response = await baseFetch(nextUrl, nextInit);
-    return announcePublishedPin(response, choice);
+    if (!bodyText) throw new Error("Missing publish request body.");
+    body = JSON.parse(bodyText) as Record<string, unknown>;
   } catch (error) {
-    console.error("Ping could not prepare the selected location privacy for publishing", error);
-    return baseFetch(input, init);
+    console.error("Pindrizzle could not prepare the selected location privacy for publishing", error);
+    throw new Error("Pindrizzle could not safely prepare this pin for publishing. Try again.");
   }
+
+  body.ping_location_precision = choice.precision;
+  if (choice.coordinates) {
+    body.ping_lat = choice.coordinates.lat;
+    body.ping_lng = choice.coordinates.lng;
+  }
+
+  const nextUrl = url.replace("/rest/v1/rpc/create_ping_v3", "/rest/v1/rpc/create_ping_v4");
+  const nextInit = { ...init, body: JSON.stringify(body) };
+  const response = input instanceof Request
+    ? await fetchWithDeadline(baseFetch, new Request(nextUrl, input), nextInit, timeoutMs)
+    : await fetchWithDeadline(baseFetch, nextUrl, nextInit, timeoutMs);
+  return announcePublishedPin(response, choice);
 };
 
 export function createClient() {
