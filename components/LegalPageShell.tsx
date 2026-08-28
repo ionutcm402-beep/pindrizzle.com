@@ -26,7 +26,7 @@ export default function LegalPageShell({
           <div>
             <span className="legal-kicker">{kicker}</span>
             <h1>{title}</h1>
-            <p className="legal-updated">Updated 26 August 2026</p>
+            <p className="legal-updated">Updated 28 August 2026</p>
           </div>
         </header>
         <nav className="legal-nav" aria-label="Privacy and legal navigation">
@@ -36,7 +36,7 @@ export default function LegalPageShell({
         </nav>
         <main className="legal-content">{children}</main>
         <footer className="legal-footer">
-          These pages describe Ping’s current product controls and closed-beta preparation. Final operator/contact and launch-specific legal details must be completed before public launch.
+          These pages describe Pindrizzle’s current website controls and closed-beta preparation. Final operator/contact and launch-specific legal details must be completed before public launch.
         </footer>
       </div>
     </div>
