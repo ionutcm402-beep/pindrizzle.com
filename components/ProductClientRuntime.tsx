@@ -9,7 +9,6 @@ import PrivacySafetyCenter from "@/components/PrivacySafetyCenter";
 import Phase6NotificationBadge from "@/components/Phase6NotificationBadge";
 import Phase16PushSafetyBridge from "@/components/Phase16PushSafetyBridge";
 import Phase19ProductAnalytics from "@/components/Phase19ProductAnalytics";
-import Phase21AccessibilityBridge from "@/components/Phase21AccessibilityBridge";
 import Phase22StorageChoice from "@/components/Phase22StorageChoice";
 import Phase24BetaBridge from "@/components/Phase24BetaBridge";
 import PindrizzleCopyBridge from "@/components/PindrizzleCopyBridge";
@@ -76,7 +75,6 @@ export default function ProductClientRuntime() {
       {isYou && <Phase22LegalSettingsEntry />}
       <Phase24BetaBridge />
       {isFeed && <Phase25LocationChoiceBridge />}
-      <Phase21AccessibilityBridge />
       {needsCommercialPolish && <CommercialSafetyBridge />}
       <PindrizzleCopyBridge />
       {needsInternalBranding && <InternalWebsiteBrandBridge />}
