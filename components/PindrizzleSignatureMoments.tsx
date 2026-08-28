@@ -182,7 +182,7 @@ export function PindrizzleSignatureBridge() {
     setTargetReady(false);
     if (!eligibleForRefresh) return;
 
-    const selector = pathname === "/map" ? ".map-v3-screen" : ".screen-content";
+    const selector = pathname === "/map" ? ".map-v3-screen" : ".feed-v3-list";
     const resolve = () => {
       const next = document.querySelector<HTMLElement>(selector);
       if (!next || next === targetRef.current) return Boolean(next);
