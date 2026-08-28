@@ -1,3 +1,4 @@
+import { Capacitor } from "@capacitor/core";
 import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
 
 type PublishLocationChoice = {
@@ -16,6 +17,26 @@ let browserClient: SupabaseClient | null = null;
 
 const PING_PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const PING_PHOTO_MAX_BYTES = 6 * 1024 * 1024;
+const NATIVE_AUTH_CALLBACK = "pindrizzle://auth/callback";
+
+function nativeAwareAuthUrl(value: string) {
+  if (!Capacitor.isNativePlatform() || !value.includes("/auth/v1/")) return value;
+  try {
+    const parsed = new URL(value);
+    if (parsed.searchParams.has("redirect_to")) parsed.searchParams.set("redirect_to", NATIVE_AUTH_CALLBACK);
+    return parsed.toString();
+  } catch {
+    return value;
+  }
+}
+
+function inputWithUrl(input: RequestInfo | URL, nextUrl: string) {
+  const originalUrl = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+  if (originalUrl === nextUrl) return input;
+  if (input instanceof Request) return new Request(nextUrl, input);
+  if (input instanceof URL) return new URL(nextUrl);
+  return nextUrl;
+}
 
 async function decodePingPhoto(blob: Blob) {
   if (typeof createImageBitmap === "function") {
@@ -109,23 +130,25 @@ const pingAwareFetch: typeof fetch = async (input, init) => {
   const baseFetch = globalThis.fetch.bind(globalThis);
   if (typeof window === "undefined") return baseFetch(input, init);
 
-  const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+  const rawUrl = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+  const url = nativeAwareAuthUrl(rawUrl);
+  const effectiveInput = inputWithUrl(input, url);
   const method = String(init?.method || (input instanceof Request ? input.method : "GET")).toUpperCase();
 
   if ((method === "POST" || method === "PUT") && url.includes("/storage/v1/object/ping-media/")) {
     const sanitizedBody = await sanitizePingUploadBody(init?.body);
     if (sanitizedBody !== init?.body || sanitizedBody instanceof FormData) {
-      return baseFetch(input, { ...init, body: sanitizedBody });
+      return baseFetch(effectiveInput, { ...init, body: sanitizedBody });
     }
   }
 
   const choice = window.__pingLocationPublishChoice;
-  if (!choice?.active || !url.includes("/rest/v1/rpc/create_ping_v3")) return baseFetch(input, init);
+  if (!choice?.active || !url.includes("/rest/v1/rpc/create_ping_v3")) return baseFetch(effectiveInput, init);
 
   try {
     let bodyText = typeof init?.body === "string" ? init.body : "";
     if (!bodyText && input instanceof Request) bodyText = await input.clone().text();
-    if (!bodyText) return baseFetch(input, init);
+    if (!bodyText) return baseFetch(effectiveInput, init);
 
     const body = JSON.parse(bodyText) as Record<string, unknown>;
     body.ping_location_precision = choice.precision;
@@ -145,7 +168,7 @@ const pingAwareFetch: typeof fetch = async (input, init) => {
     return announcePublishedPin(response, choice);
   } catch (error) {
     console.error("Ping could not prepare the selected location privacy for publishing", error);
-    return baseFetch(input, init);
+    return baseFetch(effectiveInput, init);
   }
 };
 
