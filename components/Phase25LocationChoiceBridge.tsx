@@ -30,7 +30,7 @@ export default function Phase25LocationChoiceBridge() {
     const updateCopy = () => {
       document.querySelectorAll<HTMLElement>(".feed-v3-location-card small").forEach((node) => {
         if (node.textContent?.includes("exact position is never published")) {
-          node.textContent = "One permission powers Feed, Map and local posting. You choose Private or Exact for each Ping.";
+          node.textContent = "One permission powers Feed, Map and local posting. You choose Private or Exact for each pin.";
         }
       });
       document.querySelectorAll<HTMLElement>(".map-v3-location small").forEach((node) => {
@@ -41,8 +41,8 @@ export default function Phase25LocationChoiceBridge() {
       const note = currentSheet?.querySelector<HTMLElement>(".expiry-note");
       if (note) {
         note.textContent = modeRef.current === "exact"
-          ? "Exact location: this selected point will be visible to everyone who can see this Ping."
-          : "Private location: Ping publishes an approximate nearby area, not this exact point.";
+          ? "Exact location: this selected point will be visible to everyone who can see this pin."
+          : "Private location: Pindrizzle publishes an approximate nearby area, not this exact point.";
       }
     };
 
@@ -95,8 +95,8 @@ export default function Phase25LocationChoiceBridge() {
     const note = document.querySelector<HTMLElement>(".composer-v3-sheet .expiry-note");
     if (!note) return;
     note.textContent = mode === "exact"
-      ? "Exact location: this selected point will be visible to everyone who can see this Ping."
-      : "Private location: Ping publishes an approximate nearby area, not this exact point.";
+      ? "Exact location: this selected point will be visible to everyone who can see this pin."
+      : "Private location: Pindrizzle publishes an approximate nearby area, not this exact point.";
   }, [mode]);
 
   if (!host) return null;
@@ -111,9 +111,9 @@ export default function Phase25LocationChoiceBridge() {
   };
 
   return createPortal(
-    <section className={`composer-location-choice ${mode === "exact" ? "exact" : "private"}`} aria-label="Ping location privacy">
+    <section className={`composer-location-choice ${mode === "exact" ? "exact" : "private"}`} aria-label="Pin location privacy">
       <div className="composer-location-choice-head">
-        <div><span>LOCATION</span><strong>How precise should this Ping be?</strong></div>
+        <div><span>LOCATION</span><strong>How precise should this pin be?</strong></div>
         <PingIcon name={mode === "exact" ? "location" : "shield"} size={17} />
       </div>
       <div className="composer-location-choice-toggle" role="group" aria-label="Location visibility">
@@ -126,15 +126,15 @@ export default function Phase25LocationChoiceBridge() {
       </div>
       <p className="composer-location-choice-copy">
         {mode === "exact"
-          ? "Anyone who can see this Ping can see the selected exact point. Use this only when a precise public location is useful."
+          ? "Anyone who can see this pin can see the selected exact point. Use this only when a precise public location is useful."
           : "People see a nearby approximate area. Your selected exact point stays hidden."}
       </p>
       <button type="button" className="composer-location-map-toggle" onClick={() => setPickerOpen((value) => !value)} disabled={!coordinates}>
         <PingIcon name="map" size={15} />{pickerOpen ? "Hide map" : coordinates ? "Choose on map" : "Loading location…"}
       </button>
-      {pickerOpen && coordinates && <div className="composer-location-map"><PingLocationPickerMap value={coordinates} onChange={setCoordinates} /><small>{mode === "exact" ? "The pin above is the public point." : "Ping will blur the selected point to a nearby area before publishing."}</small></div>}
+      {pickerOpen && coordinates && <div className="composer-location-map"><PingLocationPickerMap value={coordinates} onChange={setCoordinates} /><small>{mode === "exact" ? "The pin above is the public point." : "Pindrizzle will blur the selected point to a nearby area before publishing."}</small></div>}
       <style jsx global>{`
-        .composer-location-choice{margin-top:13px;padding:12px;border:1px solid var(--ping-line);border-radius:14px;background:#fff}.composer-location-choice.exact{border-color:rgba(232,85,79,.28);background:#fffafa}.composer-location-choice-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.composer-location-choice-head>div>span{display:block;color:var(--ping-muted-2);font-size:7px;font-weight:850;letter-spacing:.1em}.composer-location-choice-head strong{display:block;margin-top:3px;color:var(--ping-ink);font-size:10px}.composer-location-choice-head>svg{color:var(--ping-muted)}.composer-location-choice.exact .composer-location-choice-head>svg{color:var(--ping-danger)}.composer-location-choice-toggle{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}.composer-location-choice-toggle button{min-height:48px;border:1px solid var(--ping-line);border-radius:11px;background:#fff;color:var(--ping-ink-2);display:flex;align-items:center;gap:8px;padding:8px 9px;text-align:left}.composer-location-choice-toggle button.selected{border-color:var(--ping-ink);background:var(--ping-ink);color:#fff}.composer-location-choice.exact .composer-location-choice-toggle button.selected{border-color:#3a302f;background:#3a302f}.composer-location-choice-toggle span{display:grid;gap:2px}.composer-location-choice-toggle strong{font-size:9px}.composer-location-choice-toggle small{font-size:7.5px;opacity:.72}.composer-location-choice-copy{margin:9px 0 0;color:var(--ping-muted);font-size:8px;line-height:1.45}.composer-location-choice.exact .composer-location-choice-copy{color:#80514d}.composer-location-map-toggle{margin-top:9px;min-height:36px;border:1px solid var(--ping-line);border-radius:10px;background:var(--ping-surface-soft);color:var(--ping-ink-2);padding:0 10px;display:inline-flex;align-items:center;gap:6px;font-size:8.5px;font-weight:760}.composer-location-map-toggle:disabled{opacity:.45}.composer-location-map{display:grid;gap:6px;margin-top:9px}.composer-location-map>small{color:var(--ping-muted);font-size:7.5px;line-height:1.4}@media(max-width:350px){.composer-location-choice-toggle{grid-template-columns:1fr}}
+        .composer-location-choice{margin-top:13px;padding:12px;border:1px solid var(--ping-line);border-radius:14px;background:#fff}.composer-location-choice.exact{border-color:rgba(239,111,100,.28);background:#fffafa}.composer-location-choice-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.composer-location-choice-head>div>span{display:block;color:var(--ping-muted-2);font-size:7px;font-weight:850;letter-spacing:.1em}.composer-location-choice-head strong{display:block;margin-top:3px;color:var(--ping-ink);font-size:10px}.composer-location-choice-head>svg{color:var(--ping-muted)}.composer-location-choice.exact .composer-location-choice-head>svg{color:var(--pd-coral)}.composer-location-choice-toggle{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}.composer-location-choice-toggle button{min-height:48px;border:1px solid var(--ping-line);border-radius:11px;background:#fff;color:var(--ping-ink-2);display:flex;align-items:center;gap:8px;padding:8px 9px;text-align:left}.composer-location-choice-toggle button.selected{border-color:var(--pd-ink-900);background:var(--pd-ink-900);color:#fff}.composer-location-choice.exact .composer-location-choice-toggle button.selected{border-color:var(--pd-ink-900);background:var(--pd-ink-900)}.composer-location-choice-toggle span{display:grid;gap:2px}.composer-location-choice-toggle strong{font-size:9px}.composer-location-choice-toggle small{font-size:7.5px;opacity:.72}.composer-location-choice-copy{margin:9px 0 0;color:var(--ping-muted);font-size:8px;line-height:1.45}.composer-location-choice.exact .composer-location-choice-copy{color:#80514d}.composer-location-map-toggle{margin-top:9px;min-height:44px;border:1px solid var(--ping-line);border-radius:999px;background:var(--ping-surface-soft);color:var(--ping-ink-2);padding:0 12px;display:inline-flex;align-items:center;gap:6px;font-size:8.5px;font-weight:760}.composer-location-map-toggle:disabled{opacity:.45}.composer-location-map{display:grid;gap:6px;margin-top:9px}.composer-location-map>small{color:var(--ping-muted);font-size:7.5px;line-height:1.4}@media(max-width:350px){.composer-location-choice-toggle{grid-template-columns:1fr}}
       `}</style>
     </section>,
     host,
