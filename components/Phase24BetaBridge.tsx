@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import PingIcon from "@/components/PingIcon";
 
@@ -11,6 +11,7 @@ type ReleaseStage = "closed_beta" | "public";
 
 export default function Phase24BetaBridge() {
   const pathname = usePathname();
+  const router = useRouter();
   const [releaseStage, setReleaseStage] = useState<ReleaseStage>("closed_beta");
   const [signedIn, setSignedIn] = useState(false);
   const [state, setState] = useState<BetaState | null>(null);
@@ -82,7 +83,7 @@ export default function Phase24BetaBridge() {
   }, [pathname, releaseStage]);
 
   const entry = target && releaseStage === "closed_beta" ? createPortal(
-    <button type="button" onClick={() => window.location.assign("/beta?from=/you")}>
+    <button type="button" onClick={() => router.push("/beta?from=/you")}>
       <span><PingIcon name="beta" /></span><div><strong>Closed beta</strong><small>{state?.has_access ? "Access active · send feedback" : signedIn ? "Invite required to participate" : "Tester access & feedback"}</small></div><b><PingIcon name="chevron" size={16} /></b>
     </button>,
     target,
@@ -94,11 +95,11 @@ export default function Phase24BetaBridge() {
       {releaseStage === "closed_beta" && signedIn && state && !state.has_access && pathname !== "/beta" && !composerOpen && (
         <div className="phase24-beta-banner" role="status">
           <div><strong>Pindrizzle is in closed beta.</strong><span>Your account can browse, but participation needs an invite.</span></div>
-          <a href={`/beta?from=${encodeURIComponent(pathname)}`}>Enter invite</a>
+          <button type="button" onClick={() => router.push(`/beta?from=${encodeURIComponent(pathname)}`)}>Enter invite</button>
         </div>
       )}
       <style jsx global>{`
-        .phase24-beta-banner{position:fixed;z-index:180;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(calc(100% - 24px),430px);display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;border:1px solid rgba(66,171,213,.24);border-radius:16px;background:rgba(244,251,254,.97);box-shadow:0 14px 38px rgba(18,53,72,.18);backdrop-filter:blur(10px)}.phase24-beta-banner strong,.phase24-beta-banner span{display:block}.phase24-beta-banner strong{font-size:10px;color:#10364d}.phase24-beta-banner span{font-size:9px;color:#617987;margin-top:2px}.phase24-beta-banner a{flex:0 0 auto;border-radius:11px;background:#0e3850;color:#fff;text-decoration:none;padding:10px 11px;font-size:9px;font-weight:900}@media(max-width:360px){.phase24-beta-banner span{display:none}}
+        .phase24-beta-banner{position:fixed;z-index:180;left:50%;bottom:calc(var(--pd-tabbar-total) + 12px);transform:translateX(-50%);width:min(calc(100% - 24px),430px);display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border:1px solid rgba(37,189,200,.20);border-radius:var(--pd-radius-card);background:rgba(244,251,254,.97);box-shadow:var(--pd-elevation-2);backdrop-filter:blur(14px)}.phase24-beta-banner strong,.phase24-beta-banner span{display:block}.phase24-beta-banner strong{font-size:10px;color:var(--pd-ink-950)}.phase24-beta-banner span{font-size:9px;color:var(--pd-text-2);margin-top:2px}.phase24-beta-banner button{flex:0 0 auto;min-height:44px;border:1px solid var(--pd-ink-900);border-radius:var(--pd-radius-pill);background:var(--pd-ink-900);color:#fff;padding:0 14px;font-size:9px;font-weight:var(--pd-action-weight)}@media(max-width:360px){.phase24-beta-banner span{display:none}}
       `}</style>
     </>
   );
