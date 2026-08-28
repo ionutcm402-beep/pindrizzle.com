@@ -3,14 +3,14 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
-    name: "Pindrizzle — Drop in daily",
+    name: "Pindrizzle",
     short_name: "Pindrizzle",
     description: "Useful local pins, deals, Marketplace listings and real-time updates around you.",
     start_url: "/",
     scope: "/",
     display: "standalone",
     background_color: "#edf7fb",
-    theme_color: "#edf7fb",
+    theme_color: "#082f4a",
     categories: ["social", "utilities", "lifestyle"],
     icons: [
       { src: "/pindrizzle-icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
