@@ -44,6 +44,7 @@ import "./pindrizzle-premium-my-pins.css";
 import "./pindrizzle-premium-layout-fixes.css";
 import "./pindrizzle-premium-auth.css";
 import "./pindrizzle-premium-business.css";
+import "./pindrizzle-design-system.css";
 import "./pindrizzle-native-shell.css";
 
 export const metadata: Metadata = {
@@ -75,7 +76,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: "#eef8fb",
+  themeColor: "#eef5f7",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
