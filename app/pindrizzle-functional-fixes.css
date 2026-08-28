@@ -1,4 +1,4 @@
-/* Functional web fixes only. No brand or design-system changes. */
+/* Functional/web layout fixes only. No brand or design-system changes. */
 
 /* The document/root shell is intentionally fixed to the viewport. Every normal
    content surface must therefore own its own vertical scrolling at every width. */
@@ -25,4 +25,50 @@ body[data-ping-global-nav-active="true"] .app-shell main:not(.map-v3-screen):not
 .app-shell,
 .ping-global-nav{
   overscroll-behavior:none;
+}
+
+@media (min-width:700px){
+  /* One responsive grid rule for 1, 2 or many Feed items. auto-fit collapses
+     unused tracks, so a single listing fills the content measure instead of
+     sitting at phone width with a dead column beside it. */
+  .feed-v3-list{
+    display:grid!important;
+    grid-template-columns:repeat(auto-fit,minmax(320px,1fr))!important;
+    align-items:stretch!important;
+    gap:16px!important;
+  }
+
+  .feed-v3-list>.feed-v3-card{
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    justify-self:stretch!important;
+  }
+
+  /* Empty state follows the exact same content edges as populated Feed. */
+  .feed-v3-list>.feed-v3-quiet,
+  .feed-v3-list>.quiet-card{
+    grid-column:1/-1!important;
+    width:100%!important;
+    max-width:none!important;
+    justify-self:stretch!important;
+  }
+
+  /* Cohesive status tabs: evenly distributed inside one compact group rather
+     than four pills stretched across the whole desktop canvas. */
+  .my-pings-v3>.my-pings-v3-tabs{
+    width:min(100%,520px)!important;
+    max-width:520px!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:6px!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+  }
+}
+
+@media (min-width:1100px){
+  .feed-v3-list{
+    grid-template-columns:repeat(auto-fit,minmax(360px,1fr))!important;
+    gap:18px!important;
+  }
 }
