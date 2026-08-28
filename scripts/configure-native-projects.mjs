@@ -10,27 +10,119 @@ async function update(relative, transform) {
   if (after !== before) await writeFile(file, after, "utf8");
 }
 
+async function write(relative, content) {
+  await writeFile(path.join(root, relative), content, "utf8");
+}
+
+function replacePlistString(content, key, value) {
+  const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(`(<key>${escaped}<\\/key>\\s*<string>)[\\s\\S]*?(<\\/string>)`);
+  return pattern.test(content) ? content.replace(pattern, `$1${value}$2`) : content;
+}
+
 await update("ios/App/App/Info.plist", (content) => {
-  if (content.includes("NSCameraUsageDescription") && content.includes("pindrizzle</string>")) return content;
-  const block = `
+  let next = content;
+
+  next = replacePlistString(next, "CFBundleDisplayName", "Pindrizzle");
+  next = replacePlistString(
+    next,
+    "NSCameraUsageDescription",
+    "Pindrizzle uses the camera only when you choose to take a photo for a pin. The photo is processed before upload to remove embedded location metadata.",
+  );
+  next = replacePlistString(
+    next,
+    "NSPhotoLibraryUsageDescription",
+    "Pindrizzle lets you choose a photo from your library to attach to a pin. Only the photo you select is accessed, and it is processed before upload to remove embedded location metadata.",
+  );
+  next = replacePlistString(
+    next,
+    "NSLocationWhenInUseUsageDescription",
+    "Pindrizzle uses your location while you use the app to show nearby pins in Feed and Map and to place a new pin near you. Your exact pin location is public only when you explicitly choose Exact.",
+  );
+
+  // Pindrizzle never requests background/Always location. Keeping this key would
+  // imply a permission scope the product does not use and create unnecessary review risk.
+  next = next.replace(/\s*<key>NSLocationAlwaysAndWhenInUseUsageDescription<\/key>\s*<string>[\s\S]*?<\/string>/g, "");
+
+  const portraitOnly = `
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>`;
+  next = next.replace(
+    /\s*<key>UISupportedInterfaceOrientations<\/key>\s*<array>[\s\S]*?<\/array>\s*<key>UISupportedInterfaceOrientations~ipad<\/key>\s*<array>[\s\S]*?<\/array>/,
+    portraitOnly,
+  );
+
+  if (!next.includes("NSCameraUsageDescription")) {
+    const permissions = `
 	<key>NSCameraUsageDescription</key>
-	<string>Pindrizzle uses the camera only when you choose to add a photo to a pin.</string>
+	<string>Pindrizzle uses the camera only when you choose to take a photo for a pin. The photo is processed before upload to remove embedded location metadata.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Pindrizzle lets you choose a photo to attach to a pin.</string>
+	<string>Pindrizzle lets you choose a photo from your library to attach to a pin. Only the photo you select is accessed, and it is processed before upload to remove embedded location metadata.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Pindrizzle uses your location while the app is open to show useful pins nearby and to place new pins.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Pindrizzle uses location only while you are using the app; background location is not used.</string>
+	<string>Pindrizzle uses your location while you use the app to show nearby pins in Feed and Map and to place a new pin near you. Your exact pin location is public only when you explicitly choose Exact.</string>`;
+    next = next.replace(/\n<\/dict>\n<\/plist>\s*$/, `${permissions}\n</dict>\n</plist>\n`);
+  }
+
+  if (!next.includes("<string>pindrizzle</string>")) {
+    const deepLink = `
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
 			<string>com.pindrizzle.app.auth</string>
 			<key>CFBundleURLSchemes</key>
-			<array><string>pindrizzle</string></array>
+			<array>
+				<string>pindrizzle</string>
+			</array>
 		</dict>
 	</array>`;
-  return content.replace(/\n<\/dict>\n<\/plist>\s*$/, `${block}\n</dict>\n</plist>\n`);
+    next = next.replace(/\n<\/dict>\n<\/plist>\s*$/, `${deepLink}\n</dict>\n</plist>\n`);
+  }
+
+  return next;
+});
+
+await write("ios/App/App/App.entitlements", `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>aps-environment</key>
+	<string>development</string>
+</dict>
+</plist>
+`);
+
+await update("ios/App/App.xcodeproj/project.pbxproj", (content) => {
+  let next = content
+    .replace(/PRODUCT_BUNDLE_IDENTIFIER = [^;]+;/g, "PRODUCT_BUNDLE_IDENTIFIER = com.pindrizzle.app;")
+    .replace(/IPHONEOS_DEPLOYMENT_TARGET = [^;]+;/g, "IPHONEOS_DEPLOYMENT_TARGET = 15.0;");
+
+  if (!next.includes("CODE_SIGN_ENTITLEMENTS = App/App.entitlements;")) {
+    next = next.replace(
+      /CODE_SIGN_STYLE = Automatic;/g,
+      "CODE_SIGN_STYLE = Automatic;\n\t\t\t\tCODE_SIGN_ENTITLEMENTS = App/App.entitlements;",
+    );
+  }
+
+  if (!next.includes("com.apple.Push")) {
+    next = next.replace(
+      "ProvisioningStyle = Automatic;",
+      `ProvisioningStyle = Automatic;
+						SystemCapabilities = {
+							com.apple.Push = {
+								enabled = 1;
+							};
+						};`,
+    );
+  }
+
+  return next;
 });
 
 await update("ios/App/App/AppDelegate.swift", (content) => {
@@ -75,4 +167,4 @@ await update("android/app/src/main/AndroidManifest.xml", (content) => {
   return next;
 });
 
-console.log("Configured Pindrizzle native permissions, deep links and push hooks.");
+console.log("Configured Pindrizzle native permissions, deep links, iOS App Store target settings and push hooks.");
