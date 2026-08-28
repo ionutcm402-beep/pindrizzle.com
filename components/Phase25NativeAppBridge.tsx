@@ -14,6 +14,8 @@ export default function Phase25NativeAppBridge() {
     if (!Capacitor.isNativePlatform()) return;
     let disposed = false;
     const removers: Array<() => void | Promise<void>> = [];
+    const platformClass = `pindrizzle-native-${Capacitor.getPlatform()}`;
+    document.documentElement.classList.add("pindrizzle-native", platformClass);
 
     const routeNativeUrl = async (raw: string) => {
       try {
@@ -43,7 +45,8 @@ export default function Phase25NativeAppBridge() {
       if (disposed) return;
 
       await StatusBar.setOverlaysWebView({ overlay: true }).catch(() => {});
-      await StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
+      await StatusBar.setStyle({ style: Style.Light }).catch(() => {});
+      await StatusBar.setBackgroundColor({ color: "#082b49" }).catch(() => {});
       await SplashScreen.hide().catch(() => {});
 
       const appLink = await App.addListener("appUrlOpen", ({ url }) => { void routeNativeUrl(url); });
@@ -63,6 +66,7 @@ export default function Phase25NativeAppBridge() {
 
     return () => {
       disposed = true;
+      document.documentElement.classList.remove("pindrizzle-native", platformClass);
       removers.forEach((remove) => { void remove(); });
     };
   }, []);
