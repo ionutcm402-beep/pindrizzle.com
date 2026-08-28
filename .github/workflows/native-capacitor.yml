@@ -3,18 +3,18 @@ name: Capacitor Native Projects
 on:
   push:
     branches: [phase-25-8-capacitor-native]
-    paths-ignore:
-      - 'ios/**'
-      - 'android/**'
-      - 'package-lock.json'
+    paths: ['.native-build-trigger']
   workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: pindrizzle-capacitor-native
+  cancel-in-progress: true
+
 jobs:
   generate-and-verify:
-    if: github.actor != 'github-actions[bot]'
     runs-on: macos-latest
     timeout-minutes: 45
     env:
