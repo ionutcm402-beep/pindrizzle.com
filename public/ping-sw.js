@@ -1,4 +1,4 @@
-const OFFLINE_CACHE = "pindrizzle-offline-v1";
+const OFFLINE_CACHE = "pindrizzle-offline-v2";
 const OFFLINE_URL = "/offline";
 
 self.addEventListener("install", (event) => {
