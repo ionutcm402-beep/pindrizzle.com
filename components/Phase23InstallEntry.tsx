@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
+import { Capacitor } from "@capacitor/core";
 import PingIcon from "@/components/PingIcon";
 
 function installedStandalone() {
   if (typeof window === "undefined") return false;
+  if (Capacitor.isNativePlatform()) return true;
   const standalone = window.matchMedia("(display-mode: standalone)").matches;
   const navigatorStandalone = Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
   return standalone || navigatorStandalone;
@@ -18,11 +20,9 @@ export default function Phase23InstallEntry() {
   const [installed, setInstalled] = useState(false);
 
   useEffect(() => {
+    if (Capacitor.isNativePlatform()) { setInstalled(true); setTarget(null); return; }
     setInstalled(installedStandalone());
-    if (pathname !== "/you") {
-      setTarget(null);
-      return;
-    }
+    if (pathname !== "/you") { setTarget(null); return; }
     const timer = window.setTimeout(() => setTarget(document.querySelector("#you-account-settings") || document.querySelector(".settings-list")), 0);
     return () => window.clearTimeout(timer);
   }, [pathname]);
