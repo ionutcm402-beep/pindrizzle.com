@@ -45,7 +45,8 @@ export default function Phase25NativeAppBridge() {
       if (disposed) return;
 
       await StatusBar.setOverlaysWebView({ overlay: true }).catch(() => {});
-      await StatusBar.setStyle({ style: Style.Light }).catch(() => {});
+      // Capacitor names Style.Dark for light system-bar content on a dark background.
+      await StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
       await StatusBar.setBackgroundColor({ color: "#082b49" }).catch(() => {});
       await SplashScreen.hide().catch(() => {});
 
