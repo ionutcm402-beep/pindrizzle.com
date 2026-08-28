@@ -2,12 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>CAPACITOR_DEBUG</key>
+	<key>CAPACITOR_DEBUG</key>
 	<string>$(CAPACITOR_DEBUG)</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>Pindrizzle</string>
+	<string>Pindrizzle</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -27,21 +27,21 @@
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
-    <false/>
-    <key>UISceneConfigurations</key>
-    <dict>
-      <key>UIWindowSceneSessionRoleApplication</key>
-      <array>
-        <dict>
-            <key>UISceneConfigurationName</key>
-            <string>Default Configuration</string>
-            <key>UISceneDelegateClassName</key>
-            <string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
-            <key>UISceneStoryboardFile</key>
-            <string>Main</string>
-        </dict>
-      </array>
-    </dict>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>Default Configuration</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
 	</dict>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
@@ -54,33 +54,28 @@
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Pindrizzle uses the camera only when you choose to add a photo to a pin.</string>
+	<string>Pindrizzle uses the camera only when you choose to take a photo for a pin. The photo is processed before upload to remove embedded location metadata.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Pindrizzle lets you choose a photo to attach to a pin.</string>
+	<string>Pindrizzle lets you choose a photo from your library to attach to a pin. Only the photo you select is accessed, and it is processed before upload to remove embedded location metadata.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Pindrizzle uses your location while the app is open to show useful pins nearby and to place new pins.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Pindrizzle uses location only while you are using the app; background location is not used.</string>
+	<string>Pindrizzle uses your location while you use the app to show nearby pins in Feed and Map and to place a new pin near you. Your exact pin location is public only when you explicitly choose Exact.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
 			<string>com.pindrizzle.app.auth</string>
 			<key>CFBundleURLSchemes</key>
-			<array><string>pindrizzle</string></array>
+			<array>
+				<string>pindrizzle</string>
+			</array>
 		</dict>
 	</array>
 </dict>
