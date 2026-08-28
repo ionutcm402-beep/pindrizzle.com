@@ -75,7 +75,7 @@ export default function Phase25PrimaryNavigationBridge() {
   const showCreate = pathname === "/my-pings" && !composerOpen;
 
   return <>
-    {showCreate && <button type="button" className="ping-global-create" onClick={createPin} aria-label="Create a new pin"><PingIcon name="plus" size={18}/><span>Create a new pin</span></button>}
+    {showCreate && <button type="button" className="ping-global-create" onClick={createPin} aria-label="Drop a pin"><PingIcon name="plus" size={18}/><span>Drop a pin</span></button>}
     {!composerOpen && <nav className="ping-global-nav" data-ping-global-nav="true" aria-label="Primary navigation">
       <a href="/" onClick={(event) => navigate(event, "/")} className={itemClass("feed")} aria-current={active === "feed" ? "page" : undefined}><PingIcon name="feed" size={21}/><span>Feed</span></a>
       <a href="/map" onClick={(event) => navigate(event, "/map")} className={itemClass("map")} aria-current={active === "map" ? "page" : undefined}><PingIcon name="map" size={21}/><span>Map</span></a>
