@@ -23,6 +23,7 @@ import Phase24BetaBridge from "@/components/Phase24BetaBridge";
 import Phase25LocationChoiceBridge from "@/components/Phase25LocationChoiceBridge";
 import Phase25PrimaryNavigationBridge from "@/components/Phase25PrimaryNavigationBridge";
 import PindrizzleCopyBridge from "@/components/PindrizzleCopyBridge";
+import { PindrizzleSplash } from "@/components/PindrizzleSignatureMoments";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 import "./accessibility.css";
@@ -48,6 +49,7 @@ import "./pindrizzle-design-system.css";
 import "./pindrizzle-design-system-routes.css";
 import "./pindrizzle-native-shell.css";
 import "./pindrizzle-design-system-final.css";
+import "./pindrizzle-signature-moments.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://pindrizzle.com"),
@@ -85,6 +87,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body>
+        <PindrizzleSplash />
         {children}
         <FirstRunOnboarding />
         <Phase5PingDetail />
