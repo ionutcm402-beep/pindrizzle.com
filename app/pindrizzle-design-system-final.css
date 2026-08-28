@@ -112,7 +112,7 @@ body[data-ping-global-nav-active="true"] .bottom-nav{display:none!important}
 }
 .search-v3-chips{gap:var(--pd-space-2)!important;padding-bottom:var(--pd-space-3)!important}
 .search-v3-chips button{
-  min-height:40px!important;
+  min-height:44px!important;
   border:1px solid var(--pd-line)!important;
   border-radius:var(--pd-radius-pill)!important;
   background:rgba(255,255,255,.82)!important;
@@ -153,6 +153,117 @@ body[data-ping-global-nav-active="true"] .bottom-nav{display:none!important}
 .search-v3-empty h2,.search-v3-empty p{margin:0!important}
 .search-v3-empty p{max-width:320px;color:var(--pd-muted)!important}
 
+/* Pin detail = Content sheet. The native tab bar always stays visible. */
+.detail-v3-backdrop,
+.phase5-privacy-backdrop{
+  left:0!important;right:0!important;top:0!important;
+  bottom:var(--pd-tabbar-total)!important;
+  padding:0!important;
+  align-items:flex-end!important;
+  background:rgba(6,31,54,.28)!important;
+  backdrop-filter:blur(10px)!important;
+  -webkit-backdrop-filter:blur(10px)!important;
+}
+.detail-v3-sheet,
+.phase5-privacy-sheet{
+  width:100%!important;
+  max-width:none!important;
+  max-height:calc(100dvh - var(--pd-tabbar-total) - var(--pd-safe-top) - 8px)!important;
+  margin:0!important;
+  padding:var(--pd-space-2) var(--pd-space-3) var(--pd-space-4)!important;
+  border:1px solid var(--pd-line)!important;
+  border-bottom:0!important;
+  border-radius:var(--pd-radius-sheet) var(--pd-radius-sheet) 0 0!important;
+  background:var(--pd-canvas)!important;
+  box-shadow:var(--pd-elevation-3)!important;
+  overscroll-behavior-y:contain!important;
+}
+.detail-v3-head,
+.phase5-privacy-sheet header{min-height:44px!important}
+.detail-v3-head button,
+.phase5-privacy-sheet header button,
+.detail-v3-safety,
+.detail-v3-reply-top button{
+  min-height:44px!important;
+  border:0!important;
+  border-radius:var(--pd-radius-pill)!important;
+  background:transparent!important;
+  color:#0b6a82!important;
+  box-shadow:none!important;
+  font-weight:var(--pd-action-weight)!important;
+}
+.detail-v3-category{margin-top:var(--pd-space-3)!important;border-color:var(--pd-line)!important;background:var(--pd-aqua-100)!important;color:var(--pd-ink-800)!important}
+.detail-v3-sheet h1{color:var(--pd-ink-950)!important}
+.detail-v3-trust{gap:var(--pd-space-2)!important;margin:var(--pd-space-3) 0!important}
+.detail-v3-trust div,
+.detail-v3-replies article,
+.phase7-safety-stats div,
+.phase5-blocked-user{
+  border:1px solid var(--pd-line)!important;
+  border-radius:var(--pd-radius-control)!important;
+  background:rgba(255,255,255,.94)!important;
+  box-shadow:var(--pd-elevation-1)!important;
+}
+.detail-v3-actions{gap:var(--pd-space-2)!important}
+.detail-v3-actions button,
+.phase5-blocked-user button,
+.detail-v3-danger-box button{
+  min-height:44px!important;
+  border:1px solid var(--pd-line-strong)!important;
+  border-radius:var(--pd-radius-pill)!important;
+  background:rgba(255,255,255,.82)!important;
+  color:var(--pd-ink-800)!important;
+  box-shadow:none!important;
+  font-weight:var(--pd-action-weight)!important;
+}
+.detail-v3-actions button.primary,
+.detail-v3-compose button,
+.detail-v3-wide{
+  min-height:44px!important;
+  border:1px solid var(--pd-ink-900)!important;
+  border-radius:var(--pd-radius-pill)!important;
+  background:var(--pd-ink-900)!important;
+  color:#fff!important;
+  box-shadow:0 7px 18px rgba(8,43,73,.14)!important;
+}
+.detail-v3-actions button.selected{border-color:rgba(37,189,200,.25)!important;background:var(--pd-aqua-100)!important;color:#0c7187!important}
+.detail-v3-expiry{border-color:var(--pd-line)!important;background:var(--pd-silver-100)!important}
+.detail-v3-message{background:var(--pd-aqua-100)!important;color:#0b6577!important}
+.detail-v3-danger-box{border-color:rgba(239,111,100,.22)!important;background:#fff4f2!important;border-radius:var(--pd-radius-card)!important}
+.detail-v3-danger-box button.danger{border-color:#9b4f48!important;background:#9b4f48!important;color:#fff!important}
+.detail-v3-replies{gap:var(--pd-space-2)!important}
+.detail-v3-compose{bottom:calc(-1 * var(--pd-space-4))!important;margin:var(--pd-space-3) calc(-1 * var(--pd-space-3)) calc(-1 * var(--pd-space-4))!important;padding:var(--pd-space-2) var(--pd-space-3) var(--pd-space-3)!important;background:linear-gradient(to top,var(--pd-canvas) 82%,rgba(238,245,247,.82))!important}
+.detail-v3-compose textarea{min-height:48px!important;border-color:var(--pd-line)!important;border-radius:var(--pd-radius-control)!important}
+.detail-v3-hidden{background:var(--pd-aqua-100)!important;color:#0c7187!important;box-shadow:var(--pd-elevation-1)!important}
+
+/* Safety Center = Content sheet, not a centered Moment card. */
+.phase5-privacy-summary{
+  margin-top:var(--pd-space-3)!important;
+  padding:var(--pd-space-3)!important;
+  border:1px solid var(--pd-line)!important;
+  border-radius:var(--pd-radius-card)!important;
+  background:linear-gradient(135deg,var(--pd-aqua-100),rgba(255,255,255,.94))!important;
+  box-shadow:var(--pd-elevation-1)!important;
+}
+.phase5-privacy-summary>div:first-child{background:#fff!important;color:#0c7187!important}
+.phase7-safety-stats{gap:var(--pd-space-2)!important;margin-top:var(--pd-space-2)!important}
+.phase5-blocked-head{margin:var(--pd-space-4) 0 var(--pd-space-2)!important}
+.phase5-blocked-list{gap:var(--pd-space-2)!important}
+.phase5-blocked-user{padding:var(--pd-space-2)!important}
+.phase5-blocked-avatar{background:var(--pd-aqua-100)!important;color:var(--pd-ink-800)!important}
+.phase5-privacy-empty{
+  display:grid!important;justify-items:center!important;
+  padding:var(--pd-space-4)!important;
+  border:1px solid var(--pd-line)!important;
+  border-radius:var(--pd-radius-card)!important;
+  background:rgba(255,255,255,.94)!important;
+  color:var(--pd-muted)!important;
+  text-align:center!important;
+  box-shadow:var(--pd-elevation-1)!important;
+}
+.phase7-safety-note{margin-top:var(--pd-space-3)!important;padding:var(--pd-space-3)!important;border:1px solid var(--pd-line)!important;border-radius:var(--pd-radius-card)!important;background:var(--pd-silver-100)!important}
+.phase5-privacy-message{margin-top:var(--pd-space-2)!important;padding:var(--pd-space-3)!important;border-radius:var(--pd-radius-control)!important;background:var(--pd-aqua-100)!important;color:#0b6577!important}
+
 /* Keep elevation vocabulary strictly to the three system levels. */
 .phase9-builder,
 .phase9-request-history article,
@@ -164,7 +275,11 @@ body[data-ping-global-nav-active="true"] .bottom-nav{display:none!important}
 .phase23-install-card,
 .legal-card,
 .phase12-public-signals div,
-.phase12-public-privacy{
+.phase12-public-privacy,
+.search-v3-card,
+.detail-v3-trust div,
+.detail-v3-replies article,
+.phase5-blocked-user{
   box-shadow:var(--pd-elevation-1)!important;
 }
 .phase23-install-hero,
@@ -178,6 +293,8 @@ body[data-ping-global-nav-active="true"] .bottom-nav{display:none!important}
 .composer-sheet,
 .composer-v3-sheet,
 .map-v3-filter-sheet,
-.first-run-sheet{
+.first-run-sheet,
+.detail-v3-sheet,
+.phase5-privacy-sheet{
   box-shadow:var(--pd-elevation-3)!important;
 }
