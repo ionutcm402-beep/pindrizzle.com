@@ -61,6 +61,8 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>UIStatusBarStyle</key>
+	<string>UIStatusBarStyleLightContent</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Pindrizzle uses the camera only when you choose to take a photo for a pin. The photo is processed before upload to remove embedded location metadata.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
