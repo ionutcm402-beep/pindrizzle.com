@@ -168,7 +168,27 @@ The design system operates inside the Capacitor-ready shell:
 
 Do not design around a floating desktop browser card and then shrink it for mobile.
 
-## 10. Exceptions
+## 10. Signature moments — rare by design
+
+The droplet/pin motif is a signature interaction accent, not a background decoration. It is allowed only in these deliberate moments:
+
+- **App open:** one sub-second pin drop, one ripple, then settle and disappear. Never loop and never block functionality.
+- **Feed / Map pull-to-refresh:** one small droplet/ripple indicator only while the user is pulling or the refresh is active.
+- **Successful pin publish:** one short ripple/drop confirmation after the server accepts the pin. When an Exact point is visible in the picker, anchor the moment to that point; otherwise use a restrained contextual fallback.
+- **Moment empty states:** one static soft droplet illustration. No ambient animation.
+
+Do not use:
+
+- persistent rain or water textures
+- looping ambient ripples
+- decorative water backgrounds
+- animated droplets during ordinary Feed scrolling, Map browsing, lists or cards
+- multiple droplets merely to fill space
+- continuous animation that competes with content
+
+All signature motion must respect `prefers-reduced-motion`. The implementation lives in `components/PindrizzleSignatureMoments.tsx`, `app/pindrizzle-signature-moments.css`, and `app/pindrizzle-signature-moments-final.css`.
+
+## 11. Exceptions
 
 Internal moderation and operations consoles are functional tooling, not customer-facing Pindrizzle product surfaces. They may retain denser operational presentation until a dedicated internal-tools pass. They must never leak legacy public branding into customer-facing routes.
 
