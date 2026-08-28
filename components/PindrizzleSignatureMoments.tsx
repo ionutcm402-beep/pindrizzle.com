@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
+import { usePathname } from "next/navigation";
+import { getPingLocationSilently } from "@/lib/ping-location";
 
 export function PindrizzleDropletMark({ size = 24, className = "" }: { size?: number; className?: string }) {
   return (
@@ -164,5 +166,89 @@ export function PindrizzlePinDropMoment({ moment }: { moment: PinDropMoment | nu
       <span className="pd-pin-drop-ripple" />
       <span className="pd-pin-drop-pin"><i /></span>
     </div>
+  );
+}
+
+export function PindrizzleSignatureBridge() {
+  const pathname = usePathname();
+  const targetRef = useRef<HTMLElement | null>(null);
+  const [targetReady, setTargetReady] = useState(false);
+  const [pinMoment, setPinMoment] = useState<PinDropMoment | null>(null);
+  const momentTimerRef = useRef<number | null>(null);
+  const eligibleForRefresh = pathname === "/" || pathname === "/map";
+
+  useEffect(() => {
+    targetRef.current = null;
+    setTargetReady(false);
+    if (!eligibleForRefresh) return;
+
+    const selector = pathname === "/map" ? ".map-v3-screen" : ".screen-content";
+    const resolve = () => {
+      const next = document.querySelector<HTMLElement>(selector);
+      if (!next || next === targetRef.current) return Boolean(next);
+      targetRef.current = next;
+      setTargetReady(true);
+      return true;
+    };
+
+    if (resolve()) return;
+    const observer = new MutationObserver(() => {
+      if (resolve()) observer.disconnect();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [eligibleForRefresh, pathname]);
+
+  const refreshLocalData = useCallback(async () => {
+    const result = await getPingLocationSilently();
+    if (result.coordinates) {
+      window.dispatchEvent(new CustomEvent("ping:location-changed", { detail: result.coordinates }));
+      return;
+    }
+
+    if (pathname === "/map") {
+      const refreshButton = document.querySelector<HTMLButtonElement>('button[aria-label="Refresh nearby Pings"]');
+      refreshButton?.click();
+    }
+  }, [pathname]);
+
+  const { pull, refreshing } = usePindrizzlePullToRefresh({
+    scrollRef: targetRef,
+    onRefresh: refreshLocalData,
+    enabled: eligibleForRefresh && targetReady,
+    edgeOnly: pathname === "/map",
+  });
+
+  useEffect(() => {
+    const onPublished = (event: Event) => {
+      const detail = (event as CustomEvent<{ precision?: "approximate" | "exact" }>).detail;
+      const exactMarker = detail?.precision === "exact" ? document.querySelector<HTMLElement>(".pindrizzle-picker-pin") : null;
+      const markerRect = exactMarker?.getBoundingClientRect();
+      const markerVisible = Boolean(markerRect && markerRect.bottom > 0 && markerRect.top < window.innerHeight && markerRect.right > 0 && markerRect.left < window.innerWidth);
+      const publishButton = document.querySelector<HTMLElement>(".composer-v3-sheet .publish-button");
+      const buttonRect = publishButton?.getBoundingClientRect();
+      const x = markerVisible && markerRect ? markerRect.left + markerRect.width / 2 : buttonRect ? buttonRect.left + buttonRect.width / 2 : window.innerWidth / 2;
+      const y = markerVisible && markerRect ? markerRect.bottom - 4 : buttonRect ? buttonRect.top + buttonRect.height / 2 : Math.min(window.innerHeight * 0.58, 460);
+
+      if (momentTimerRef.current) window.clearTimeout(momentTimerRef.current);
+      setPinMoment({ key: Date.now(), x, y });
+      momentTimerRef.current = window.setTimeout(() => {
+        setPinMoment(null);
+        momentTimerRef.current = null;
+      }, 620);
+    };
+
+    window.addEventListener("pindrizzle:pin-published", onPublished);
+    return () => {
+      window.removeEventListener("pindrizzle:pin-published", onPublished);
+      if (momentTimerRef.current) window.clearTimeout(momentTimerRef.current);
+    };
+  }, []);
+
+  return (
+    <>
+      {eligibleForRefresh && <PindrizzleRefreshIndicator pull={pull} refreshing={refreshing} />}
+      <PindrizzlePinDropMoment moment={pinMoment} />
+    </>
   );
 }
