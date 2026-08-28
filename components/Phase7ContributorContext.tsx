@@ -86,8 +86,8 @@ export default function Phase7ContributorContext() {
 
   useEffect(() => {
     const ensureHost = () => {
-      const sheet = document.querySelector<HTMLElement>(".phase5-detail-sheet");
-      const trust = sheet?.querySelector<HTMLElement>(".phase5-detail-trust");
+      const sheet = document.querySelector<HTMLElement>(".detail-v3-sheet");
+      const trust = sheet?.querySelector<HTMLElement>(".detail-v3-trust");
       if (!sheet || !trust) {
         setHost(null);
         return;
