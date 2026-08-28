@@ -120,7 +120,7 @@ export default function PwaInstallPanel() {
             <div className="phase23-install-icon" aria-hidden="true"><i>pd</i></div>
             <div>
               <h2>Pindrizzle on your device</h2>
-              <p>Add Pindrizzle to your home screen or computer for direct access. The web app updates automatically.</p>
+              <p>Add Pindrizzle to your home screen or computer for direct access. The website updates automatically.</p>
             </div>
           </section>
 
@@ -130,7 +130,7 @@ export default function PwaInstallPanel() {
             <section className="phase23-install-card success">
               <span className="phase23-install-status">INSTALLED</span>
               <h2>Pindrizzle is installed</h2>
-              <p>Open it from your home screen, app launcher, dock or Start menu. The browser version remains available.</p>
+              <p>Open it from your home screen, dock or Start menu. The regular browser version remains available.</p>
               <div className="phase23-install-actions"><a className="primary" href="/">Open Feed</a></div>
             </section>
           )}
@@ -153,7 +153,7 @@ export default function PwaInstallPanel() {
                 <li>Tap the Share button.</li>
                 <li>Choose <b>Add to Home Screen</b>, then confirm Add.</li>
               </ol>
-              <p>Home-screen web apps can also use web push on supported iPhone and iPad versions when you choose to enable it.</p>
+              <p>The installed website can also use web push on supported iPhone and iPad versions when you choose to enable it.</p>
             </section>
           )}
 
