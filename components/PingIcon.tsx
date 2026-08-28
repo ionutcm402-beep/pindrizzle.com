@@ -12,17 +12,18 @@ export type PingIconName =
 
 type Props = SVGProps<SVGSVGElement> & { name: PingIconName; size?: number };
 
-export default function PingIcon({ name, size = 20, ...props }: Props) {
+export default function PingIcon({ name, size = 20, className, ...props }: Props) {
   const common = {
     viewBox: "0 0 24 24",
     width: size,
     height: size,
     fill: "none",
     stroke: "currentColor",
-    strokeWidth: 1.8,
+    strokeWidth: 1.75,
     strokeLinecap: "round" as const,
     strokeLinejoin: "round" as const,
     "aria-hidden": true,
+    className: `pd-icon${className ? ` ${className}` : ""}`,
   };
 
   let content;
