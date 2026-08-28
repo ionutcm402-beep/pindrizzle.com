@@ -57,7 +57,7 @@ function groupPings(pings: MapPing[]) {
   return Array.from(groups.values());
 }
 
-export default function LivePingMap({ center, radiusMiles, pings }: Props) {
+export default function LivePingMap({ center, radiusMiles, pings, selectedId, onSelect }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const maplibreRef = useRef<any>(null);
   const mapRef = useRef<any>(null);
@@ -133,12 +133,14 @@ export default function LivePingMap({ center, radiusMiles, pings }: Props) {
       const representative = group[0];
       const isCluster = group.length > 1;
       const isPricePin = !isCluster && representative.categoryKey === "marketplace" && Boolean(representative.priceLabel);
+      const selected = !isCluster && representative.id === selectedId;
       const avgLat = group.reduce((sum, ping) => sum + ping.lat, 0) / group.length;
       const avgLng = group.reduce((sum, ping) => sum + ping.lng, 0) / group.length;
       const button = document.createElement("button");
       button.type = "button";
-      button.className = `ping-map-pin ping-map-pin-${representative.categoryKey}${isCluster ? " cluster" : ""}${isPricePin ? " price" : ""}`;
+      button.className = `ping-map-pin ping-map-pin-${representative.categoryKey}${isCluster ? " cluster" : ""}${isPricePin ? " price" : ""}${selected ? " selected" : ""}`;
       button.setAttribute("aria-label", isCluster ? `${group.length} nearby pins. Zoom in to separate them.` : `${representative.category}: ${representative.title}${representative.priceLabel ? `, ${representative.priceLabel}` : ""}`);
+      if (selected) button.setAttribute("aria-pressed", "true");
       button.dataset.pingTitle = isCluster ? `${group.length} pins nearby` : representative.title;
       if (!isCluster) button.dataset.userContent = "true";
       button.innerHTML = isCluster
@@ -155,12 +157,13 @@ export default function LivePingMap({ center, radiusMiles, pings }: Props) {
           map.easeTo({ center: [avgLng, avgLat], zoom: Math.min(map.getZoom() + 2, 17), duration: 360 });
           return;
         }
-        window.location.assign(`/#ping=${encodeURIComponent(representative.id)}`);
+        onSelect(representative.id);
+        window.dispatchEvent(new CustomEvent("ping:open-detail", { detail: { id: representative.id, live: true } }));
       });
       return new maplibre.Marker({ element: button, anchor: "bottom" }).setLngLat([avgLng, avgLat]).addTo(map);
     });
     return () => { markersRef.current.forEach((marker) => marker.remove()); markersRef.current = []; };
-  }, [pings, mapReady]);
+  }, [pings, mapReady, onSelect, selectedId]);
 
   return (
     <>
@@ -171,7 +174,7 @@ export default function LivePingMap({ center, radiusMiles, pings }: Props) {
         .map-v3-card{display:none!important}
         .live-ping-map{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;background:#d9e2e6}.live-map-starting{position:absolute;z-index:35;left:16px;top:120px;padding:8px 12px;border:1px solid rgba(8,43,73,.10);border-radius:999px;background:rgba(248,252,253,.92);color:#496777;font-size:10px;font-weight:700;box-shadow:var(--pd-elevation-1);backdrop-filter:blur(16px)}.live-map-error{position:absolute;z-index:40;left:16px;right:16px;top:120px;padding:16px;border:1px solid var(--pd-line);border-radius:20px;background:rgba(255,255,255,.96);color:var(--pd-text);box-shadow:var(--pd-elevation-2);display:grid;gap:4px}.live-map-error strong{font-size:13px}.live-map-error span{font-size:10px;color:var(--pd-muted);line-height:1.45}
         .ping-user-marker{width:14px;height:14px;border:3px solid #fff;border-radius:50%;background:#2f83d6;box-shadow:0 0 0 6px rgba(37,189,200,.17),0 4px 12px rgba(8,43,73,.24)}
-        .ping-map-pin{--pin:#2f83d6;position:relative;width:38px!important;height:46px!important;min-width:38px!important;min-height:46px!important;border:0!important;background:transparent!important;padding:0!important;cursor:pointer;filter:drop-shadow(0 5px 8px rgba(8,43,73,.20));transform-origin:50% 100%;transition:transform .16s ease,filter .16s ease;overflow:visible!important}.ping-map-pin-head{position:absolute;left:5px;top:5px;width:29px;height:29px;display:grid;place-items:center;border:2px solid rgba(255,255,255,.96);border-radius:50% 50% 50% 8px;background:var(--pin);color:#fff;transform:rotate(-45deg);box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}.ping-map-pin-head svg{width:14px;height:14px;transform:rotate(45deg)}.ping-map-pin-head b{font-size:10px;color:#fff;transform:rotate(45deg)}.ping-map-pin-alert{--pin:#ef6f64}.ping-map-pin-traffic{--pin:#e5a64d}.ping-map-pin-lost_found{--pin:#6f82c9}.ping-map-pin-free{--pin:#25bdc8}.ping-map-pin-help{--pin:#55cad3}.ping-map-pin-deals{--pin:#2f83d6}.ping-map-pin-marketplace{--pin:#082b49}.ping-map-pin-parking{--pin:#6078ad}.ping-map-pin-events{--pin:#507fc4}.ping-map-pin-outages{--pin:#e9855f}.ping-map-pin-local{--pin:#3698e5}.ping-map-pin.cluster{--pin:#0d3d60}.ping-map-pin:focus-visible{outline:3px solid rgba(37,189,200,.55)!important;outline-offset:4px!important}.ping-map-pin:hover,.ping-map-pin:focus-visible{transform:scale(1.14);z-index:8!important;filter:drop-shadow(0 8px 12px rgba(8,43,73,.25))}
+        .ping-map-pin{--pin:#2f83d6;position:relative;width:38px!important;height:46px!important;min-width:38px!important;min-height:46px!important;border:0!important;background:transparent!important;padding:0!important;cursor:pointer;filter:drop-shadow(0 5px 8px rgba(8,43,73,.20));transform-origin:50% 100%;transition:transform .16s ease,filter .16s ease;overflow:visible!important}.ping-map-pin-head{position:absolute;left:5px;top:5px;width:29px;height:29px;display:grid;place-items:center;border:2px solid rgba(255,255,255,.96);border-radius:50% 50% 50% 8px;background:var(--pin);color:#fff;transform:rotate(-45deg);box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}.ping-map-pin-head svg{width:14px;height:14px;transform:rotate(45deg)}.ping-map-pin-head b{font-size:10px;color:#fff;transform:rotate(45deg)}.ping-map-pin-alert{--pin:#ef6f64}.ping-map-pin-traffic{--pin:#e5a64d}.ping-map-pin-lost_found{--pin:#6f82c9}.ping-map-pin-free{--pin:#25bdc8}.ping-map-pin-help{--pin:#55cad3}.ping-map-pin-deals{--pin:#2f83d6}.ping-map-pin-marketplace{--pin:#082b49}.ping-map-pin-parking{--pin:#6078ad}.ping-map-pin-events{--pin:#507fc4}.ping-map-pin-outages{--pin:#e9855f}.ping-map-pin-local{--pin:#3698e5}.ping-map-pin.cluster{--pin:#0d3d60}.ping-map-pin:focus-visible{outline:3px solid rgba(37,189,200,.55)!important;outline-offset:4px!important}.ping-map-pin:hover,.ping-map-pin:focus-visible,.ping-map-pin.selected{transform:scale(1.14);z-index:8!important;filter:drop-shadow(0 8px 12px rgba(8,43,73,.25))}
         .ping-map-pin::after{content:attr(data-ping-title);position:absolute;z-index:12;left:50%;bottom:49px;max-width:190px;min-width:max-content;padding:8px;border:1px solid rgba(8,43,73,.08);border-radius:12px;background:rgba(250,253,254,.97);color:#0a2b46;box-shadow:var(--pd-elevation-2);font-size:9px;font-weight:760;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;pointer-events:none;transform:translate(-50%,5px) scale(.96);transition:opacity .14s ease,transform .14s ease}.ping-map-pin:hover::after,.ping-map-pin:focus-visible::after{opacity:1;transform:translate(-50%,0) scale(1)}
         .ping-map-pin.price{width:auto!important;min-width:56px!important;height:43px!important;min-height:43px!important;filter:drop-shadow(0 5px 8px rgba(8,43,73,.20))}.ping-map-price-head{position:relative;z-index:2;display:flex;align-items:center;justify-content:center;min-width:56px;height:30px;padding:0 10px;border:2px solid rgba(255,255,255,.96);border-radius:999px;background:#082b49;color:#fff;white-space:nowrap}.ping-map-price-head b{font-size:10px;font-weight:820;letter-spacing:-.02em}.ping-map-price-tail{position:absolute;z-index:1;left:50%;top:27px;width:10px;height:11px;transform:translateX(-50%);background:#25bdc8;clip-path:polygon(0 0,100% 0,50% 100%)}
         .live-ping-map .maplibregl-ctrl-attrib{margin:0 7px 7px 0!important;border:1px solid rgba(8,43,73,.08)!important;border-radius:10px!important;background:rgba(242,248,249,.74)!important;color:#617985!important;box-shadow:none!important;font-size:8px!important;backdrop-filter:blur(10px)}.live-ping-map .maplibregl-ctrl-attrib a{color:#496777!important;text-decoration:none!important}.live-ping-map .maplibregl-ctrl-attrib-button{width:28px!important;height:28px!important;background-color:rgba(242,248,249,.88)!important;border-radius:9px!important}
