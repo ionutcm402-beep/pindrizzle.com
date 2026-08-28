@@ -4,7 +4,7 @@ export default function OfflinePage() {
   return (
     <div className="pindrizzle-offline-page">
       <main className="pindrizzle-offline-moment">
-        <div className="brand">pindrizzle</div>
+        <div className="brand">Pindrizzle</div>
         <span className="pindrizzle-offline-icon" aria-hidden="true"><i /></span>
         <div className="pindrizzle-offline-eyebrow">OFFLINE</div>
         <h1>Pindrizzle needs a connection for live local updates.</h1>
