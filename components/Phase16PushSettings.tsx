@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { isNativeRuntime } from "@/lib/native-runtime";
 import PingIcon from "@/components/PingIcon";
 
-type PushState = "checking" | "unsupported" | "off" | "blocked" | "on" | "working";
+type PushState = "checking" | "native_pending" | "unsupported" | "off" | "blocked" | "on" | "working";
 
 type Props = {
   userId: string | null;
@@ -33,6 +34,7 @@ export default function Phase16PushSettings({ userId, authLoading }: Props) {
 
   const supported = useCallback(() => {
     return typeof window !== "undefined"
+      && !isNativeRuntime()
       && window.isSecureContext
       && "serviceWorker" in navigator
       && "PushManager" in window
@@ -40,6 +42,11 @@ export default function Phase16PushSettings({ userId, authLoading }: Props) {
   }, []);
 
   const refresh = useCallback(async () => {
+    if (isNativeRuntime()) {
+      setDeviceCount(0);
+      setState("native_pending");
+      return;
+    }
     if (!supported()) {
       setState("unsupported");
       return;
@@ -87,6 +94,10 @@ export default function Phase16PushSettings({ userId, authLoading }: Props) {
   }, [authLoading, refresh]);
 
   const enable = async () => {
+    if (isNativeRuntime()) {
+      setState("native_pending");
+      return;
+    }
     if (!userId) {
       window.dispatchEvent(new CustomEvent("ping:auth-needed", { detail: { message: "Sign in to enable Pindrizzle notifications on this device." } }));
       return;
@@ -145,7 +156,7 @@ export default function Phase16PushSettings({ userId, authLoading }: Props) {
   };
 
   const disable = async () => {
-    if (!supported()) return;
+    if (isNativeRuntime() || !supported()) return;
     setState("working");
     setMessage("");
     try {
@@ -167,30 +178,36 @@ export default function Phase16PushSettings({ userId, authLoading }: Props) {
 
   const statusCopy = state === "on"
     ? "Enabled on this device"
-    : state === "blocked"
-      ? "Blocked by browser settings"
-      : state === "unsupported"
-        ? "Not available on this browser/device"
-        : state === "working" || state === "checking"
-          ? "Checking this device…"
-          : "Off on this device";
+    : state === "native_pending"
+      ? "Native beta setup pending"
+      : state === "blocked"
+        ? "Blocked by browser settings"
+        : state === "unsupported"
+          ? "Not available on this browser/device"
+          : state === "working" || state === "checking"
+            ? "Checking this device…"
+            : "Off on this device";
+
+  const description = state === "native_pending"
+    ? "Native notifications are intentionally disabled in this beta build until APNs on iOS and FCM on Android are connected and verified."
+    : "Get useful local activity even when Pindrizzle is closed. Notifications follow your Reply, Confirmation and Helpful choices below.";
 
   return (
     <section className="phase16-push-card" aria-label="Pindrizzle notification settings">
       <div className="phase16-push-icon"><PingIcon name="alerts" size={20} /></div>
       <div className="phase16-push-copy">
         <div className="phase16-push-title"><strong>Push notifications</strong><span className={state === "on" ? "on" : ""}>{statusCopy}</span></div>
-        <p>Get useful local activity even when Pindrizzle is closed. Notifications follow your Reply, Confirmation and Helpful choices below.</p>
+        <p>{description}</p>
         {deviceCount > 0 && <small>{deviceCount} {deviceCount === 1 ? "device" : "devices"} connected to this account.</small>}
         {message && <div className="phase16-push-message">{message}</div>}
       </div>
-      <button
+      {state !== "native_pending" && <button
         type="button"
         onClick={state === "on" ? disable : enable}
         disabled={authLoading || state === "checking" || state === "working" || state === "blocked" || state === "unsupported"}
       >
         {state === "on" ? "Turn off" : state === "working" ? "Working…" : "Enable push"}
-      </button>
+      </button>}
       <style jsx>{`
         .phase16-push-card{margin:0 0 13px;padding:15px;border:1px solid rgba(31,91,124,.13);background:linear-gradient(135deg,#edf8fc,#fff);border-radius:20px;display:grid;grid-template-columns:42px 1fr;gap:11px;align-items:start}.phase16-push-icon{width:42px;height:42px;border-radius:14px;background:#dff5fb;color:#0a668d;display:grid;place-items:center}.phase16-push-copy{min-width:0}.phase16-push-title{display:flex;align-items:center;justify-content:space-between;gap:8px}.phase16-push-title strong{font-size:12px;color:#17364a}.phase16-push-title span{font-size:8px;font-weight:900;color:#6f8490;background:#edf3f6;border-radius:999px;padding:5px 7px;white-space:nowrap}.phase16-push-title span.on{color:#0d6182;background:#d9f1f8}.phase16-push-copy p{margin:6px 0 0;color:#657d8b;font-size:10px;line-height:1.45}.phase16-push-copy small{display:block;margin-top:6px;color:#778d98;font-size:8px;font-weight:800}.phase16-push-message{margin-top:7px;color:#245b74;font-size:9px;font-weight:850}.phase16-push-card>button{grid-column:2;justify-self:start;border:0;border-radius:11px;background:#123c57;color:#fff;padding:9px 12px;font-size:9px;font-weight:900}.phase16-push-card>button:disabled{opacity:.45;cursor:not-allowed}
       `}</style>
