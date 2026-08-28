@@ -6,6 +6,7 @@ import PingIcon from "@/components/PingIcon";
 import {
   CATEGORY_DEFINITIONS,
   CATEGORY_ORDER,
+  CREATE_CATEGORY_ORDER,
   DEAL_KIND_LABEL,
   DEAL_KINDS,
   DEAL_SOURCE_LABEL,
@@ -258,13 +259,13 @@ function LocationBanner({ state, onRequest }: { state: PingLocationState; onRequ
 }
 
 function Composer({ onClose, onPublish }: { onClose: () => void; onPublish: (draft: PingDraft) => void | Promise<void> }) {
-  const [category, setCategory] = useState<PingCategoryKey>("alert");
+  const [category, setCategory] = useState<PingCategoryKey>("free");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoError, setPhotoError] = useState("");
   const [publishing, setPublishing] = useState(false);
-  const [expiryHours, setExpiryHours] = useState(CATEGORY_DEFINITIONS.alert.recommendedExpiryHours);
+  const [expiryHours, setExpiryHours] = useState(CATEGORY_DEFINITIONS.free.recommendedExpiryHours);
   const [dealSource, setDealSource] = useState<DealSource>("spotted");
   const [dealKind, setDealKind] = useState<DealKind>("offer");
   const [merchantName, setMerchantName] = useState("");
@@ -316,7 +317,7 @@ function Composer({ onClose, onPublish }: { onClose: () => void; onPublish: (dra
 
   return <div className="composer-backdrop" role="dialog" aria-modal="true" aria-label="Drop a pin"><div className="composer-sheet composer-v3-sheet">
     <div className="sheet-handle" /><div className="composer-header"><button onClick={onClose} disabled={publishing}>Cancel</button><strong>New pin</strong><span /></div><h2>Share something useful nearby</h2>
-    <div className="composer-v3-category-grid" aria-label="Pin category">{CATEGORY_ORDER.map((key) => { const item = CATEGORY_DEFINITIONS[key]; return <button type="button" key={key} className={category === key ? "selected" : ""} onClick={() => chooseCategory(key)} disabled={publishing}><PingIcon name={item.icon} size={16} /><span>{item.label}</span></button>; })}</div>
+    <div className="composer-v3-category-grid" aria-label="Pin category">{CREATE_CATEGORY_ORDER.map((key) => { const item = CATEGORY_DEFINITIONS[key]; return <button type="button" key={key} className={category === key ? "selected" : ""} onClick={() => chooseCategory(key)} disabled={publishing}><PingIcon name={item.icon} size={16} /><span>{item.label}</span></button>; })}</div>
 
     {category === "deals" && <section className="composer-v3-deal-panel"><div className="composer-v3-source-toggle"><button type="button" className={dealSource === "spotted" ? "selected" : ""} onClick={() => setDealSource("spotted")}><PingIcon name="deals" size={15} />I found this deal</button><button type="button" className={dealSource === "business" ? "selected" : ""} onClick={() => setDealSource("business")}><PingIcon name="business" size={15} />Business post</button></div><label>Shop or business name<input value={merchantName} onChange={(event) => setMerchantName(event.target.value)} maxLength={120} placeholder="e.g. Tesco, local café, Currys" /></label><label>Deal type<select value={dealKind} onChange={(event) => setDealKind(event.target.value as DealKind)}>{DEAL_KINDS.map((kind) => <option key={kind} value={kind}>{DEAL_KIND_LABEL[kind]}</option>)}</select></label>{dealSource === "business" && <small>Business posts are self-identified and are not shown as verified.</small>}</section>}
 

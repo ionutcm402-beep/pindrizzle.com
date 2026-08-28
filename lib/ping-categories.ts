@@ -75,6 +75,16 @@ export const CATEGORY_ORDER: PingCategoryKey[] = [
   "local",
 ];
 
+// Categories offered when creating a new pin. Keep CATEGORY_ORDER and
+// CATEGORY_DEFINITIONS unchanged so historical pins in retired categories
+// continue to render and remain available through existing views and filters.
+export const CREATE_CATEGORY_ORDER: PingCategoryKey[] = [
+  "free",
+  "deals",
+  "marketplace",
+  "local",
+];
+
 export const CATEGORY_DEFINITIONS: Record<PingCategoryKey, CategoryDefinition> = {
   alert: { key: "alert", label: "Alert", shortLabel: "Alert", icon: "alert", tone: "urgent", usefulnessWeight: 46, recommendedExpiryHours: 6, maxExpiryHours: 24 },
   traffic: { key: "traffic", label: "Traffic", shortLabel: "Traffic", icon: "traffic", tone: "urgent", usefulnessWeight: 42, recommendedExpiryHours: 6, maxExpiryHours: 24 },
