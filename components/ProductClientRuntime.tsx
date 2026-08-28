@@ -30,7 +30,15 @@ const InternalWebsiteBrandBridge = dynamic(() => import("@/components/InternalWe
 
 const COMMERCIAL_POLISH_PATHS = new Set(["/promote", "/business", "/search"]);
 const VISIBILITY_SYNC_PATHS = new Set(["/", "/map", "/search", "/following"]);
-const COPY_BRIDGE_DEFER_PATHS = new Set(["/map", "/search", "/my-pings", "/alerts", "/you"]);
+const COPY_BRIDGE_DEFER_PATHS = new Set([
+  "/map",
+  "/search",
+  "/my-pings",
+  "/alerts",
+  "/you",
+  "/following",
+  "/notifications",
+]);
 
 export default function ProductClientRuntime() {
   const pathname = usePathname();
