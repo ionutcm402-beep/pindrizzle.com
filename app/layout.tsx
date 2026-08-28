@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import NativeRuntimeBridge from "@/components/NativeRuntimeBridge";
 import Phase21AccessibilityBridge from "@/components/Phase21AccessibilityBridge";
+import Phase23PwaBridge from "@/components/Phase23PwaBridge";
 import LiveDataRecoveryBridge from "@/components/LiveDataRecoveryBridge";
 import SiteHeader from "@/components/SiteHeader";
 import ProductRuntimeGate from "@/components/ProductRuntimeGate";
@@ -75,6 +76,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en">
       <body>
         <Phase21AccessibilityBridge />
+        <Phase23PwaBridge />
         <LiveDataRecoveryBridge />
         <NativeRuntimeBridge />
         <SiteHeader />
