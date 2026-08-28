@@ -1,0 +1,94 @@
+name: Capacitor Native Projects
+
+on:
+  push:
+    branches: [phase-25-8-capacitor-native]
+    paths-ignore:
+      - 'ios/**'
+      - 'android/**'
+      - 'package-lock.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate-and-verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: macos-latest
+    timeout-minutes: 45
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
+      NEXT_PUBLIC_PINDRIZZLE_API_ORIGIN: https://ping-app-cyan.vercel.app
+      SUPABASE_SERVICE_ROLE_KEY: ci_service_role_placeholder
+      STRIPE_SECRET_KEY: sk_test_ci_placeholder
+      STRIPE_WEBHOOK_SECRET: whsec_ci_placeholder
+      PING_LIVE_PAYMENTS_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build static Capacitor web bundle
+        run: npm run build:native:web
+
+      - name: Add native projects when missing
+        shell: bash
+        run: |
+          if [ ! -d ios ]; then npx cap add ios; fi
+          if [ ! -d android ]; then npx cap add android; fi
+
+      - name: Sync Capacitor plugins and web bundle
+        run: npx cap sync
+
+      - name: Generate native icons and splash from exact Pindrizzle asset
+        shell: bash
+        run: |
+          mkdir -p assets
+          cp public/pindrizzle-icon-512.png assets/logo.png
+          npm run native:assets
+          rm -rf assets
+
+      - name: Apply Pindrizzle native permissions and deep links
+        run: node scripts/configure-native-projects.mjs
+
+      - name: Verify Android native compile
+        shell: bash
+        run: |
+          chmod +x android/gradlew
+          cd android
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Verify iOS simulator compile without signing
+        shell: bash
+        run: |
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Commit generated native projects
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add ios android package-lock.json
+          if git diff --cached --quiet; then
+            echo 'Native projects already current.'
+            exit 0
+          fi
+          git commit -m 'build: generate Capacitor iOS and Android projects'
+          git push origin HEAD:${GITHUB_REF_NAME}
