@@ -277,7 +277,7 @@ export default function ChatPage() {
     const supabase = createClient();
     let disposed = false;
     let channel: ReturnType<typeof supabase.channel> | null = null;
-    let refreshTimer: ReturnType<typeof window.setTimeout> | null = null;
+    let refreshTimer: number | null = null;
 
     const refreshChangedMessage = async (payload: RealtimePayload) => {
       const changedId = payload.new?.id || payload.old?.id;
