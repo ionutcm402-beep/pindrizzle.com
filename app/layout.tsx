@@ -23,7 +23,7 @@ import Phase24BetaBridge from "@/components/Phase24BetaBridge";
 import Phase25LocationChoiceBridge from "@/components/Phase25LocationChoiceBridge";
 import Phase25PrimaryNavigationBridge from "@/components/Phase25PrimaryNavigationBridge";
 import PindrizzleCopyBridge from "@/components/PindrizzleCopyBridge";
-import { PindrizzleSplash } from "@/components/PindrizzleSignatureMoments";
+import { PindrizzleSignatureBridge, PindrizzleSplash } from "@/components/PindrizzleSignatureMoments";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 import "./accessibility.css";
@@ -89,6 +89,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         <PindrizzleSplash />
         {children}
+        <PindrizzleSignatureBridge />
         <FirstRunOnboarding />
         <Phase5PingDetail />
         <PrivacySafetyCenter />
