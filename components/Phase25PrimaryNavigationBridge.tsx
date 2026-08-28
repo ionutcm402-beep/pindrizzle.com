@@ -14,6 +14,7 @@ const APP_PATHS = new Set([
   "/you",
   "/search",
   "/place",
+  "/profile",
   "/promote",
   "/business",
   "/privacy",
@@ -32,6 +33,7 @@ function sectionFor(pathname: string) {
   if (pathname === "/alerts" || pathname === "/notifications") return "activity";
   if (
     pathname === "/you" ||
+    pathname === "/profile" ||
     pathname === "/promote" ||
     pathname === "/business" ||
     pathname === "/privacy" ||
