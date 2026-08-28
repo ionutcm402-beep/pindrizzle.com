@@ -1,4 +1,4 @@
-/* Final signature-moment overrides: these intentionally load after all existing route styles. */
+/* Final signature-moment overrides: these intentionally load after all route/design-system styles. */
 
 /* Feed keeps the icon well but swaps only the glyph for the static droplet. */
 .feed-v3-quiet .quiet-icon{
@@ -18,6 +18,28 @@
   box-shadow:0 7px 14px rgba(8,43,73,.08);
 }
 
+/* Activity empty states use the same centered static droplet motif. */
+.activity-empty>span{
+  width:54px!important;
+  height:54px!important;
+  display:grid!important;
+  place-items:center!important;
+  margin:0 auto 13px!important;
+  border-radius:50%!important;
+  background:radial-gradient(circle at 50% 44%,rgba(230,248,250,.96),rgba(244,248,250,.72) 66%,rgba(244,248,250,0) 68%)!important;
+  box-shadow:inset 0 0 0 1px rgba(37,189,200,.10)!important;
+}
+.activity-empty>span>svg{display:none!important}
+.activity-empty>span::before{
+  content:"";
+  width:24px;
+  height:29px;
+  display:block;
+  background:linear-gradient(160deg,rgba(47,131,214,.72),rgba(37,189,200,.66));
+  clip-path:polygon(50% 0,88% 48%,95% 68%,88% 84%,72% 96%,50% 100%,28% 96%,12% 84%,5% 68%,12% 48%);
+  box-shadow:0 7px 14px rgba(8,43,73,.08);
+}
+
 /* Notification empty state uses the same single static motif. */
 .notification-settings-empty-icon{display:none!important}
 .notification-settings-empty::before{
@@ -31,7 +53,7 @@
   box-shadow:0 7px 14px rgba(8,43,73,.08);
 }
 
-/* My Pins empty/signed-out/loading Moment cards have no stable module class, so target only direct non-list sections. */
+/* My Pins empty/signed-out/loading Moment cards use the same static droplet. */
 .my-pings-v3>section:not(.my-pings-v3-list)::before{
   content:"";
   width:24px;
@@ -44,9 +66,10 @@
 }
 .my-pings-v3>section:not(.my-pings-v3-list)>span:first-child{display:none!important}
 
-/* Replace the Map's generic refresh glyph with the brand droplet. */
+/* Map manual refresh uses the droplet too; never restore a generic refresh spinner/glyph. */
 .map-v3-top-actions button[aria-label="Refresh nearby Pings"]{
   font-size:0!important;
+  background-image:none!important;
 }
 .map-v3-top-actions button[aria-label="Refresh nearby Pings"]::before{
   content:"";
@@ -61,3 +84,28 @@
     animation:pdRefreshDroplet 720ms ease-in-out infinite;
   }
 }
+
+/* Publish impact adds one tiny droplet at the ripple point, then disappears. */
+.pd-pin-drop-drop{
+  position:absolute;
+  z-index:3;
+  left:50%;
+  top:19%;
+  width:7px;
+  height:9px;
+  background:linear-gradient(160deg,var(--pd-blue-600),var(--pd-aqua-500));
+  clip-path:polygon(50% 0,88% 48%,95% 68%,88% 84%,72% 96%,50% 100%,28% 96%,12% 84%,5% 68%,12% 48%);
+  opacity:0;
+  transform:translate(-50%,-12px) scale(.75);
+}
+@media(prefers-reduced-motion:no-preference){
+  .pd-pin-drop-drop{animation:pdPinImpactDrop 420ms cubic-bezier(.18,.8,.22,1) both}
+}
+@keyframes pdPinImpactDrop{
+  0%{opacity:0;transform:translate(-50%,-12px) scale(.75)}
+  28%{opacity:.92}
+  68%{opacity:.88;transform:translate(-50%,7px) scale(1)}
+  100%{opacity:0;transform:translate(-50%,9px) scale(.82)}
+}
+
+/* These are event-bound moments only. Nothing here animates during normal scroll/browse. */
