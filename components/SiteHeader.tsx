@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import PingIcon from "@/components/PingIcon";
 
@@ -31,10 +31,18 @@ function sectionFor(pathname: string) {
   return "";
 }
 
+function shouldUseBrowserNavigation(event: React.MouseEvent<HTMLAnchorElement>) {
+  return event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey;
+}
+
 export default function SiteHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
 
   const visible = SITE_PATHS.has(pathname) || pathname.startsWith("/profile/");
   if (!visible) return null;
@@ -42,6 +50,7 @@ export default function SiteHeader() {
   const active = sectionFor(pathname);
 
   const navigate = (event: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (shouldUseBrowserNavigation(event)) return;
     event.preventDefault();
     setMenuOpen(false);
     router.push(href);
