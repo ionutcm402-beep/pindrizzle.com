@@ -7,13 +7,14 @@ import PingIcon from "@/components/PingIcon";
 const NAV_LINKS = [
   { href: "/", label: "Feed", section: "feed" },
   { href: "/map", label: "Map", section: "map" },
+  { href: "/chat", label: "Chat", section: "chat" },
   { href: "/my-pings", label: "My Pins", section: "mine" },
   { href: "/alerts", label: "Activity", section: "activity" },
   { href: "/you", label: "You", section: "you" },
 ];
 
 const SITE_PATHS = new Set([
-  "/", "/map", "/my-pings", "/following", "/alerts", "/notifications",
+  "/", "/map", "/chat", "/my-pings", "/following", "/alerts", "/notifications",
   "/you", "/search", "/place", "/promote", "/business", "/privacy",
   "/cookies", "/terms", "/safety", "/install",
 ]);
@@ -21,6 +22,7 @@ const SITE_PATHS = new Set([
 function sectionFor(pathname: string) {
   if (pathname === "/" || pathname === "/search" || pathname === "/place") return "feed";
   if (pathname === "/map") return "map";
+  if (pathname === "/chat") return "chat";
   if (pathname === "/my-pings" || pathname === "/following") return "mine";
   if (pathname === "/alerts" || pathname === "/notifications") return "activity";
   if (
