@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { authRedirectUrl } from "@/lib/native-runtime";
 
 type Mode = "signin" | "signup" | "recovery";
 type ReleaseStage = "closed_beta" | "public";
@@ -148,7 +149,7 @@ export default function PasswordAuthOverlay() {
           email: normalizedEmail,
           password,
           options: {
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: authRedirectUrl("confirm"),
             data: {
               age_13_plus_declared: true,
               ping_terms_version: "2026-08-26",
@@ -185,7 +186,7 @@ export default function PasswordAuthOverlay() {
           }
         }
       } else {
-        const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, { redirectTo: `${window.location.origin}/reset-password` });
+        const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, { redirectTo: authRedirectUrl("reset") });
         if (error) throw error;
         setMessage("Password reset email sent. Open the newest email to choose a new password.");
       }
