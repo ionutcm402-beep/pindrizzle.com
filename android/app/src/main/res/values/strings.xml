@@ -4,4 +4,5 @@
     <string name="title_activity_main">Pindrizzle</string>
     <string name="package_name">com.pindrizzle.app</string>
     <string name="custom_url_scheme">com.pindrizzle.app</string>
+    <string name="default_notification_channel_id">pindrizzle-updates</string>
 </resources>
