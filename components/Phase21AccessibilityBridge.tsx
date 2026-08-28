@@ -72,9 +72,6 @@ export default function Phase21AccessibilityBridge() {
     document.querySelectorAll<HTMLElement>('nav[aria-label="Primary navigation"] a:not(.active),nav[aria-label="Primary navigation"] button:not(.active)').forEach((item) => {
       item.removeAttribute("aria-current");
     });
-    document.querySelectorAll<HTMLElement>('nav[aria-label="Primary navigation"] a > span,nav[aria-label="Primary navigation"] button > span').forEach((icon) => {
-      icon.setAttribute("aria-hidden", "true");
-    });
 
     const timer = window.setTimeout(() => setAnnouncement(`${label} loaded`), 80);
     return () => window.clearTimeout(timer);
