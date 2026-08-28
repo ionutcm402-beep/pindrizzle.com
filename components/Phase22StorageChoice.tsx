@@ -7,14 +7,40 @@ export type AnalyticsChoice = "allow" | "necessary";
 export const ANALYTICS_CHOICE_KEY = "ping-analytics-choice-v1";
 const ANALYTICS_SESSION_KEY = "ping-product-session-v1";
 const ANALYTICS_SEEN_PREFIX = "ping-product-seen-v1:";
+const ANALYTICS_CHOICE_MAX_AGE = 60 * 60 * 24 * 365;
 
-export function readAnalyticsChoice(): AnalyticsChoice | null {
+let promptShownThisDocument = false;
+
+function readAnalyticsChoiceCookie(): AnalyticsChoice | null {
   try {
-    const value = window.localStorage.getItem(ANALYTICS_CHOICE_KEY);
+    const prefix = `${ANALYTICS_CHOICE_KEY}=`;
+    const match = document.cookie.split(";").map((part) => part.trim()).find((part) => part.startsWith(prefix));
+    if (!match) return null;
+    const value = decodeURIComponent(match.slice(prefix.length));
     return value === "allow" || value === "necessary" ? value : null;
   } catch {
     return null;
   }
+}
+
+function saveAnalyticsChoiceCookie(choice: AnalyticsChoice) {
+  try {
+    const secure = window.location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = `${ANALYTICS_CHOICE_KEY}=${encodeURIComponent(choice)}; Path=/; Max-Age=${ANALYTICS_CHOICE_MAX_AGE}; SameSite=Lax${secure}`;
+  } catch {}
+}
+
+export function readAnalyticsChoice(): AnalyticsChoice | null {
+  try {
+    const value = window.localStorage.getItem(ANALYTICS_CHOICE_KEY);
+    if (value === "allow" || value === "necessary") return value;
+  } catch {}
+
+  const cookieChoice = readAnalyticsChoiceCookie();
+  if (cookieChoice) {
+    try { window.localStorage.setItem(ANALYTICS_CHOICE_KEY, cookieChoice); } catch {}
+  }
+  return cookieChoice;
 }
 
 export function clearAnalyticsSessionStorage() {
@@ -31,6 +57,7 @@ export function clearAnalyticsSessionStorage() {
 
 export function saveAnalyticsChoice(choice: AnalyticsChoice) {
   try { window.localStorage.setItem(ANALYTICS_CHOICE_KEY, choice); } catch {}
+  saveAnalyticsChoiceCookie(choice);
   if (choice === "necessary") clearAnalyticsSessionStorage();
   window.dispatchEvent(new CustomEvent("ping:analytics-choice", { detail: { choice } }));
 }
@@ -41,8 +68,20 @@ export default function Phase22StorageChoice() {
   useEffect(() => {
     if (readAnalyticsChoice()) return;
     clearAnalyticsSessionStorage();
-    const timer = window.setTimeout(() => setVisible(true), 1200);
-    return () => window.clearTimeout(timer);
+
+    const onChoice = () => setVisible(false);
+    window.addEventListener("ping:analytics-choice", onChoice);
+
+    const timer = window.setTimeout(() => {
+      if (readAnalyticsChoice() || promptShownThisDocument) return;
+      promptShownThisDocument = true;
+      setVisible(true);
+    }, 1200);
+
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("ping:analytics-choice", onChoice);
+    };
   }, []);
 
   if (!visible) return null;
@@ -64,7 +103,7 @@ export default function Phase22StorageChoice() {
         <button type="button" className="allow" onClick={() => choose("allow")}>Allow analytics</button>
       </div>
       <style jsx global>{`
-        .phase22-storage-choice{position:fixed;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:390;width:min(calc(100% - 28px),430px);background:linear-gradient(150deg,rgba(9,31,52,.98),rgba(13,48,72,.98));color:#f7fbff;border:1px solid rgba(124,211,246,.24);border-radius:22px;padding:15px 16px;box-shadow:0 20px 60px rgba(4,21,36,.34);display:grid;gap:12px;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}.phase22-storage-choice strong{font-size:14px;letter-spacing:-.01em}.phase22-storage-choice p{margin:5px 0 7px;color:#c7dbe8;font-size:11px;line-height:1.45}.phase22-storage-choice a{color:#7dd9f5;font-size:10px;font-weight:850;text-underline-offset:3px}.phase22-storage-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.phase22-storage-actions button{border:1px solid rgba(183,214,229,.34);background:rgba(255,255,255,.04);color:#f7fbff;border-radius:13px;padding:11px 8px;font-size:11px;font-weight:900}.phase22-storage-actions button.allow{background:linear-gradient(135deg,#1687b8,#1faac7);color:#fff;border-color:rgba(125,217,245,.44);box-shadow:0 8px 22px rgba(22,135,184,.2)}.phase22-storage-actions button:focus-visible{outline:3px solid rgba(125,217,245,.38);outline-offset:2px}@media(max-width:520px){.phase22-storage-choice{bottom:max(10px,env(safe-area-inset-bottom));width:calc(100% - 20px);border-radius:20px;padding:14px}.phase22-storage-choice p{font-size:10.5px}.phase22-storage-actions button{padding:10px 7px}}
+        .phase22-storage-choice{position:fixed;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:900;width:min(calc(100% - 28px),430px);background:linear-gradient(150deg,rgba(9,31,52,.98),rgba(13,48,72,.98));color:#f7fbff;border:1px solid rgba(124,211,246,.24);border-radius:22px;padding:15px 16px;box-shadow:0 20px 60px rgba(4,21,36,.34);display:grid;gap:12px;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}body[data-ping-global-nav-active="true"] .phase22-storage-choice{bottom:calc(var(--pd-tabbar-total,82px) + 12px)}.phase22-storage-choice strong{font-size:14px;letter-spacing:-.01em}.phase22-storage-choice p{margin:5px 0 7px;color:#c7dbe8;font-size:11px;line-height:1.45}.phase22-storage-choice a{color:#7dd9f5;font-size:10px;font-weight:850;text-underline-offset:3px}.phase22-storage-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.phase22-storage-actions button{min-height:44px;border:1px solid rgba(183,214,229,.34);background:rgba(255,255,255,.04);color:#f7fbff;border-radius:13px;padding:10px 8px;font-size:11px;font-weight:900}.phase22-storage-actions button.allow{background:linear-gradient(135deg,#1687b8,#1faac7);color:#fff;border-color:rgba(125,217,245,.44);box-shadow:0 8px 22px rgba(22,135,184,.2)}.phase22-storage-actions button:focus-visible{outline:3px solid rgba(125,217,245,.38);outline-offset:2px}@media(max-width:520px){.phase22-storage-choice{width:calc(100% - 20px);border-radius:20px;padding:14px}.phase22-storage-choice p{font-size:10.5px}.phase22-storage-actions button{min-height:44px;padding:9px 7px}}
       `}</style>
     </aside>
   );
