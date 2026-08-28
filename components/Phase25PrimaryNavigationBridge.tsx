@@ -65,6 +65,19 @@ export default function Phase25PrimaryNavigationBridge() {
     return () => observer.disconnect();
   }, [visible, pathname]);
 
+  useEffect(() => {
+    if (!visible) return;
+    const interceptLegacyCreateLink = (event: MouseEvent) => {
+      const target = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[href="/#ping"],a[href="#ping"]') : null;
+      if (!target) return;
+      event.preventDefault();
+      setCreateStarting(true);
+      router.push("/compose-start");
+    };
+    document.addEventListener("click", interceptLegacyCreateLink, true);
+    return () => document.removeEventListener("click", interceptLegacyCreateLink, true);
+  }, [visible, router]);
+
   useEffect(() => { setCreateStarting(false); }, [pathname]);
 
   if (!visible) return null;
