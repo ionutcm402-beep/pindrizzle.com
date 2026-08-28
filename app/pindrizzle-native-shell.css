@@ -131,6 +131,27 @@ body[data-ping-global-nav-active="true"] .app-shell main:not(.map-v3-screen){
   top:calc(var(--pd-safe-top) + 88px)!important;
 }
 
+/* Compact Map controls keep their visual size but get native-sized hit areas. */
+.map-v3-top-actions button,
+.map-v3-radii button,
+.map-v3-filter-button{
+  position:relative;
+  isolation:isolate;
+}
+
+.map-v3-top-actions button::after,
+.map-v3-radii button::after,
+.map-v3-filter-button::after{
+  content:"";
+  position:absolute;
+  z-index:2;
+  left:0;
+  right:0;
+  top:50%;
+  height:44px;
+  transform:translateY(-50%);
+}
+
 /* Quick, restrained mount transition: client navigation remains Next router-driven. */
 @keyframes pdNativeScreenIn{
   from{opacity:.72;transform:translate3d(0,3px,0)}
