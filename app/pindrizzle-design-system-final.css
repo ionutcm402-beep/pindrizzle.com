@@ -74,6 +74,85 @@ body[data-ping-global-nav-active="true"] .bottom-nav{display:none!important}
 }
 .phase23-install-icon>*{display:none!important}
 
+/* Search is a Content-pattern route and uses the same spacing/material vocabulary. */
+.search-v3-page{
+  min-height:100dvh!important;
+  padding:0!important;
+  background:var(--pd-canvas)!important;
+}
+.search-v3-shell{
+  width:100%!important;
+  max-width:none!important;
+  min-height:100dvh!important;
+  padding:0 var(--pd-space-3) calc(96px + env(safe-area-inset-bottom))!important;
+}
+.search-v3-head{
+  grid-template-columns:44px 1fr 44px!important;
+  gap:var(--pd-space-2)!important;
+  padding:var(--pd-space-3) 0!important;
+}
+.search-v3-head>button{
+  width:44px!important;height:44px!important;
+  border:1px solid var(--pd-line)!important;
+  border-radius:var(--pd-radius-pill)!important;
+  background:rgba(255,255,255,.82)!important;
+  color:var(--pd-ink-800)!important;
+  box-shadow:none!important;
+}
+.search-v3-intro{padding:var(--pd-space-4) 0 var(--pd-space-2)!important}
+.search-v3-intro h1{margin:0 0 var(--pd-space-2)!important;color:var(--pd-ink-950)!important;letter-spacing:-.045em!important}
+.search-v3-intro p{margin:0!important;color:var(--pd-text-2)!important}
+.search-v3-searchbox{
+  height:52px!important;
+  margin:var(--pd-space-3) 0 var(--pd-space-2)!important;
+  border:1px solid var(--pd-line)!important;
+  border-radius:var(--pd-radius-control)!important;
+  background:rgba(255,255,255,.94)!important;
+  box-shadow:var(--pd-elevation-1)!important;
+}
+.search-v3-chips{gap:var(--pd-space-2)!important;padding-bottom:var(--pd-space-3)!important}
+.search-v3-chips button{
+  min-height:40px!important;
+  border:1px solid var(--pd-line)!important;
+  border-radius:var(--pd-radius-pill)!important;
+  background:rgba(255,255,255,.82)!important;
+  color:var(--pd-text-2)!important;
+  box-shadow:none!important;
+}
+.search-v3-chips button.active{border-color:var(--pd-ink-900)!important;background:var(--pd-ink-900)!important;color:#fff!important}
+.search-v3-controls{gap:var(--pd-space-2)!important;padding-bottom:var(--pd-space-3)!important}
+.search-v3-controls label{min-height:44px!important;padding:var(--pd-space-2)!important;border-radius:var(--pd-radius-control)!important;background:var(--pd-silver-100)!important}
+.search-v3-location{
+  padding:var(--pd-space-3)!important;
+  border:1px solid var(--pd-line)!important;
+  border-radius:var(--pd-radius-card)!important;
+  background:linear-gradient(135deg,var(--pd-aqua-100),rgba(255,255,255,.94))!important;
+  box-shadow:var(--pd-elevation-1)!important;
+}
+.search-v3-location>span{background:rgba(255,255,255,.80)!important;color:var(--pd-ink-800)!important}
+.search-v3-location button{min-height:44px!important;border-radius:var(--pd-radius-pill)!important;background:var(--pd-ink-900)!important;color:#fff!important;padding:0 var(--pd-space-3)!important}
+.search-v3-results{gap:var(--pd-space-2)!important}
+.search-v3-card{
+  padding:var(--pd-space-3)!important;
+  border:1px solid var(--pd-line)!important;
+  border-radius:var(--pd-radius-card)!important;
+  background:rgba(255,255,255,.94)!important;
+  box-shadow:var(--pd-elevation-1)!important;
+}
+.search-v3-empty{
+  display:grid!important;
+  justify-items:center!important;
+  gap:var(--pd-space-2)!important;
+  padding:var(--pd-space-5) var(--pd-space-4)!important;
+  border:1px solid var(--pd-line)!important;
+  border-radius:var(--pd-radius-card)!important;
+  background:rgba(255,255,255,.94)!important;
+  box-shadow:var(--pd-elevation-1)!important;
+  text-align:center!important;
+}
+.search-v3-empty h2,.search-v3-empty p{margin:0!important}
+.search-v3-empty p{max-width:320px;color:var(--pd-muted)!important}
+
 /* Keep elevation vocabulary strictly to the three system levels. */
 .phase9-builder,
 .phase9-request-history article,
