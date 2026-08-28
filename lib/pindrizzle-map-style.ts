@@ -1,133 +1,279 @@
-const BASE_STYLE_URL = "https://tiles.openfreemap.org/styles/positron";
+/*
+ * Canonical Pindrizzle MapLibre style.
+ *
+ * This is deliberately owned by the app rather than recolouring a stock style at
+ * runtime. OpenFreeMap supplies OpenMapTiles-schema vector data; Pindrizzle owns
+ * every visible layer, colour, label and road decision below.
+ */
+
+const OPEN_FREE_MAP_SOURCE = "https://tiles.openfreemap.org/planet";
+const OPEN_FREE_MAP_GLYPHS = "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf";
 
 const MAP = {
-  background: "#d9e2e6",
-  land: "#dfe7e9",
-  landAlt: "#d6e2e3",
-  park: "#cfdfdc",
-  building: "#c6d2d7",
-  buildingOutline: "#b7c7ce",
-  water: "#65c5cf",
+  background: "#d6e0e4",
+  land: "#dce5e8",
+  residential: "#d8e3e6",
+  commercial: "#d3dfe3",
+  industrial: "#cedbe0",
+  park: "#c9ddda",
+  woodland: "#c5dad6",
+  building: "#c0ced4",
+  buildingOutline: "#b3c3ca",
+  water: "#62c5cf",
   waterLine: "#3aaebd",
-  roadLocal: "#eef4f5",
-  roadMinor: "#d6eaed",
-  roadMajor: "#85d1d7",
-  roadPrimary: "#4db7c5",
-  roadCasing: "#b5c8cf",
-  boundary: "#94a9b4",
-  label: "#344f5e",
-  labelStrong: "#1d3d50",
-  labelHalo: "#eef4f5",
+  path: "#edf3f5",
+  roadMinor: "#d9ecef",
+  roadMajor: "#91d6dc",
+  roadPrimary: "#4db8c6",
+  roadCasing: "#aebfc6",
+  boundary: "#8fa5b0",
+  label: "#486675",
+  labelStrong: "#1b3c50",
+  labelMuted: "#6f8793",
+  labelHalo: "#eaf1f3",
 } as const;
 
-type StyleLayer = {
-  id?: string;
-  type?: string;
-  paint?: Record<string, unknown>;
-  layout?: Record<string, unknown>;
-  [key: string]: unknown;
-};
-
 type MapStyle = {
-  name?: string;
-  layers?: StyleLayer[];
-  [key: string]: unknown;
+  version: 8;
+  name: string;
+  sources: Record<string, unknown>;
+  glyphs: string;
+  layers: Array<Record<string, unknown>>;
 };
 
-function layerName(layer: StyleLayer) {
-  return `${String(layer.id || "")} ${String(layer["source-layer"] || "")}`.toLowerCase();
-}
+const nameExpression = ["coalesce", ["get", "name:latin"], ["get", "name"]];
 
-function contains(name: string, terms: string[]) {
-  return terms.some((term) => name.includes(term));
-}
+const style: MapStyle = {
+  version: 8,
+  name: "Pindrizzle Local",
+  sources: {
+    openmaptiles: {
+      type: "vector",
+      url: OPEN_FREE_MAP_SOURCE,
+    },
+  },
+  glyphs: OPEN_FREE_MAP_GLYPHS,
+  layers: [
+    {
+      id: "pd-background",
+      type: "background",
+      paint: { "background-color": MAP.background },
+    },
+    {
+      id: "pd-landcover-wood",
+      type: "fill",
+      source: "openmaptiles",
+      "source-layer": "landcover",
+      filter: ["in", "class", "wood", "grass", "farmland"],
+      paint: { "fill-color": MAP.woodland, "fill-opacity": 0.78 },
+    },
+    {
+      id: "pd-landuse-residential",
+      type: "fill",
+      source: "openmaptiles",
+      "source-layer": "landuse",
+      filter: ["==", "class", "residential"],
+      paint: { "fill-color": MAP.residential, "fill-opacity": 0.82 },
+    },
+    {
+      id: "pd-landuse-commercial",
+      type: "fill",
+      source: "openmaptiles",
+      "source-layer": "landuse",
+      filter: ["in", "class", "commercial", "retail", "school", "hospital"],
+      paint: { "fill-color": MAP.commercial, "fill-opacity": 0.74 },
+    },
+    {
+      id: "pd-landuse-industrial",
+      type: "fill",
+      source: "openmaptiles",
+      "source-layer": "landuse",
+      filter: ["==", "class", "industrial"],
+      paint: { "fill-color": MAP.industrial, "fill-opacity": 0.72 },
+    },
+    {
+      id: "pd-parks",
+      type: "fill",
+      source: "openmaptiles",
+      "source-layer": "park",
+      paint: { "fill-color": MAP.park, "fill-opacity": 0.84 },
+    },
+    {
+      id: "pd-water",
+      type: "fill",
+      source: "openmaptiles",
+      "source-layer": "water",
+      paint: { "fill-color": MAP.water, "fill-opacity": 0.92 },
+    },
+    {
+      id: "pd-waterway",
+      type: "line",
+      source: "openmaptiles",
+      "source-layer": "waterway",
+      paint: {
+        "line-color": MAP.waterLine,
+        "line-opacity": 0.78,
+        "line-width": ["interpolate", ["linear"], ["zoom"], 8, 0.6, 13, 1.25, 17, 2.4],
+      },
+    },
+    {
+      id: "pd-buildings",
+      type: "fill",
+      source: "openmaptiles",
+      "source-layer": "building",
+      minzoom: 12,
+      paint: {
+        "fill-color": MAP.building,
+        "fill-outline-color": MAP.buildingOutline,
+        "fill-opacity": ["interpolate", ["linear"], ["zoom"], 12, 0.3, 15, 0.76],
+      },
+    },
+    {
+      id: "pd-paths",
+      type: "line",
+      source: "openmaptiles",
+      "source-layer": "transportation",
+      filter: ["in", "class", "path", "track", "service"],
+      paint: {
+        "line-color": MAP.path,
+        "line-opacity": 0.8,
+        "line-width": ["interpolate", ["linear"], ["zoom"], 12, 0.7, 17, 2.4],
+      },
+    },
+    {
+      id: "pd-road-casing",
+      type: "line",
+      source: "openmaptiles",
+      "source-layer": "transportation",
+      filter: ["in", "class", "motorway", "trunk", "primary", "secondary", "tertiary", "minor"],
+      paint: {
+        "line-color": MAP.roadCasing,
+        "line-opacity": 0.54,
+        "line-width": ["interpolate", ["linear"], ["zoom"], 7, 1.4, 11, 2.6, 15, 7.4, 18, 16],
+      },
+    },
+    {
+      id: "pd-road-minor",
+      type: "line",
+      source: "openmaptiles",
+      "source-layer": "transportation",
+      filter: ["in", "class", "minor", "service", "residential"],
+      paint: {
+        "line-color": MAP.roadMinor,
+        "line-opacity": 0.9,
+        "line-width": ["interpolate", ["linear"], ["zoom"], 10, 0.7, 13, 1.5, 17, 5.2],
+      },
+    },
+    {
+      id: "pd-road-major",
+      type: "line",
+      source: "openmaptiles",
+      "source-layer": "transportation",
+      filter: ["in", "class", "secondary", "tertiary"],
+      paint: {
+        "line-color": MAP.roadMajor,
+        "line-opacity": 0.9,
+        "line-width": ["interpolate", ["linear"], ["zoom"], 7, 0.8, 11, 1.6, 15, 5.7, 18, 12],
+      },
+    },
+    {
+      id: "pd-road-primary",
+      type: "line",
+      source: "openmaptiles",
+      "source-layer": "transportation",
+      filter: ["in", "class", "motorway", "trunk", "primary"],
+      paint: {
+        "line-color": MAP.roadPrimary,
+        "line-opacity": 0.94,
+        "line-width": ["interpolate", ["linear"], ["zoom"], 5, 0.9, 10, 2.2, 14, 6.2, 18, 14],
+      },
+    },
+    {
+      id: "pd-boundaries",
+      type: "line",
+      source: "openmaptiles",
+      "source-layer": "boundary",
+      paint: {
+        "line-color": MAP.boundary,
+        "line-opacity": 0.34,
+        "line-dasharray": [2, 2],
+        "line-width": ["interpolate", ["linear"], ["zoom"], 4, 0.5, 12, 1],
+      },
+    },
+    {
+      id: "pd-water-labels",
+      type: "symbol",
+      source: "openmaptiles",
+      "source-layer": "water_name",
+      minzoom: 9,
+      layout: {
+        "text-field": nameExpression,
+        "text-font": ["Noto Sans Regular"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 9, 10, 15, 12],
+        "text-letter-spacing": 0.02,
+      },
+      paint: {
+        "text-color": "#1c7785",
+        "text-halo-color": MAP.labelHalo,
+        "text-halo-width": 1.2,
+      },
+    },
+    {
+      id: "pd-road-labels",
+      type: "symbol",
+      source: "openmaptiles",
+      "source-layer": "transportation_name",
+      minzoom: 11.5,
+      layout: {
+        "symbol-placement": "line",
+        "text-field": nameExpression,
+        "text-font": ["Noto Sans Regular"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 11.5, 9, 16, 11],
+        "text-letter-spacing": 0.015,
+        "text-max-angle": 30,
+      },
+      paint: {
+        "text-color": MAP.label,
+        "text-halo-color": MAP.labelHalo,
+        "text-halo-width": 1.35,
+        "text-halo-blur": 0.3,
+      },
+    },
+    {
+      id: "pd-place-labels",
+      type: "symbol",
+      source: "openmaptiles",
+      "source-layer": "place",
+      minzoom: 5,
+      filter: ["in", "class", "city", "town", "village", "suburb", "neighbourhood"],
+      layout: {
+        "text-field": nameExpression,
+        "text-font": ["Noto Sans Regular"],
+        "text-size": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          5,
+          10,
+          11,
+          12,
+          15,
+          14,
+        ],
+        "text-letter-spacing": 0.015,
+        "text-max-width": 9,
+      },
+      paint: {
+        "text-color": MAP.labelStrong,
+        "text-halo-color": MAP.labelHalo,
+        "text-halo-width": 1.4,
+        "text-halo-blur": 0.35,
+      },
+    },
+  ],
+};
 
-function paint(layer: StyleLayer, key: string, value: unknown) {
-  layer.paint = { ...(layer.paint || {}), [key]: value };
-}
-
-function layout(layer: StyleLayer, key: string, value: unknown) {
-  layer.layout = { ...(layer.layout || {}), [key]: value };
-}
-
-function brandLayer(layer: StyleLayer) {
-  const name = layerName(layer);
-
-  if (layer.type === "background") {
-    paint(layer, "background-color", MAP.background);
-    return layer;
-  }
-
-  if (layer.type === "fill") {
-    if (contains(name, ["water", "ocean", "lake", "river"])) {
-      paint(layer, "fill-color", MAP.water);
-      paint(layer, "fill-opacity", 1);
-    } else if (contains(name, ["building"])) {
-      paint(layer, "fill-color", MAP.building);
-      paint(layer, "fill-outline-color", MAP.buildingOutline);
-      paint(layer, "fill-opacity", 0.86);
-    } else if (contains(name, ["park", "wood", "forest", "grass", "garden", "green", "landcover"])) {
-      paint(layer, "fill-color", MAP.park);
-      paint(layer, "fill-opacity", 0.9);
-    } else if (contains(name, ["industrial", "commercial", "school", "hospital", "landuse"])) {
-      paint(layer, "fill-color", MAP.landAlt);
-      paint(layer, "fill-opacity", 0.78);
-    } else {
-      paint(layer, "fill-color", MAP.land);
-    }
-    return layer;
-  }
-
-  if (layer.type === "line") {
-    if (contains(name, ["waterway", "river", "stream", "canal"])) {
-      paint(layer, "line-color", MAP.waterLine);
-      paint(layer, "line-opacity", 0.72);
-    } else if (contains(name, ["motorway", "trunk", "primary", "highway"])) {
-      paint(layer, "line-color", MAP.roadPrimary);
-      paint(layer, "line-opacity", 0.88);
-    } else if (contains(name, ["secondary", "tertiary", "major road", "road_major"])) {
-      paint(layer, "line-color", MAP.roadMajor);
-      paint(layer, "line-opacity", 0.86);
-    } else if (contains(name, ["road", "street", "bridge", "tunnel", "transportation"])) {
-      paint(layer, "line-color", contains(name, ["casing", "outline"]) ? MAP.roadCasing : MAP.roadMinor);
-      paint(layer, "line-opacity", 0.78);
-    } else if (contains(name, ["boundary", "admin"])) {
-      paint(layer, "line-color", MAP.boundary);
-      paint(layer, "line-opacity", 0.38);
-    } else {
-      paint(layer, "line-color", MAP.roadLocal);
-      paint(layer, "line-opacity", 0.55);
-    }
-    return layer;
-  }
-
-  if (layer.type === "symbol") {
-    /* Pindrizzle is a utility map, not a POI directory. Keep labels quiet. */
-    if (contains(name, ["poi", "transit", "airport", "railway station", "bus", "shop label"])) {
-      layout(layer, "visibility", "none");
-      return layer;
-    }
-
-    paint(layer, "text-color", contains(name, ["place", "city", "town", "road", "street"]) ? MAP.labelStrong : MAP.label);
-    paint(layer, "text-halo-color", MAP.labelHalo);
-    paint(layer, "text-halo-width", 1.2);
-    paint(layer, "text-halo-blur", 0.35);
-    return layer;
-  }
-
-  return layer;
-}
-
-export async function loadPindrizzleMapStyle(): Promise<MapStyle | string> {
-  try {
-    const response = await fetch(BASE_STYLE_URL, { cache: "force-cache" });
-    if (!response.ok) throw new Error(`Map style HTTP ${response.status}`);
-    const style = (await response.json()) as MapStyle;
-    style.name = "Pindrizzle Local";
-    style.layers = (style.layers || []).map((layer) => brandLayer({ ...layer, paint: layer.paint ? { ...layer.paint } : undefined, layout: layer.layout ? { ...layer.layout } : undefined }));
-    return style;
-  } catch (error) {
-    console.warn("Pindrizzle map style could not be prepared; using clean OpenFreeMap fallback.", error);
-    return BASE_STYLE_URL;
-  }
+export async function loadPindrizzleMapStyle(): Promise<MapStyle> {
+  /* Return a fresh object because MapLibre mutates style objects internally. */
+  return JSON.parse(JSON.stringify(style)) as MapStyle;
 }
