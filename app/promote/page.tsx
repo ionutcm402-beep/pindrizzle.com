@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import PingIcon, { type PingIconName } from "@/components/PingIcon";
 
 type Category = "alert" | "traffic" | "lost_found" | "free" | "help" | "local" | "deals" | "events" | "outages" | "marketplace" | "parking";
 type PromotablePing = {
@@ -40,18 +41,18 @@ const RADII: RadiusOption[] = [
   { meters: 8047, label: "5 mi" },
 ];
 const DURATIONS: DurationOption[] = [6, 12, 24];
-const categoryMeta: Record<Category, { label: string; icon: string }> = {
-  alert: { label: "Alert", icon: "🚨" },
-  traffic: { label: "Traffic", icon: "🚧" },
-  lost_found: { label: "Lost & Found", icon: "🐕" },
-  free: { label: "Free", icon: "🎁" },
-  help: { label: "Help", icon: "🙋" },
-  local: { label: "Other local", icon: "📍" },
-  deals: { label: "Deals", icon: "🏷️" },
-  events: { label: "Events", icon: "📅" },
-  outages: { label: "Outages", icon: "⚡" },
-  marketplace: { label: "Marketplace", icon: "🏠" },
-  parking: { label: "Parking", icon: "🅿️" },
+const categoryMeta: Record<Category, { label: string; icon: PingIconName }> = {
+  alert: { label: "Alert", icon: "alert" },
+  traffic: { label: "Traffic", icon: "traffic" },
+  lost_found: { label: "Lost & Found", icon: "lostFound" },
+  free: { label: "Free", icon: "free" },
+  help: { label: "Help", icon: "help" },
+  local: { label: "Other local", icon: "local" },
+  deals: { label: "Deals", icon: "deals" },
+  events: { label: "Events", icon: "events" },
+  outages: { label: "Outages", icon: "outages" },
+  marketplace: { label: "Marketplace", icon: "marketplace" },
+  parking: { label: "Parking", icon: "parking" },
 };
 
 function pricePence(radius: number, duration: number) {
@@ -204,21 +205,21 @@ export default function PromotePage() {
       <div className="app-shell">
         <main className="phase9-promote-screen">
           <header className="phase9-promote-header">
-            <a href="/you" className="phase9-promote-back" aria-label="Back to You">‹</a>
-            <div><div className="brand small">Pindrizzle</div><h1>Promote a Pin</h1></div>
+            <a href="/you" className="phase9-promote-back" aria-label="Back to You"><PingIcon name="chevron" size={18} style={{ transform: "rotate(180deg)" }} /></a>
+            <div><div className="brand small">pindrizzle</div><h1>Promote a Pin</h1></div>
           </header>
 
           <section className="phase9-promote-intro">
-            <span>↗</span>
+            <span><PingIcon name="promote" size={20}/></span>
             <div><strong>Reach more people nearby.</strong><p>Promoted pins stay local, are always labelled as paid placement, and keep the normal Report & Block controls.</p></div>
           </section>
 
           {!loading && signedIn === false ? (
-            <section className="phase9-promote-empty">
+            <section className="phase9-promote-empty pd-moment">
               <h2>Sign in to promote a pin.</h2><p>Create a useful pin first, then choose how far and how long to promote it.</p><button type="button" onClick={openAuth}>Sign in / Sign up</button>
             </section>
           ) : loading ? (
-            <section className="phase9-promote-empty"><h2>Loading promotion options…</h2></section>
+            <section className="phase9-promote-empty pd-moment"><h2>Loading promotion options…</h2></section>
           ) : (
             <>
               <section className="phase9-builder">
@@ -226,14 +227,14 @@ export default function PromotePage() {
                 {pings.length ? (
                   <div className="phase9-ping-options">
                     {pings.map((ping) => {
-                      const meta = categoryMeta[ping.category] || { label: "Other local", icon: "📍" };
+                      const meta = categoryMeta[ping.category] || { label: "Other local", icon: "local" as PingIconName };
                       const selected = ping.ping_id === selectedPingId;
                       return <button key={ping.ping_id} type="button" className={selected ? "selected" : ""} onClick={() => setSelectedPingId(ping.ping_id)}>
-                        <div><span>{meta.icon} {meta.label}</span><small>{timeLeft(ping.remaining_minutes)}</small></div><strong data-user-content>{ping.title}</strong><p data-user-content>{ping.body}</p>
+                        <div><span><PingIcon name={meta.icon} size={14}/>{meta.label}</span><small>{timeLeft(ping.remaining_minutes)}</small></div><strong data-user-content>{ping.title}</strong><p data-user-content>{ping.body}</p>
                       </button>;
                     })}
                   </div>
-                ) : <div className="phase9-no-pings"><strong>No eligible pins right now.</strong><p>Create a new pin, then come back here while it still has enough time left.</p><a href="/#ping">Create a pin →</a></div>}
+                ) : <div className="phase9-no-pings pd-moment"><strong>No eligible pins right now.</strong><p>Create a new pin, then come back here while it still has enough time left.</p><a href="/#ping">Create a pin →</a></div>}
 
                 <div className="phase9-step-heading"><b>2</b><div><strong>Who is promoting it?</strong><span>This name appears on the paid placement.</span></div></div>
                 <label className="phase9-sponsor-field"><span>Sponsor / business name</span><input value={sponsorName} onChange={(event) => setSponsorName(event.target.value)} maxLength={80} placeholder="e.g. Three Bridges Coffee" /></label>
@@ -258,7 +259,7 @@ export default function PromotePage() {
                 </section>
 
                 <button className="phase9-submit" type="button" disabled={!selectedPing || !sponsorName.trim() || !durationAvailable(duration) || submitting} onClick={() => void submit()}>{submitting ? "Submitting…" : "Submit for approval"}</button>
-                {success && <div className="phase9-success">✓ {success}</div>}
+                {success && <div className="phase9-success"><PingIcon name="check" size={14}/>{success}</div>}
                 {message && <div className="phase9-error">{message}</div>}
               </section>
 
@@ -276,7 +277,7 @@ export default function PromotePage() {
       </div>
 
       <style jsx global>{`
-        .phase9-promote-screen{min-height:100%;padding:0 18px 112px;overflow:auto}.phase9-promote-header{display:flex;gap:14px;align-items:flex-start;padding:24px 4px 18px}.phase9-promote-header h1{font-size:29px;letter-spacing:-.9px;margin:14px 0 0}.phase9-promote-back{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;text-decoration:none;color:#233329;background:#fff;box-shadow:0 8px 24px rgba(31,41,32,.08);font-size:29px}.phase9-promote-intro{display:grid;grid-template-columns:42px 1fr;gap:11px;padding:15px;border-radius:19px;background:#eef6e9;margin-bottom:13px}.phase9-promote-intro>span{width:42px;height:42px;border-radius:14px;background:#dcefd6;display:grid;place-items:center;color:#35653b;font-size:20px}.phase9-promote-intro strong{font-size:13px}.phase9-promote-intro p{margin:4px 0 0;color:#68766b;font-size:10px;line-height:1.5}.phase9-builder{border:1px solid #e1e6de;border-radius:22px;background:#fff;padding:15px}.phase9-step-heading{display:grid;grid-template-columns:28px 1fr;gap:9px;align-items:center;margin:4px 0 10px}.phase9-step-heading>b{width:28px;height:28px;border-radius:10px;background:#eef4eb;display:grid;place-items:center;color:#35613a;font-size:11px}.phase9-step-heading strong,.phase9-step-heading span{display:block}.phase9-step-heading strong{font-size:12px}.phase9-step-heading span{margin-top:2px;color:#818a82;font-size:8px}.phase9-ping-options{display:grid;gap:8px;margin-bottom:18px}.phase9-ping-options>button{border:1px solid #e2e7df;border-radius:16px;background:#fafbf8;padding:12px;text-align:left;color:#1e251f}.phase9-ping-options>button.selected{border-color:#79c86f;background:#f1f9ee;box-shadow:0 0 0 2px rgba(86,194,75,.08)}.phase9-ping-options>button>div{display:flex;justify-content:space-between;gap:8px}.phase9-ping-options>button span{font-size:8px;font-weight:900;color:#5e6b61}.phase9-ping-options>button small{font-size:8px;color:#859087}.phase9-ping-options>button strong{display:block;font-size:14px;margin-top:7px}.phase9-ping-options>button p{margin:4px 0 0;font-size:9px;color:#747f76;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.phase9-no-pings{border:1px dashed #dce2d9;border-radius:16px;padding:15px;text-align:center;margin-bottom:18px}.phase9-no-pings strong{font-size:12px}.phase9-no-pings p{font-size:9px;color:#7b857d}.phase9-no-pings a{font-size:9px;color:#315c35;font-weight:900;text-decoration:none}.phase9-sponsor-field{display:block;margin-bottom:18px}.phase9-sponsor-field span{display:block;font-size:8px;font-weight:900;color:#687269;margin-bottom:5px}.phase9-sponsor-field input{width:100%;box-sizing:border-box;border:1px solid #dce2d9;border-radius:13px;background:#fbfcfa;padding:11px 12px;font-size:12px;outline:none}.phase9-sponsor-field input:focus{border-color:#73c66b;box-shadow:0 0 0 3px rgba(83,200,73,.08)}.phase9-choice-grid{display:grid;gap:7px;margin-bottom:18px}.phase9-choice-grid.radius{grid-template-columns:repeat(4,1fr)}.phase9-choice-grid.duration{grid-template-columns:repeat(3,1fr)}.phase9-choice-grid button{border:1px solid #dfe5dc;border-radius:13px;background:#fafbf8;padding:10px 5px;color:#4f5a51;font-size:9px;font-weight:900}.phase9-choice-grid button.selected{background:#1f2921;border-color:#1f2921;color:white}.phase9-choice-grid button:disabled{opacity:.4}.phase9-choice-grid.duration button strong,.phase9-choice-grid.duration button small{display:block}.phase9-choice-grid.duration button strong{font-size:12px}.phase9-choice-grid.duration button small{font-size:7px;margin-top:3px;font-weight:700}.phase9-quote{margin:2px 0 12px;border-radius:17px;background:#f1f7ee;padding:14px}.phase9-quote>div{display:flex;align-items:end;justify-content:space-between;gap:10px}.phase9-quote>div span{font-size:9px;font-weight:850;color:#627064}.phase9-quote>div strong{font-size:24px;letter-spacing:-.5px}.phase9-quote p{margin:6px 0 0;font-size:9px;color:#647166}.phase9-quote small{display:block;margin-top:7px;padding-top:7px;border-top:1px solid #dce8d8;color:#849086;font-size:7px;line-height:1.45}.phase9-submit{width:100%;border:0;border-radius:14px;background:#58d84f;padding:13px;font-size:11px;font-weight:950;color:#173118}.phase9-submit:disabled{opacity:.45}.phase9-success,.phase9-error{margin-top:9px;border-radius:12px;padding:10px;font-size:9px;line-height:1.4}.phase9-success{background:#eaf6e6;color:#2e6534}.phase9-error{background:#f7e9e6;color:#8a5147}.phase9-request-history{margin-top:14px}.phase9-history-title{display:flex;align-items:center;justify-content:space-between;padding:4px 3px 9px}.phase9-history-title strong,.phase9-history-title span{display:block}.phase9-history-title strong{font-size:14px}.phase9-history-title span{font-size:8px;color:#879087;margin-top:2px}.phase9-history-title>b{min-width:27px;height:27px;border-radius:10px;background:#eef3eb;display:grid;place-items:center;font-size:10px}.phase9-request-history article{border:1px solid #e0e6dd;border-radius:17px;background:#fff;padding:12px;margin-bottom:8px}.phase9-request-top{display:flex;justify-content:space-between;gap:8px;align-items:center}.phase9-request-top .status{border-radius:999px;padding:5px 7px;background:#f0f2ed;color:#687068;font-size:7px;font-weight:950}.phase9-request-top .status.pending{background:#fff2d7;color:#89691e}.phase9-request-top .status.active{background:#e8f6e4;color:#2e6b34}.phase9-request-top .status.rejected{background:#f7e6e2;color:#915449}.phase9-request-top small{font-size:7px;color:#909890}.phase9-request-history article h2{font-size:14px;margin:8px 0 3px}.phase9-request-history article p{margin:0;font-size:8px;color:#7a847c}.phase9-request-meta{display:flex;flex-wrap:wrap;gap:5px 10px;margin-top:9px;font-size:8px;color:#69756c}.phase9-history-empty{border:1px dashed #dce3da;border-radius:16px;padding:18px;text-align:center;color:#899189;font-size:9px}.phase9-promote-empty{padding:30px 20px;border:1px solid #e1e7df;border-radius:22px;background:#fff;text-align:center}.phase9-promote-empty h2{font-size:18px;margin:0 0 6px}.phase9-promote-empty p{font-size:10px;color:#6f7a71}.phase9-promote-empty button{margin-top:12px;border:0;border-radius:12px;background:#59d951;padding:11px 15px;font-weight:900}@media(max-width:520px){.phase9-promote-screen{padding-left:15px;padding-right:15px}}
+        .phase9-promote-screen{min-height:100%;padding:0 18px 112px;overflow:auto}.phase9-promote-header{display:flex;gap:14px;align-items:flex-start;padding:24px 4px 18px}.phase9-promote-header h1{font-size:29px;letter-spacing:-.9px;margin:14px 0 0}.phase9-promote-back{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;text-decoration:none;color:#233329;background:#fff;box-shadow:0 8px 24px rgba(31,41,32,.08);font-size:29px}.phase9-promote-intro{display:grid;grid-template-columns:42px 1fr;gap:11px;padding:15px;border-radius:19px;background:#eef6e9;margin-bottom:13px}.phase9-promote-intro>span{width:42px;height:42px;border-radius:14px;background:#dcefd6;display:grid;place-items:center;color:#35653b;font-size:20px}.phase9-promote-intro strong{font-size:13px}.phase9-promote-intro p{margin:4px 0 0;color:#68766b;font-size:10px;line-height:1.5}.phase9-builder{border:1px solid #e1e6de;border-radius:22px;background:#fff;padding:15px}.phase9-step-heading{display:grid;grid-template-columns:28px 1fr;gap:9px;align-items:center;margin:4px 0 10px}.phase9-step-heading>b{width:28px;height:28px;border-radius:10px;background:#eef4eb;display:grid;place-items:center;color:#35613a;font-size:11px}.phase9-step-heading strong,.phase9-step-heading span{display:block}.phase9-step-heading strong{font-size:12px}.phase9-step-heading span{margin-top:2px;color:#818a82;font-size:8px}.phase9-ping-options{display:grid;gap:8px;margin-bottom:18px}.phase9-ping-options>button{border:1px solid #e2e7df;border-radius:16px;background:#fafbf8;padding:12px;text-align:left;color:#1e251f}.phase9-ping-options>button.selected{border-color:#79c86f;background:#f1f9ee;box-shadow:0 0 0 2px rgba(86,194,75,.08)}.phase9-ping-options>button>div{display:flex;justify-content:space-between;gap:8px}.phase9-ping-options>button span{display:flex;align-items:center;gap:5px;font-size:8px;font-weight:900;color:#5e6b61}.phase9-ping-options>button small{font-size:8px;color:#859087}.phase9-ping-options>button strong{display:block;font-size:14px;margin-top:7px}.phase9-ping-options>button p{margin:4px 0 0;font-size:9px;color:#747f76;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.phase9-no-pings{border:1px dashed #dce2d9;border-radius:16px;padding:15px;text-align:center;margin-bottom:18px}.phase9-no-pings strong{font-size:12px}.phase9-no-pings p{font-size:9px;color:#7b857d}.phase9-no-pings a{font-size:9px;color:#315c35;font-weight:900;text-decoration:none}.phase9-sponsor-field{display:block;margin-bottom:18px}.phase9-sponsor-field span{display:block;font-size:8px;font-weight:900;color:#687269;margin-bottom:5px}.phase9-sponsor-field input{width:100%;box-sizing:border-box;border:1px solid #dce2d9;border-radius:13px;background:#fbfcfa;padding:11px 12px;font-size:12px;outline:none}.phase9-sponsor-field input:focus{border-color:#73c66b;box-shadow:0 0 0 3px rgba(83,200,73,.08)}.phase9-choice-grid{display:grid;gap:7px;margin-bottom:18px}.phase9-choice-grid.radius{grid-template-columns:repeat(4,1fr)}.phase9-choice-grid.duration{grid-template-columns:repeat(3,1fr)}.phase9-choice-grid button{border:1px solid #dfe5dc;border-radius:13px;background:#fafbf8;padding:10px 5px;color:#4f5a51;font-size:9px;font-weight:900}.phase9-choice-grid button.selected{background:#1f2921;border-color:#1f2921;color:white}.phase9-choice-grid button:disabled{opacity:.4}.phase9-choice-grid.duration button strong,.phase9-choice-grid.duration button small{display:block}.phase9-choice-grid.duration button strong{font-size:12px}.phase9-choice-grid.duration button small{font-size:7px;margin-top:3px;font-weight:700}.phase9-quote{margin:2px 0 12px;border-radius:17px;background:#f1f7ee;padding:14px}.phase9-quote>div{display:flex;align-items:end;justify-content:space-between;gap:10px}.phase9-quote>div span{font-size:9px;font-weight:850;color:#627064}.phase9-quote>div strong{font-size:24px;letter-spacing:-.5px}.phase9-quote p{margin:6px 0 0;font-size:9px;color:#647166}.phase9-quote small{display:block;margin-top:7px;padding-top:7px;border-top:1px solid #dce8d8;color:#849086;font-size:7px;line-height:1.45}.phase9-submit{width:100%;border:0;border-radius:14px;background:#58d84f;padding:13px;font-size:11px;font-weight:950;color:#173118}.phase9-submit:disabled{opacity:.45}.phase9-success,.phase9-error{margin-top:9px;border-radius:12px;padding:10px;font-size:9px;line-height:1.4}.phase9-success{display:flex;align-items:center;gap:6px;background:#eaf6e6;color:#2e6534}.phase9-error{background:#f7e9e6;color:#8a5147}.phase9-request-history{margin-top:14px}.phase9-history-title{display:flex;align-items:center;justify-content:space-between;padding:4px 3px 9px}.phase9-history-title strong,.phase9-history-title span{display:block}.phase9-history-title strong{font-size:14px}.phase9-history-title span{font-size:8px;color:#879087;margin-top:2px}.phase9-history-title>b{min-width:27px;height:27px;border-radius:10px;background:#eef3eb;display:grid;place-items:center;font-size:10px}.phase9-request-history article{border:1px solid #e0e6dd;border-radius:17px;background:#fff;padding:12px;margin-bottom:8px}.phase9-request-top{display:flex;justify-content:space-between;gap:8px;align-items:center}.phase9-request-top .status{border-radius:999px;padding:5px 7px;background:#f0f2ed;color:#687068;font-size:7px;font-weight:950}.phase9-request-top .status.pending{background:#fff2d7;color:#89691e}.phase9-request-top .status.active{background:#e8f6e4;color:#2e6b34}.phase9-request-top .status.rejected{background:#f7e6e2;color:#915449}.phase9-request-top small{font-size:7px;color:#909890}.phase9-request-history article h2{font-size:14px;margin:8px 0 3px}.phase9-request-history article p{margin:0;font-size:8px;color:#7a847c}.phase9-request-meta{display:flex;flex-wrap:wrap;gap:5px 10px;margin-top:9px;font-size:8px;color:#69756c}.phase9-history-empty{border:1px dashed #dce3da;border-radius:16px;padding:18px;text-align:center;color:#899189;font-size:9px}.phase9-promote-empty{padding:30px 20px;border:1px solid #e1e7df;border-radius:22px;background:#fff;text-align:center}.phase9-promote-empty h2{font-size:18px;margin:0 0 6px}.phase9-promote-empty p{font-size:10px;color:#6f7a71}.phase9-promote-empty button{margin-top:12px;border:0;border-radius:12px;background:#59d951;padding:11px 15px;font-weight:900}@media(max-width:520px){.phase9-promote-screen{padding-left:15px;padding-right:15px}}
       `}</style>
     </div>
   );
