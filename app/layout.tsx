@@ -61,6 +61,11 @@ export const metadata: Metadata = {
   description: "Drop in daily for useful local pins, deals, Marketplace listings and real-time updates around you.",
   applicationName: "Pindrizzle",
   manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "Pindrizzle",
+    statusBarStyle: "default",
+  },
   alternates: { canonical: "/" },
   openGraph: {
     title: "Pindrizzle — Drop in daily",
@@ -84,7 +89,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: "#eef5f7",
+  themeColor: "#082f4a",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
