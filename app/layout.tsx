@@ -67,7 +67,6 @@ export const metadata: Metadata = {
     title: "Pindrizzle",
     statusBarStyle: "default",
   },
-  alternates: { canonical: "/" },
   openGraph: {
     title: "Pindrizzle — Useful local updates nearby",
     description: "Useful local pins and real-time updates around you.",
