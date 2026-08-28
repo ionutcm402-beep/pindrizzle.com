@@ -53,6 +53,7 @@ import "./pindrizzle-design-system-final.css";
 import "./pindrizzle-signature-moments.css";
 import "./pindrizzle-signature-moments-final.css";
 import "./pindrizzle-regression-fixes.css";
+import "./pindrizzle-design-system-audit.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://pindrizzle.com"),
