@@ -36,14 +36,15 @@ const slots = [
 ];
 
 for (const name of await readdir(iconDir)) {
-  if (/^AppIcon-.*\.png$/i.test(name) && path.join(iconDir, name) !== source) {
-    await unlink(path.join(iconDir, name));
-  }
+  const candidate = path.join(iconDir, name);
+  if (/^AppIcon-.*\.png$/i.test(name) && candidate !== source) await unlink(candidate);
 }
 
 for (const slot of slots) {
   execFileSync("sips", ["-z", String(slot.px), String(slot.px), source, "--out", path.join(iconDir, slot.filename)], { stdio: "ignore" });
 }
+
+if (source === generated1024 && await exists(generated1024)) await unlink(generated1024);
 
 const contents = {
   images: slots.map(({ idiom, size, scale, filename }) => ({ idiom, size, scale, filename })),
