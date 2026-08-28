@@ -32,6 +32,8 @@ const routeNames: Record<string, string> = {
   "/ops": "Operations",
 };
 
+const detailDialogSelector = ".detail-v3-backdrop[role=dialog],.phase5-detail-backdrop[role=dialog]";
+
 function visibleDialogs() {
   return Array.from(document.querySelectorAll<HTMLElement>('[role="dialog"][aria-modal="true"]'))
     .filter((dialog) => dialog.offsetParent !== null || getComputedStyle(dialog).position === "fixed");
@@ -127,21 +129,21 @@ export default function Phase21AccessibilityBridge() {
     const preparePingDetail = () => {
       detailPreviousFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       window.setTimeout(() => {
-        const dialog = document.querySelector<HTMLElement>(".phase5-detail-backdrop[role=dialog]");
+        const dialog = document.querySelector<HTMLElement>(detailDialogSelector);
         const heading = dialog?.querySelector<HTMLElement>("h1");
         if (!dialog || !heading) return;
-        heading.id = "phase5-detail-title";
+        heading.id = "pindrizzle-detail-title";
         heading.tabIndex = -1;
         dialog.setAttribute("aria-labelledby", heading.id);
         dialog.removeAttribute("aria-label");
-        const message = dialog.querySelector<HTMLElement>(".phase5-action-message");
+        const message = dialog.querySelector<HTMLElement>(".detail-v3-message,.phase5-action-message");
         if (message) {
           message.setAttribute("role", "status");
           message.setAttribute("aria-live", "polite");
         }
-        const reply = dialog.querySelector<HTMLTextAreaElement>(".phase5-reply-compose textarea");
+        const reply = dialog.querySelector<HTMLTextAreaElement>(".detail-v3-compose textarea,.phase5-reply-compose textarea");
         if (reply && !reply.getAttribute("aria-label")) reply.setAttribute("aria-label", "Write a reply");
-        const reportReason = dialog.querySelector<HTMLSelectElement>(".phase5-report-box select");
+        const reportReason = dialog.querySelector<HTMLSelectElement>(".detail-v3-danger-box select,.phase5-report-box select");
         if (reportReason && !reportReason.getAttribute("aria-label")) reportReason.setAttribute("aria-label", "Report reason");
         heading.focus({ preventScroll: true });
       }, 0);
@@ -149,9 +151,13 @@ export default function Phase21AccessibilityBridge() {
 
     const restoreDetailFocus = (event: MouseEvent) => {
       const target = event.target instanceof HTMLElement ? event.target : null;
-      if (!target?.closest(".phase5-detail-backdrop")) return;
+      if (!target) return;
+      const backdrop = target.closest<HTMLElement>(".detail-v3-backdrop,.phase5-detail-backdrop");
+      if (!backdrop) return;
       const button = target.closest<HTMLButtonElement>("button");
-      if (button && /^(close)$/i.test(button.textContent?.trim() || "")) {
+      const closesFromButton = Boolean(button && /^(close)$/i.test(button.textContent?.trim() || ""));
+      const closesFromBackdrop = target === backdrop;
+      if (closesFromButton || closesFromBackdrop) {
         window.setTimeout(() => detailPreviousFocus.current?.focus(), 0);
       }
     };
