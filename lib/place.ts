@@ -1,3 +1,5 @@
+import { pindrizzleApiUrl } from "@/lib/pindrizzle-api";
+
 export type PlaceLabel = {
   label: string;
   locality?: string | null;
@@ -15,10 +17,10 @@ function coarseCell(value: number) {
 
 export async function resolvePlaceLabel(lat: number, lng: number): Promise<PlaceLabel> {
   try {
-    const response = await fetch("/api/location/place", {
+    const response = await fetch(pindrizzleApiUrl("/api/location/place"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      // Only a neighbourhood-scale cell centre leaves the browser for place lookup.
+      // Only a neighbourhood-scale cell centre leaves the device for place lookup.
       body: JSON.stringify({ lat: coarseCell(lat), lng: coarseCell(lng) }),
     });
     if (!response.ok) return { label: "Nearby" };
