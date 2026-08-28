@@ -10,6 +10,10 @@ export class PingStripeConfigError extends Error {
 }
 
 export function getPingStripe(options?: { allowDisabledLive?: boolean }) {
+  if (process.env.PING_STRIPE_ACCOUNT_READY !== "true") {
+    throw new PingStripeConfigError("Pindrizzle payments are locked until a dedicated Stripe account is configured.");
+  }
+
   const secret = process.env.STRIPE_SECRET_KEY?.trim() || "";
   if (!secret) throw new PingStripeConfigError("Stripe is not configured yet.");
 
