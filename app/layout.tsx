@@ -45,6 +45,7 @@ import "./pindrizzle-premium-layout-fixes.css";
 import "./pindrizzle-premium-auth.css";
 import "./pindrizzle-premium-business.css";
 import "./pindrizzle-design-system.css";
+import "./pindrizzle-design-system-routes.css";
 import "./pindrizzle-native-shell.css";
 
 export const metadata: Metadata = {
