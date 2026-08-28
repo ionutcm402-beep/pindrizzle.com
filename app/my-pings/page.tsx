@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { withTimeout } from "@/lib/async-timeout";
 import PingIcon from "@/components/PingIcon";
@@ -35,26 +35,35 @@ export default function MyPingsPage(){
   const [editId,setEditId]=useState<string|null>(null);
   const [confirmRemoveId,setConfirmRemoveId]=useState<string|null>(null);
   const [message,setMessage]=useState("");
+  const loadInFlightRef=useRef<Promise<void>|null>(null);
 
-  const load=useCallback(async(mode:LoadMode="refresh")=>{
-    if(mode==="initial") setLoading(true); else setRefreshing(true);
-    setLoadError("");
-    if(mode==="initial") setMessage("");
-    try{
-      const supabase=createClient();
-      const {data:authData}=await withTimeout(supabase.auth.getSession(),LOAD_TIMEOUT_MS,"Session check timed out.");
-      if(!authData.session?.user){setSignedIn(false);setItems([]);return;}
-      setSignedIn(true);
-      const {data,error}=await withTimeout(supabase.rpc("my_pings"),LOAD_TIMEOUT_MS,"My Pins request timed out.");
-      if(error)throw error;
-      setItems((data||[])as MyPing[]);
-    }catch(error){
-      console.error("My pins failed",error);
-      setLoadError("Your pins could not load right now. Check your connection and try again.");
-    }finally{
-      setLoading(false);
-      setRefreshing(false);
-    }
+  const load=useCallback((mode:LoadMode="refresh")=>{
+    if(loadInFlightRef.current)return loadInFlightRef.current;
+
+    const run=(async()=>{
+      if(mode==="initial") setLoading(true); else setRefreshing(true);
+      setLoadError("");
+      if(mode==="initial") setMessage("");
+      try{
+        const supabase=createClient();
+        const {data:authData}=await withTimeout(supabase.auth.getSession(),LOAD_TIMEOUT_MS,"Session check timed out.");
+        if(!authData.session?.user){setSignedIn(false);setItems([]);return;}
+        setSignedIn(true);
+        const {data,error}=await withTimeout(supabase.rpc("my_pings"),LOAD_TIMEOUT_MS,"My Pins request timed out.");
+        if(error)throw error;
+        setItems((data||[])as MyPing[]);
+      }catch(error){
+        console.error("My pins failed",error);
+        setLoadError("Your pins could not load right now. Check your connection and try again.");
+      }finally{
+        setLoading(false);
+        setRefreshing(false);
+      }
+    })();
+
+    loadInFlightRef.current=run;
+    void run.finally(()=>{if(loadInFlightRef.current===run)loadInFlightRef.current=null;});
+    return run;
   },[]);
 
   useEffect(()=>{
