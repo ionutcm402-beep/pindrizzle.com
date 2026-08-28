@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties, type RefO
 import { usePathname } from "next/navigation";
 import { getPingLocationSilently } from "@/lib/ping-location";
 
+const SPLASH_SESSION_KEY = "pindrizzle-open-moment-session-v1";
+
 export function PindrizzleDropletMark({ size = 24, className = "" }: { size?: number; className?: string }) {
   return (
     <svg
@@ -30,11 +32,17 @@ export function PindrizzleEmptyDroplet({ size = 54 }: { size?: number }) {
 }
 
 export function PindrizzleSplash() {
-  const [visible, setVisible] = useState(true);
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    try {
+      if (window.sessionStorage.getItem(SPLASH_SESSION_KEY) === "shown") return;
+      window.sessionStorage.setItem(SPLASH_SESSION_KEY, "shown");
+    } catch {}
+
     const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    const timer = window.setTimeout(() => setVisible(false), reduced ? 180 : 780);
+    setVisible(true);
+    const timer = window.setTimeout(() => setVisible(false), reduced ? 140 : 780);
     return () => window.clearTimeout(timer);
   }, []);
 
@@ -164,6 +172,7 @@ export function PindrizzlePinDropMoment({ moment }: { moment: PinDropMoment | nu
   return (
     <div key={moment.key} className="pd-pin-drop-moment" aria-hidden="true" style={{ left: moment.x, top: moment.y }}>
       <span className="pd-pin-drop-ripple" />
+      <span className="pd-pin-drop-drop" />
       <span className="pd-pin-drop-pin"><i /></span>
     </div>
   );
@@ -202,7 +211,9 @@ export function PindrizzleSignatureBridge() {
   const refreshLocalData = useCallback(async () => {
     const result = await getPingLocationSilently();
     if (result.coordinates) {
-      window.dispatchEvent(new CustomEvent("ping:location-changed", { detail: result.coordinates }));
+      window.dispatchEvent(new CustomEvent("ping:location-changed", {
+        detail: { lat: result.coordinates.lat, lng: result.coordinates.lng },
+      }));
       return;
     }
 
@@ -220,15 +231,29 @@ export function PindrizzleSignatureBridge() {
   });
 
   useEffect(() => {
-    const onPublished = (event: Event) => {
-      const detail = (event as CustomEvent<{ precision?: "approximate" | "exact" }>).detail;
-      const exactMarker = detail?.precision === "exact" ? document.querySelector<HTMLElement>(".pindrizzle-picker-pin") : null;
-      const markerRect = exactMarker?.getBoundingClientRect();
+    const onPublished = () => {
+      const pickerMarker = document.querySelector<HTMLElement>(".pindrizzle-picker-pin");
+      const markerRect = pickerMarker?.getBoundingClientRect();
       const markerVisible = Boolean(markerRect && markerRect.bottom > 0 && markerRect.top < window.innerHeight && markerRect.right > 0 && markerRect.left < window.innerWidth);
+      const locationChoice = document.querySelector<HTMLElement>(".composer-location-choice");
+      const choiceRect = locationChoice?.getBoundingClientRect();
       const publishButton = document.querySelector<HTMLElement>(".composer-v3-sheet .publish-button");
       const buttonRect = publishButton?.getBoundingClientRect();
-      const x = markerVisible && markerRect ? markerRect.left + markerRect.width / 2 : buttonRect ? buttonRect.left + buttonRect.width / 2 : window.innerWidth / 2;
-      const y = markerVisible && markerRect ? markerRect.bottom - 4 : buttonRect ? buttonRect.top + buttonRect.height / 2 : Math.min(window.innerHeight * 0.58, 460);
+
+      const x = markerVisible && markerRect
+        ? markerRect.left + markerRect.width / 2
+        : choiceRect
+          ? choiceRect.left + choiceRect.width / 2
+          : buttonRect
+            ? buttonRect.left + buttonRect.width / 2
+            : window.innerWidth / 2;
+      const y = markerVisible && markerRect
+        ? markerRect.bottom - 4
+        : choiceRect
+          ? Math.min(choiceRect.bottom - 10, window.innerHeight - 100)
+          : buttonRect
+            ? buttonRect.top + buttonRect.height / 2
+            : Math.min(window.innerHeight * 0.58, 460);
 
       if (momentTimerRef.current) window.clearTimeout(momentTimerRef.current);
       setPinMoment({ key: Date.now(), x, y });
