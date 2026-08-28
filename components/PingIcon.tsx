@@ -1,7 +1,7 @@
 import type { SVGProps } from "react";
 
 export type PingIconName =
-  | "feed" | "map" | "plus" | "alerts" | "user" | "myPings"
+  | "feed" | "map" | "search" | "plus" | "alerts" | "user" | "myPings"
   | "activity" | "following" | "bell" | "location" | "radius"
   | "profile" | "edit" | "install" | "shield" | "legal"
   | "promote" | "beta" | "moderation" | "review" | "signout"
@@ -31,6 +31,7 @@ export default function PingIcon({ name, size = 20, className, ...props }: Props
     case "feed": content = <><path d="M5 5h14M5 12h14M5 19h9"/><circle cx="3" cy="5" r=".5"/><circle cx="3" cy="12" r=".5"/><circle cx="3" cy="19" r=".5"/></>; break;
     case "myPings": content = <><path d="M5 5h9M5 11h9M5 17h6"/><path d="M19 8c0 3-4 6-4 6s-4-3-4-6a4 4 0 1 1 8 0Z"/><circle cx="15" cy="8" r="1.2"/></>; break;
     case "map": content = <><path d="m3 6 5-2 8 3 5-2v13l-5 2-8-3-5 2Z"/><path d="M8 4v13M16 7v13"/></>; break;
+    case "search": content = <><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></>; break;
     case "plus": content = <path d="M12 5v14M5 12h14"/>; break;
     case "alerts": case "bell": content = <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></>; break;
     case "user": case "profile": content = <><circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4.2 3.4-6.5 8-6.5s7.2 2.3 8 6.5"/></>; break;
