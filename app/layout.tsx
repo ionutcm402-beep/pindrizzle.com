@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import NativeRuntimeBridge from "@/components/NativeRuntimeBridge";
+import Phase21AccessibilityBridge from "@/components/Phase21AccessibilityBridge";
 import SiteHeader from "@/components/SiteHeader";
 import ProductRuntimeGate from "@/components/ProductRuntimeGate";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -72,6 +73,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body>
+        <Phase21AccessibilityBridge />
         <NativeRuntimeBridge />
         <SiteHeader />
         {children}
