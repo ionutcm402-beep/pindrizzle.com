@@ -22,6 +22,8 @@ import Phase23InstallEntry from "@/components/Phase23InstallEntry";
 import Phase24BetaBridge from "@/components/Phase24BetaBridge";
 import Phase25LocationChoiceBridge from "@/components/Phase25LocationChoiceBridge";
 import Phase25PrimaryNavigationBridge from "@/components/Phase25PrimaryNavigationBridge";
+import Phase25NativeAppBridge from "@/components/Phase25NativeAppBridge";
+import Phase25NativeMediaBridge from "@/components/Phase25NativeMediaBridge";
 import PindrizzleCopyBridge from "@/components/PindrizzleCopyBridge";
 import { PindrizzleSignatureBridge, PindrizzleSplash } from "@/components/PindrizzleSignatureMoments";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -91,6 +93,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <PindrizzleSplash />
         {children}
         <PindrizzleSignatureBridge />
+        <Phase25NativeAppBridge />
+        <Phase25NativeMediaBridge />
         <FirstRunOnboarding />
         <Phase5PingDetail />
         <PrivacySafetyCenter />
