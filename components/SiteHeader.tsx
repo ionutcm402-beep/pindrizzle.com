@@ -15,7 +15,7 @@ const NAV_LINKS = [
 const SITE_PATHS = new Set([
   "/", "/map", "/my-pings", "/following", "/alerts", "/notifications",
   "/you", "/search", "/place", "/promote", "/business", "/privacy",
-  "/safety", "/install",
+  "/cookies", "/terms", "/safety", "/install",
 ]);
 
 function sectionFor(pathname: string) {
@@ -25,8 +25,8 @@ function sectionFor(pathname: string) {
   if (pathname === "/alerts" || pathname === "/notifications") return "activity";
   if (
     pathname === "/you" || pathname === "/promote" || pathname === "/business" ||
-    pathname === "/privacy" || pathname === "/safety" || pathname === "/install" ||
-    pathname.startsWith("/profile/")
+    pathname === "/privacy" || pathname === "/cookies" || pathname === "/terms" ||
+    pathname === "/safety" || pathname === "/install" || pathname.startsWith("/profile/")
   ) return "you";
   return "";
 }
