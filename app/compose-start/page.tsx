@@ -12,6 +12,7 @@ type Stage = "checking-auth" | "waiting-auth" | "locating" | "error";
 const COMPOSE_LOCATION_TIMEOUT_MS = 13500;
 const COMPOSE_AUTH_TIMEOUT_MS = 8000;
 const COMPOSE_HANDOFF_FALLBACK_MS = 1500;
+const COMPOSE_PREFLIGHT_KEY = "pindrizzle:compose-preflight";
 
 function requestLocationWithTimeout(): Promise<PingLocationResult> {
   return new Promise((resolve) => {
@@ -25,6 +26,12 @@ function requestLocationWithTimeout(): Promise<PingLocationResult> {
     const timer = window.setTimeout(() => finish({ state: "error", coordinates: null }), COMPOSE_LOCATION_TIMEOUT_MS);
     void requestPingLocation().then(finish).catch(() => finish({ state: "error", coordinates: null }));
   });
+}
+
+function authorizeComposeHandoff() {
+  try {
+    window.sessionStorage.setItem(COMPOSE_PREFLIGHT_KEY, String(Date.now()));
+  } catch {}
 }
 
 export default function ComposeStartPage() {
@@ -55,10 +62,14 @@ export default function ComposeStartPage() {
 
       if (result.state === "granted" && result.coordinates) {
         clearHandoffTimer();
+        authorizeComposeHandoff();
         router.replace("/#ping");
         handoffTimerRef.current = window.setTimeout(() => {
           handoffTimerRef.current = null;
-          if (window.location.pathname === "/compose-start") window.location.assign("/#ping");
+          if (window.location.pathname === "/compose-start") {
+            authorizeComposeHandoff();
+            window.location.assign("/#ping");
+          }
         }, COMPOSE_HANDOFF_FALLBACK_MS);
         return;
       }
