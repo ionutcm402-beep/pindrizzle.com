@@ -112,7 +112,7 @@ export default function MyPingsPage(){
           </div>}</div>}
         </div>
         {confirming&&!item.has_open_promotion&&<div className={styles.confirmRemove} role="alert"><div><strong>Remove this pin?</strong><p>This removes it from community views. Replies, reports and audit history are preserved.</p></div><div><button type="button" onClick={()=>setConfirmRemoveId(null)}>Keep</button><button type="button" onClick={()=>void removePing(item.id)} disabled={busyId===item.id}>{busyId===item.id?"Removing…":"Remove"}</button></div></div>}
-      </article>;})}</section>:<section className={styles.empty}><span><PingIcon name={selected==="active"?"myPings":selected==="resolved"?"check":selected==="expired"?"clock":"remove"} size={25}/></span><h2>No {selected} pins</h2><p>{emptyCopy(selected)}</p>{selected==="active"&&<a href="/#ping">Drop a pin</a>}</section>}
+      </article>;})}</section>:<section className={styles.empty}><span><PingIcon name={selected==="active"?"myPings":selected==="resolved"?"check":selected==="expired"?"clock":"remove"} size={25}/></span><h2>No {selected} pins</h2><p>{emptyCopy(selected)}</p>{selected==="active"&&<a href="/compose-start">Drop a pin</a>}</section>}
     </>}
     {refreshing&&items.length>0&&<div className={styles.message} role="status">Refreshing…</div>}
     {loadError&&items.length>0&&<div className={styles.message} role="status">{loadError} <button type="button" onClick={()=>void load("refresh")}>Retry</button></div>}
