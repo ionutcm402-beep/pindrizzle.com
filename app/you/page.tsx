@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { disableNativePushDevice } from "@/lib/native-push";
 import PingIcon, { type PingIconName } from "@/components/PingIcon";
 import { getPingLocationSilently, requestPingLocation, type PingLocationState } from "@/lib/ping-location";
 import { readPingRadius, subscribePingLocalPreferences, writePingRadius } from "@/lib/ping-local-preferences";
@@ -22,12 +23,12 @@ export default function YouPage(){
   useEffect(()=>{setRadius(readPingRadius());const unsubscribe=subscribePingLocalPreferences(next=>setRadius(next.radius));void getPingLocationSilently().then(result=>setLocationState(result.state));const handleLocation=()=>setLocationState("granted");window.addEventListener("ping:location-changed",handleLocation);void loadAccount();const supabase=createClient();const{data}=supabase.auth.onAuthStateChange(()=>window.setTimeout(()=>void loadAccount(),0));const handleFollow=()=>void loadAccount();window.addEventListener("ping:follow-changed",handleFollow);return()=>{unsubscribe();data.subscription.unsubscribe();window.removeEventListener("ping:follow-changed",handleFollow);window.removeEventListener("ping:location-changed",handleLocation);};},[loadAccount]);
   const requestLocation=async()=>{setLocationState("requesting");const result=await requestPingLocation();setLocationState(result.state);};
   const openAuth=()=>window.dispatchEvent(new CustomEvent("ping:auth-needed",{detail:{message:"Sign in or create your Pindrizzle account."}}));
-  const signOut=async()=>{await createClient().auth.signOut();setEmail(null);setUserId(null);setProfile(null);setModerator(false);setFollowedCount(0);};
+  const signOut=async()=>{await disableNativePushDevice();await createClient().auth.signOut();setEmail(null);setUserId(null);setProfile(null);setModerator(false);setFollowedCount(0);};
   const startEditingName=()=>{setNameDraft(profile?.display_name||"");setNameMessage("");setEditingName(true);};
   const saveDisplayName=async()=>{const trimmed=nameDraft.trim();if(trimmed.length<2||trimmed.length>32){setNameMessage("Use 2–32 characters.");return;}setNameSaving(true);setNameMessage("");try{const{data,error}=await createClient().rpc("update_my_display_name",{requested_display_name:trimmed});if(error)throw error;setNameDraft(String(data||trimmed));setEditingName(false);await loadAccount();setNameMessage("Display name updated.");}catch{setNameMessage("That name can’t be used. Avoid links and reserved Pindrizzle roles.");}finally{setNameSaving(false);}};
   const initials=useMemo(()=>{const source=profile?.display_name?.trim()||email||"You";return source.slice(0,2).toUpperCase();},[profile?.display_name,email]);
   const progress=useMemo(()=>{if(!profile)return 0;if(!profile.next_level_points)return 100;const floor=levelFloor(profile.reputation_level);const span=profile.next_level_points-floor;return span<=0?100:Math.max(0,Math.min(100,((profile.reputation_points-floor)/span)*100));},[profile]);
-  const locationDetail=locationState==="granted"?"Active for Feed, Map and local posting":locationState==="checking"||locationState==="requesting"?"Checking your location permission…":locationState==="denied"?"Blocked in this browser — tap after changing permission":"Enable once for Feed, Map and local posting";
+  const locationDetail=locationState==="granted"?"Active for Feed, Map and local posting":locationState==="checking"||locationState==="requesting"?"Checking your location permission…":locationState==="denied"?"Blocked in this device — tap after changing permission":"Enable once for Feed, Map and local posting";
 
   return <div className="page-shell"><div className="app-shell"><main className={`${styles.screen} you-v3-screen`}>
     <header className="you-v3-header"><div className="brand small">Pindrizzle</div><h1>You</h1></header>
