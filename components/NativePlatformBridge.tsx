@@ -5,6 +5,7 @@ import { Capacitor } from "@capacitor/core";
 import { App } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
 import { Network } from "@capacitor/network";
+import { PushNotifications } from "@capacitor/push-notifications";
 import { createClient } from "@/lib/supabase/client";
 
 function authParams(url: URL) {
@@ -67,6 +68,16 @@ async function handleIncomingUrl(rawUrl: string) {
   }
 }
 
+function openNativeNotification(data: Record<string, unknown> | undefined) {
+  const pingId = typeof data?.pingId === "string" ? data.pingId : typeof data?.ping_id === "string" ? data.ping_id : "";
+  if (/^[0-9a-f-]{36}$/i.test(pingId)) {
+    window.location.assign(`/#ping=${encodeURIComponent(pingId)}`);
+    return;
+  }
+  const rawPath = typeof data?.url === "string" ? data.url : typeof data?.path === "string" ? data.path : "";
+  if (rawPath.startsWith("/")) window.location.assign(rawPath);
+}
+
 export default function NativePlatformBridge() {
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
@@ -95,6 +106,18 @@ export default function NativePlatformBridge() {
     void Network.addListener("networkStatusChange", (status) => {
       document.body.dataset.pindrizzleNetwork = status.connected ? status.connectionType : "offline";
       window.dispatchEvent(new CustomEvent("pindrizzle:native-network", { detail: status }));
+    }).then((handle) => {
+      if (disposed) void handle.remove(); else removers.push(() => handle.remove());
+    });
+
+    void PushNotifications.addListener("pushNotificationReceived", (notification) => {
+      window.dispatchEvent(new CustomEvent("pindrizzle:native-push-received", { detail: notification }));
+    }).then((handle) => {
+      if (disposed) void handle.remove(); else removers.push(() => handle.remove());
+    });
+
+    void PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
+      openNativeNotification((action.notification.data || {}) as Record<string, unknown>);
     }).then((handle) => {
       if (disposed) void handle.remove(); else removers.push(() => handle.remove());
     });
