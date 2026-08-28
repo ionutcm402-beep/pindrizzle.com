@@ -131,11 +131,15 @@ body[data-ping-global-nav-active="true"] {
 
 .site-menu-toggle {
   display: none;
+  width: 44px;
+  height: 44px;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 4px;
   background: none;
   border: none;
-  padding: 8px;
+  padding: 0;
   cursor: pointer;
 }
 
@@ -144,6 +148,14 @@ body[data-ping-global-nav-active="true"] {
   height: 2px;
   background: var(--site-text);
   border-radius: 1px;
+}
+
+.site-logo:focus-visible,
+.site-nav-link:focus-visible,
+.site-cta:focus-visible,
+.site-menu-toggle:focus-visible {
+  outline: 3px solid #25bdc8;
+  outline-offset: 2px;
 }
 
 .site-nav-mobile {
