@@ -6,14 +6,17 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "native:sync": "cap sync",
-    "native:ios": "cap open ios",
-    "native:android": "cap open android"
+    "native:check": "node scripts/check-native-beta.mjs",
+    "native:sync": "npm run native:check && cap sync",
+    "native:ios": "npm run native:check && cap sync ios && cap open ios",
+    "native:android": "npm run native:check && cap sync android && cap open android"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.1",
+    "@capacitor/browser": "^8.0.0",
     "@capacitor/core": "^8.5.0",
     "@capacitor/geolocation": "^8.2.2",
+    "@capacitor/network": "^8.0.0",
     "@capacitor/push-notifications": "^8.1.2",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.57.4",
