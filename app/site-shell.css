@@ -1,7 +1,7 @@
 /* ============================================================
    SITE SHELL — loaded LAST so it wins the cascade over the
-   26 older design-system/patch files. This is the single
-   source of truth for "does it look like a website, not an app".
+   older design-system/patch files. This is the single source
+   of truth for the desktop website shell.
    ============================================================ */
 
 :root {
@@ -22,8 +22,7 @@
   display: none !important;
 }
 
-/* Undo the "reserve space for a bottom bar" padding that the app
-   shell added to every page. */
+/* Undo the space reserved for the retired bottom app bar. */
 body[data-ping-global-nav-active="true"] {
   padding-bottom: 0 !important;
 }
@@ -131,14 +130,39 @@ body[data-ping-global-nav-active="true"] {
 }
 
 /* -------------------- Page container -------------------- */
-/* Give every page a normal centered website column instead of
-   full-bleed app screens. Pages can still opt out with
-   .site-full-bleed on their root element if they truly need it
-   (e.g. the map). */
-main:not(.site-full-bleed) {
+/* Standard pages use a centered website column. Full-screen flows keep
+   their own layout and must not inherit the website column dimensions. */
+main:not(.site-full-bleed):not(.launch-map-screen):not(.compose-start-screen) {
   max-width: var(--site-max-width);
   margin: 0 auto;
   padding: 24px 20px 64px;
+}
+
+/* -------------------- Deliberate text alignment -------------------- */
+/* Centre only compact, standalone headings. Long-form copy, forms,
+   lists and card content remain left-aligned for readability. */
+.feed-v3-quiet h2,
+.map-v3-quiet > strong,
+.my-pings-v3 > section:not(.my-pings-v3-list) > h2,
+.activity-empty h2,
+.first-run-heading,
+.compose-start-card > strong,
+.composer-header strong,
+.composer-v3-sheet > h2,
+.password-auth-sheet > h2,
+.map-v3-filter-head h2 {
+  text-align: center !important;
+}
+
+.feed-v3-quiet p,
+.map-v3-quiet > span,
+.my-pings-v3 > section:not(.my-pings-v3-list) > p,
+.activity-empty p,
+.first-run-copy,
+.compose-start-card p,
+.password-auth-context,
+.password-auth-copy {
+  text-align: left !important;
 }
 
 /* -------------------- Responsive: collapse to mobile menu -------------------- */

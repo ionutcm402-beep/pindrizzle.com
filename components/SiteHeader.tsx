@@ -75,8 +75,8 @@ export default function SiteHeader() {
 
         <div className="site-header-actions">
           <a
-            href="/my-pings"
-            onClick={(event) => navigate(event, "/my-pings")}
+            href="/compose-start"
+            onClick={(event) => navigate(event, "/compose-start")}
             className="site-cta"
           >
             <PingIcon name="plus" size={16} />

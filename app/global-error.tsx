@@ -19,13 +19,11 @@ export default function GlobalError({
             color: "#10202f",
           }}
         >
-          <h1 style={{ fontSize: 22, marginBottom: 8 }}>
-            Something broke on this page
+          <h1 style={{ fontSize: 22, marginBottom: 8, textAlign: "center" }}>
+            Pindrizzle couldn’t load
           </h1>
           <p style={{ color: "#52606d", marginBottom: 16 }}>
-            Pindrizzle hit an unexpected error instead of loading normally.
-            This message (instead of a blank or stuck screen) is here so we
-            can actually see what went wrong.
+            An unexpected error occurred. The detail below can help diagnose it.
           </p>
           <pre
             style={{

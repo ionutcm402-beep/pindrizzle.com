@@ -23,12 +23,11 @@ export default function Error({
         color: "#10202f",
       }}
     >
-      <h1 style={{ fontSize: 22, marginBottom: 8 }}>
-        This page hit an error
+      <h1 style={{ fontSize: 22, marginBottom: 8, textAlign: "center" }}>
+        This page couldn’t load
       </h1>
       <p style={{ color: "#52606d", marginBottom: 16 }}>
-        Instead of staying blank or stuck loading, here's what actually
-        went wrong:
+        The error detail is shown below.
       </p>
       <pre
         style={{
