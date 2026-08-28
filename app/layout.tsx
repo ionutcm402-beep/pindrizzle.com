@@ -18,13 +18,10 @@ import Phase19ProductAnalytics from "@/components/Phase19ProductAnalytics";
 import Phase21AccessibilityBridge from "@/components/Phase21AccessibilityBridge";
 import Phase22StorageChoice from "@/components/Phase22StorageChoice";
 import Phase22LegalSettingsEntry from "@/components/Phase22LegalSettingsEntry";
-import Phase23PwaBridge from "@/components/Phase23PwaBridge";
-import Phase23InstallEntry from "@/components/Phase23InstallEntry";
 import Phase24BetaBridge from "@/components/Phase24BetaBridge";
 import Phase25LocationChoiceBridge from "@/components/Phase25LocationChoiceBridge";
-import Phase25PrimaryNavigationBridge from "@/components/Phase25PrimaryNavigationBridge";
+import SiteHeader from "@/components/SiteHeader";
 import PindrizzleCopyBridge from "@/components/PindrizzleCopyBridge";
-import { PindrizzleSignatureBridge, PindrizzleSplash } from "@/components/PindrizzleSignatureMoments";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 import "./accessibility.css";
@@ -56,6 +53,7 @@ import "./pindrizzle-design-system-audit.css";
 import "./pindrizzle-signature-moments-final.css";
 import "./pindrizzle-wide-layout.css";
 import "./pindrizzle-functional-fixes.css";
+import "./site-shell.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://pindrizzle.com"),
@@ -99,9 +97,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en">
       <body>
         <NativeRuntimeBridge />
-        <PindrizzleSplash />
+        <SiteHeader />
         {children}
-        <PindrizzleSignatureBridge />
         <FirstRunOnboarding />
         <Phase5PingDetail />
         <PrivacySafetyCenter />
@@ -119,11 +116,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Phase19ProductAnalytics />
         <Phase22StorageChoice />
         <Phase22LegalSettingsEntry />
-        <Phase23PwaBridge />
-        <Phase23InstallEntry />
         <Phase24BetaBridge />
         <Phase25LocationChoiceBridge />
-        <Phase25PrimaryNavigationBridge />
         <Phase21AccessibilityBridge />
         <PindrizzleCopyBridge />
       </body>
