@@ -1,8 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { Capacitor } from "@capacitor/core";
 import { createClient } from "@/lib/supabase/client";
 import PingIcon from "@/components/PingIcon";
+import {
+  disableNativePushDevice,
+  enableNativePushDevice,
+  nativePushPermissionState,
+  nativePushSupported,
+  refreshNativePushDevice,
+} from "@/lib/native-push";
 
 type PushState = "checking" | "unsupported" | "off" | "blocked" | "on" | "working";
 
@@ -30,8 +38,10 @@ export default function Phase16PushSettings({ userId, authLoading }: Props) {
   const [state, setState] = useState<PushState>("checking");
   const [deviceCount, setDeviceCount] = useState(0);
   const [message, setMessage] = useState("");
+  const native = Capacitor.isNativePlatform();
 
   const supported = useCallback(() => {
+    if (Capacitor.isNativePlatform()) return nativePushSupported();
     return typeof window !== "undefined"
       && window.isSecureContext
       && "serviceWorker" in navigator
@@ -39,13 +49,19 @@ export default function Phase16PushSettings({ userId, authLoading }: Props) {
       && "Notification" in window;
   }, []);
 
+  const refreshDeviceCount = useCallback(async () => {
+    if (!userId) {
+      setDeviceCount(0);
+      return;
+    }
+    const stateResult = await createClient().rpc("my_push_state");
+    const row = Array.isArray(stateResult.data) ? stateResult.data[0] : stateResult.data;
+    setDeviceCount(Number(row?.active_subscriptions || 0));
+  }, [userId]);
+
   const refresh = useCallback(async () => {
     if (!supported()) {
       setState("unsupported");
-      return;
-    }
-    if (Notification.permission === "denied") {
-      setState("blocked");
       return;
     }
     if (!userId) {
@@ -54,12 +70,33 @@ export default function Phase16PushSettings({ userId, authLoading }: Props) {
       return;
     }
 
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const permission = await nativePushPermissionState();
+        if (permission === "blocked") {
+          setState("blocked");
+          await refreshDeviceCount();
+          return;
+        }
+        const nativeState = await refreshNativePushDevice();
+        setState(nativeState === "on" ? "on" : nativeState === "blocked" ? "blocked" : nativeState === "unsupported" ? "unsupported" : "off");
+        await refreshDeviceCount();
+      } catch (error) {
+        console.error("Native push state check failed", error);
+        setState("off");
+      }
+      return;
+    }
+
+    if (Notification.permission === "denied") {
+      setState("blocked");
+      return;
+    }
+
     try {
       const registration = await navigator.serviceWorker.getRegistration("/");
       const subscription = registration ? await registration.pushManager.getSubscription() : null;
-      const stateResult = await createClient().rpc("my_push_state");
-      const row = Array.isArray(stateResult.data) ? stateResult.data[0] : stateResult.data;
-      setDeviceCount(Number(row?.active_subscriptions || 0));
+      await refreshDeviceCount();
 
       if (subscription && Notification.permission === "granted") {
         const keys = subscriptionKeys(subscription);
@@ -79,7 +116,7 @@ export default function Phase16PushSettings({ userId, authLoading }: Props) {
       console.error("Push state check failed", error);
       setState("off");
     }
-  }, [supported, userId]);
+  }, [refreshDeviceCount, supported, userId]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -98,6 +135,23 @@ export default function Phase16PushSettings({ userId, authLoading }: Props) {
 
     setState("working");
     setMessage("");
+
+    if (native) {
+      const result = await enableNativePushDevice();
+      if (result.state === "on") {
+        setState("on");
+        setMessage("Pindrizzle notifications are enabled on this device.");
+      } else if (result.state === "blocked") {
+        setState("blocked");
+        setMessage("Notifications are blocked in this device’s system settings.");
+      } else {
+        setState(result.state === "unsupported" ? "unsupported" : "off");
+        setMessage("Notifications could not be enabled on this device yet.");
+      }
+      await refreshDeviceCount();
+      return;
+    }
+
     try {
       const permission = await Notification.requestPermission();
       if (permission === "denied") {
@@ -148,6 +202,15 @@ export default function Phase16PushSettings({ userId, authLoading }: Props) {
     if (!supported()) return;
     setState("working");
     setMessage("");
+
+    if (native) {
+      await disableNativePushDevice();
+      setState("off");
+      setMessage("Pindrizzle notifications are off on this device.");
+      await refreshDeviceCount();
+      return;
+    }
+
     try {
       const registration = await navigator.serviceWorker.getRegistration("/");
       const subscription = registration ? await registration.pushManager.getSubscription() : null;
@@ -168,9 +231,9 @@ export default function Phase16PushSettings({ userId, authLoading }: Props) {
   const statusCopy = state === "on"
     ? "Enabled on this device"
     : state === "blocked"
-      ? "Blocked by browser settings"
+      ? native ? "Blocked by device settings" : "Blocked by browser settings"
       : state === "unsupported"
-        ? "Not available on this browser/device"
+        ? "Not available on this device"
         : state === "working" || state === "checking"
           ? "Checking this device…"
           : "Off on this device";
