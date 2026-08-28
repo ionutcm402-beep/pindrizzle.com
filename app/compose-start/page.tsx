@@ -66,8 +66,8 @@ export default function ComposeStartPage() {
       setStage("error");
       setMessage(
         result.state === "denied"
-          ? "Location permission is blocked. Allow location in your browser settings, then try again."
-          : "We couldn’t get your location. Check your connection and location settings, then try again.",
+          ? "Allow location in your browser settings, then try again."
+          : "Location is unavailable. Check your browser settings and try again.",
       );
     } finally {
       if (requestIdRef.current === requestId) locationInProgressRef.current = false;
@@ -89,12 +89,12 @@ export default function ComposeStartPage() {
         return;
       }
       setStage("waiting-auth");
-      window.dispatchEvent(new CustomEvent("ping:auth-needed", { detail: { message: "Sign in once to post useful Pings nearby." } }));
+      window.dispatchEvent(new CustomEvent("ping:auth-needed", { detail: { message: "Sign in to publish a pin." } }));
     } catch (error) {
       if (requestIdRef.current !== requestId) return;
       console.error("Pin creation preflight failed", error);
       setStage("error");
-      setMessage("Pin creation couldn’t start. Check your connection and try again.");
+      setMessage("Pin creation is unavailable. Check your connection and try again.");
     }
   }, [clearHandoffTimer, startLocation]);
 
@@ -129,8 +129,8 @@ export default function ComposeStartPage() {
     <main className="compose-start-screen" aria-live="polite">
       <section className="compose-start-card">
         <span className={`compose-start-icon${locating ? " loading" : ""}`} aria-hidden="true"><PingIcon name="location" size={24} /></span>
-        <strong>{stage === "waiting-auth" ? "Sign in to continue" : stage === "error" ? "Location needed" : "Getting your location…"}</strong>
-        {stage === "waiting-auth" ? <p>Complete sign in, then pin creation will continue automatically.</p> : stage === "error" ? <p>{message}</p> : <p>Preparing pin creation. This should only take a moment.</p>}
+        <strong>{stage === "waiting-auth" ? "Sign in to continue" : stage === "error" ? "Unable to start" : "Finding your location…"}</strong>
+        {stage === "waiting-auth" ? <p>Sign in to continue creating your pin.</p> : stage === "error" ? <p>{message}</p> : <p>Preparing your pin.</p>}
         {stage === "error" && <div className="compose-start-actions"><button type="button" className="primary" onClick={() => void checkAuthAndStart()}>Try again</button><button type="button" onClick={() => router.replace("/my-pings")}>Cancel</button></div>}
         {stage === "waiting-auth" && <button type="button" className="compose-start-cancel" onClick={() => router.replace("/my-pings")}>Cancel</button>}
       </section>
