@@ -39,15 +39,26 @@ export default function SiteHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [activityUnread, setActivityUnread] = useState(0);
 
   useEffect(() => {
     setMenuOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    const updateUnread = (event: Event) => {
+      const count = Number((event as CustomEvent<{ count?: number }>).detail?.count || 0);
+      setActivityUnread(Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0);
+    };
+    window.addEventListener("pindrizzle:activity-unread", updateUnread as EventListener);
+    return () => window.removeEventListener("pindrizzle:activity-unread", updateUnread as EventListener);
+  }, []);
+
   const visible = SITE_PATHS.has(pathname) || pathname.startsWith("/profile/");
   if (!visible) return null;
 
   const active = sectionFor(pathname);
+  const unreadLabel = activityUnread > 99 ? "99+" : String(activityUnread);
 
   const navigate = (event: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (shouldUseBrowserNavigation(event)) return;
@@ -55,6 +66,26 @@ export default function SiteHeader() {
     setMenuOpen(false);
     router.push(href);
   };
+
+  const renderNavLink = (link: (typeof NAV_LINKS)[number]) => (
+    <a
+      key={link.href}
+      href={link.href}
+      onClick={(event) => navigate(event, link.href)}
+      className={`site-nav-link${active === link.section ? " active" : ""}`}
+      aria-current={active === link.section ? "page" : undefined}
+    >
+      <span>{link.label}</span>
+      {link.section === "activity" && activityUnread > 0 && (
+        <span
+          className="site-nav-unread"
+          aria-label={`${activityUnread} unread activity ${activityUnread === 1 ? "item" : "items"}`}
+        >
+          {unreadLabel}
+        </span>
+      )}
+    </a>
+  );
 
   return (
     <header className="site-header" data-site-header="true">
@@ -70,17 +101,7 @@ export default function SiteHeader() {
         </a>
 
         <nav className="site-nav" aria-label="Primary navigation">
-          {NAV_LINKS.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              onClick={(event) => navigate(event, link.href)}
-              className={`site-nav-link${active === link.section ? " active" : ""}`}
-              aria-current={active === link.section ? "page" : undefined}
-            >
-              {link.label}
-            </a>
-          ))}
+          {NAV_LINKS.map(renderNavLink)}
         </nav>
 
         <div className="site-header-actions">
@@ -109,17 +130,7 @@ export default function SiteHeader() {
 
       {menuOpen && (
         <nav className="site-nav-mobile" aria-label="Primary navigation">
-          {NAV_LINKS.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              onClick={(event) => navigate(event, link.href)}
-              className={`site-nav-link${active === link.section ? " active" : ""}`}
-              aria-current={active === link.section ? "page" : undefined}
-            >
-              {link.label}
-            </a>
-          ))}
+          {NAV_LINKS.map(renderNavLink)}
         </nav>
       )}
     </header>

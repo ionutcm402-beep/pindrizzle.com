@@ -50,20 +50,12 @@ export default function Phase6NotificationBadge() {
   }, [toast]);
 
   useEffect(() => {
-    const apply = () => {
-      const activity = document.querySelector<HTMLElement>('[data-ping-nav-role="activity"]');
-      if (!activity) return;
-      let badge = activity.querySelector<HTMLElement>(".ping-global-unread");
-      if (unread <= 0) { badge?.remove(); return; }
-      if (!badge) { badge = document.createElement("i"); badge.className = "ping-global-unread"; activity.appendChild(badge); }
-      badge.textContent = unread > 99 ? "99+" : String(unread);
-      badge.setAttribute("aria-label", `${unread} unread activity ${unread === 1 ? "item" : "items"}`);
-    };
-    apply();
-    const observer = new MutationObserver(() => window.requestAnimationFrame(apply));
-    observer.observe(document.body, { childList:true, subtree:true });
-    return () => observer.disconnect();
+    window.dispatchEvent(new CustomEvent("pindrizzle:activity-unread", { detail: { count: unread } }));
   }, [unread]);
+
+  useEffect(() => () => {
+    window.dispatchEvent(new CustomEvent("pindrizzle:activity-unread", { detail: { count: 0 } }));
+  }, []);
 
   const openToast = async () => {
     if (!toast) return;

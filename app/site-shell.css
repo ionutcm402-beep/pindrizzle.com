@@ -67,8 +67,10 @@ body[data-ping-global-nav-active="true"] {
 
 .site-nav-link {
   min-height: 44px;
+  position: relative;
   display: inline-flex;
   align-items: center;
+  gap: 6px;
   padding: 8px 14px;
   border-radius: 8px;
   font-size: 14px;
@@ -86,6 +88,20 @@ body[data-ping-global-nav-active="true"] {
 .site-nav-link.active {
   background: #e8f0fb;
   color: var(--site-brand);
+}
+
+.site-nav-unread {
+  min-width: 18px;
+  height: 18px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #b42318;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 750;
+  line-height: 1;
 }
 
 .site-header-actions {
