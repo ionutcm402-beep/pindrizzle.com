@@ -6,9 +6,15 @@ type PublishLocationChoice = {
   coordinates: { lat: number; lng: number } | null;
 };
 
+type LiveDataFailureDetail = {
+  reason: "offline" | "timeout" | "network" | "server";
+  status?: number;
+};
+
 declare global {
   interface Window {
     __pingLocationPublishChoice?: PublishLocationChoice;
+    __pindrizzleLiveDataFailure?: LiveDataFailureDetail | null;
   }
 }
 
@@ -18,23 +24,66 @@ const PING_PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const PING_PHOTO_MAX_BYTES = 6 * 1024 * 1024;
 const DEFAULT_REQUEST_TIMEOUT_MS = 20_000;
 const PHOTO_UPLOAD_TIMEOUT_MS = 60_000;
+const LIVE_DATA_READ_RPCS = [
+  "/rest/v1/rpc/nearby_pings",
+  "/rest/v1/rpc/nearby_map_pings",
+  "/rest/v1/rpc/search_nearby_pings",
+  "/rest/v1/rpc/ping_community_state",
+];
+
+function isLiveDataReadRpc(url: string) {
+  return LIVE_DATA_READ_RPCS.some((path) => url.includes(path));
+}
+
+function announceLiveDataFailure(detail: LiveDataFailureDetail) {
+  window.__pindrizzleLiveDataFailure = detail;
+  window.dispatchEvent(new CustomEvent("pindrizzle:live-data-failure", { detail }));
+}
+
+function announceLiveDataHealthy() {
+  window.__pindrizzleLiveDataFailure = null;
+  window.dispatchEvent(new Event("pindrizzle:live-data-healthy"));
+}
 
 async function fetchWithDeadline(
   baseFetch: typeof fetch,
   input: RequestInfo | URL,
   init: RequestInit | undefined,
   timeoutMs: number,
+  url: string,
+  method: string,
 ) {
   const controller = new AbortController();
   const sourceSignal = init?.signal || (input instanceof Request ? input.signal : null);
   const forwardAbort = () => controller.abort();
+  const liveReadRpc = isLiveDataReadRpc(url);
+  const liveReadGet = method === "GET";
+  let timedOut = false;
 
   if (sourceSignal?.aborted) controller.abort();
   else sourceSignal?.addEventListener("abort", forwardAbort, { once: true });
 
-  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  const timer = window.setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
+
   try {
-    return await baseFetch(input, { ...init, signal: controller.signal });
+    const response = await baseFetch(input, { ...init, signal: controller.signal });
+    const transientServerFailure = response.status === 408 || response.status === 429 || response.status >= 500;
+    if ((!response.ok && liveReadRpc) || (transientServerFailure && (liveReadRpc || liveReadGet))) {
+      announceLiveDataFailure({ reason: "server", status: response.status });
+    } else if (response.ok && liveReadRpc) {
+      announceLiveDataHealthy();
+    }
+    return response;
+  } catch (error) {
+    if (!sourceSignal?.aborted && (liveReadRpc || liveReadGet)) {
+      announceLiveDataFailure({
+        reason: !navigator.onLine ? "offline" : timedOut ? "timeout" : "network",
+      });
+    }
+    throw error;
   } finally {
     window.clearTimeout(timer);
     sourceSignal?.removeEventListener("abort", forwardAbort);
@@ -147,13 +196,13 @@ const pingAwareFetch: typeof fetch = async (input, init) => {
   if ((method === "POST" || method === "PUT") && url.includes("/storage/v1/object/ping-media/")) {
     const sanitizedBody = await sanitizePingUploadBody(init?.body);
     if (sanitizedBody !== init?.body || sanitizedBody instanceof FormData) {
-      return fetchWithDeadline(baseFetch, input, { ...init, body: sanitizedBody }, timeoutMs);
+      return fetchWithDeadline(baseFetch, input, { ...init, body: sanitizedBody }, timeoutMs, url, method);
     }
   }
 
   const choice = window.__pingLocationPublishChoice;
   if (!choice?.active || !url.includes("/rest/v1/rpc/create_ping_v3")) {
-    return fetchWithDeadline(baseFetch, input, init, timeoutMs);
+    return fetchWithDeadline(baseFetch, input, init, timeoutMs, url, method);
   }
 
   let body: Record<string, unknown>;
@@ -176,8 +225,8 @@ const pingAwareFetch: typeof fetch = async (input, init) => {
   const nextUrl = url.replace("/rest/v1/rpc/create_ping_v3", "/rest/v1/rpc/create_ping_v4");
   const nextInit = { ...init, body: JSON.stringify(body) };
   const response = input instanceof Request
-    ? await fetchWithDeadline(baseFetch, new Request(nextUrl, input), nextInit, timeoutMs)
-    : await fetchWithDeadline(baseFetch, nextUrl, nextInit, timeoutMs);
+    ? await fetchWithDeadline(baseFetch, new Request(nextUrl, input), nextInit, timeoutMs, nextUrl, method)
+    : await fetchWithDeadline(baseFetch, nextUrl, nextInit, timeoutMs, nextUrl, method);
   return announcePublishedPin(response, choice);
 };
 
