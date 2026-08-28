@@ -28,8 +28,9 @@ const SEEN_PREFIX = "ping-product-seen-v1:";
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const routeEvents: Record<string, ProductEvent> = {
-  "/": "feed_view",
+  "/": "map_view",
   "/map": "map_view",
+  "/feed": "feed_view",
   "/chat": "chat_view",
   "/search": "search_view",
   "/place": "place_view",

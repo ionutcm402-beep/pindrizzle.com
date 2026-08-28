@@ -5,8 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import PingIcon from "@/components/PingIcon";
 
 const NAV_LINKS = [
-  { href: "/", label: "Feed", section: "feed" },
-  { href: "/map", label: "Map", section: "map" },
+  { href: "/", label: "Map", section: "map" },
+  { href: "/feed", label: "Feed", section: "feed" },
   { href: "/chat", label: "Chat", section: "chat" },
   { href: "/my-pings", label: "My Pins", section: "mine" },
   { href: "/alerts", label: "Activity", section: "activity" },
@@ -14,14 +14,14 @@ const NAV_LINKS = [
 ];
 
 const SITE_PATHS = new Set([
-  "/", "/map", "/chat", "/my-pings", "/following", "/alerts", "/notifications",
+  "/", "/map", "/feed", "/chat", "/my-pings", "/following", "/alerts", "/notifications",
   "/you", "/search", "/place", "/promote", "/business", "/privacy",
   "/cookies", "/terms", "/safety", "/install",
 ]);
 
 function sectionFor(pathname: string) {
-  if (pathname === "/" || pathname === "/search" || pathname === "/place") return "feed";
-  if (pathname === "/map") return "map";
+  if (pathname === "/" || pathname === "/map" || pathname === "/search" || pathname === "/place") return "map";
+  if (pathname === "/feed") return "feed";
   if (pathname === "/chat") return "chat";
   if (pathname === "/my-pings" || pathname === "/following") return "mine";
   if (pathname === "/alerts" || pathname === "/notifications") return "activity";

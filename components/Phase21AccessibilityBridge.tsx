@@ -4,8 +4,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 
 const routeNames: Record<string, string> = {
-  "/": "Feed",
+  "/": "Map",
   "/map": "Map",
+  "/feed": "Feed",
   "/chat": "Local Chat",
   "/search": "Search",
   "/place": "Local area",

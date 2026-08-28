@@ -63,12 +63,12 @@ export default function ComposeStartPage() {
       if (result.state === "granted" && result.coordinates) {
         clearHandoffTimer();
         authorizeComposeHandoff();
-        router.replace("/#ping");
+        router.replace("/feed#ping");
         handoffTimerRef.current = window.setTimeout(() => {
           handoffTimerRef.current = null;
           if (window.location.pathname === "/compose-start") {
             authorizeComposeHandoff();
-            window.location.assign("/#ping");
+            window.location.assign("/feed#ping");
           }
         }, COMPOSE_HANDOFF_FALLBACK_MS);
         return;

@@ -29,9 +29,11 @@ const CommercialSafetyBridge = dynamic(() => import("@/components/CommercialSafe
 const InternalWebsiteBrandBridge = dynamic(() => import("@/components/InternalWebsiteBrandBridge"));
 
 const COMMERCIAL_POLISH_PATHS = new Set(["/promote", "/business", "/search"]);
-const VISIBILITY_SYNC_PATHS = new Set(["/", "/map", "/search", "/following"]);
+const VISIBILITY_SYNC_PATHS = new Set(["/", "/map", "/feed", "/search", "/following"]);
 const COPY_BRIDGE_DEFER_PATHS = new Set([
+  "/",
   "/map",
+  "/feed",
   "/chat",
   "/search",
   "/my-pings",
@@ -44,7 +46,8 @@ const COPY_BRIDGE_DEFER_PATHS = new Set([
 export default function ProductClientRuntime() {
   const pathname = usePathname();
   const [detailEnhancementsActive, setDetailEnhancementsActive] = useState(false);
-  const isFeed = pathname === "/";
+  const isHome = pathname === "/";
+  const isFeed = pathname === "/feed";
   const isYou = pathname === "/you";
   const needsVisibilitySync = VISIBILITY_SYNC_PATHS.has(pathname);
   const needsCommercialPolish = COMMERCIAL_POLISH_PATHS.has(pathname);
@@ -68,7 +71,7 @@ export default function ProductClientRuntime() {
 
   return (
     <>
-      {isFeed && <FirstRunOnboarding />}
+      {isHome && <FirstRunOnboarding />}
       <Phase5PingDetail />
       <PrivacySafetyCenter />
       <PasswordAuthOverlay />

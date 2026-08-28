@@ -4,6 +4,19 @@ Audit date: 28 August 2026
 Baseline audited: `main` at `0a6df90`  
 Scope: pre-map-first cleanup audit. No component, CSS, route, migration, or database data was deleted.
 
+## Map-first home restructure — 28 August 2026
+
+- The existing MapLibre experience is now the home screen at `/`.
+- The same map remains available at `/map` for compatibility with existing links.
+- The previous Feed implementation was preserved at `/feed`; no Feed query, posting, promotion, retention or detail logic was deleted.
+- Existing `nearby_map_pings` data and `LivePingMap` marker rendering are reused unchanged. No new data source or category was introduced.
+- Radius choices (0.5, 1, 3 and 5 miles) and horizontally scrollable category chips now sit together in the floating map overlay. The detailed filter sheet remains available, including existing Marketplace filters.
+- Selecting a marker continues to dispatch `ping:open-detail`, which is handled by the existing global `Phase5PingDetail` sheet.
+- Primary navigation now treats Map as home and keeps Feed as a secondary destination alongside Chat, My Pins, Activity and You.
+- Feed-only phase bridges now recognise `/feed` instead of `/`, and product analytics/accessibility route labels distinguish Map home from the secondary Feed.
+- The authenticated posting preflight now hands off to `/feed#ping`, preserving the existing composer after the route move.
+- This step changed frontend routing/components only. Database schema, migrations, authentication, RLS and moderation code were not changed.
+
 ## What changed in this pass
 
 - New-pin category choices are now limited to **Free**, **Deals**, **Marketplace**, and **Other local**.
@@ -144,4 +157,3 @@ Local Chat is **implemented end-to-end in source**, not merely half-built. This 
 2. Decide whether Following, Activity/push, promotions and Local Chat remain future features. They are separate feature clusters, not dead files.
 3. Preserve `CATEGORY_DEFINITIONS` and database enum/check compatibility for historical data even if more creation categories are retired later.
 4. When deletions are approved, use a branch/PR and visual QA for Map, My Pins, You and Auth because the CSS cascade is highly shared.
-

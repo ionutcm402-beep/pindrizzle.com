@@ -6,7 +6,7 @@ import PingIcon from "@/components/PingIcon";
 export default function Phase14SearchEntry() {
   const pathname = usePathname();
   const router = useRouter();
-  if (pathname !== "/") return null;
+  if (pathname !== "/feed") return null;
 
   return (
     <>

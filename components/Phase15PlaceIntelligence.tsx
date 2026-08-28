@@ -62,7 +62,7 @@ export default function Phase15PlaceIntelligence() {
   }, [applyLabel]);
 
   useEffect(() => {
-    if (window.location.pathname !== "/") return;
+    if (window.location.pathname !== "/feed") return;
 
     let cached = "";
     try { cached = localStorage.getItem(PLACE_LABEL_KEY) || ""; } catch {}

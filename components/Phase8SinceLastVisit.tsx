@@ -168,7 +168,7 @@ export default function Phase8SinceLastVisit() {
   }, [refreshing]);
 
   useEffect(() => {
-    if (window.location.pathname !== "/") return;
+    if (window.location.pathname !== "/feed") return;
     let createdNode: HTMLElement | null = null;
     const frame = window.requestAnimationFrame(() => {
       const filter = document.querySelector<HTMLElement>(".filter-row");

@@ -34,7 +34,7 @@ export default function LegacyComposeLinkBridge() {
     const handleClick = (event: MouseEvent) => {
       if (event.defaultPrevented || shouldUseBrowserNavigation(event)) return;
       const target = event.target instanceof Element
-        ? event.target.closest<HTMLAnchorElement>("a[href='/#ping'],a[href='#ping']")
+        ? event.target.closest<HTMLAnchorElement>("a[href='/feed#ping'],a[href='/#ping'],a[href='#ping']")
         : null;
       if (!target) return;
 
