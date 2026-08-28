@@ -11,7 +11,9 @@
     "cap:copy": "npx cap copy",
     "cap:open:ios": "npx cap open ios",
     "cap:open:android": "npx cap open android",
-    "native:assets": "npx @capacitor/assets generate --iconBackgroundColor '#eef5f7' --iconBackgroundColorDark '#082b49' --splashBackgroundColor '#eef5f7' --splashBackgroundColorDark '#082b49' --logoSplashScale 0.18",
+    "native:assets:ios": "npx @capacitor/assets generate --ios --iconBackgroundColor '#eef5f7' --iconBackgroundColorDark '#082b49' --splashBackgroundColor '#eef5f7' --splashBackgroundColorDark '#082b49' --logoSplashScale 0.18",
+    "native:assets:android": "npx @capacitor/assets generate --android --iconBackgroundColor '#eef5f7' --iconBackgroundColorDark '#082b49' --splashBackgroundColor '#eef5f7' --splashBackgroundColorDark '#082b49' --logoSplashScale 0.18",
+    "native:assets": "npm run native:assets:ios && npm run native:assets:android",
     "native:prepare": "npm run build:native:web && npm run cap:sync"
   },
   "dependencies": {
