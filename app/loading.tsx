@@ -13,6 +13,7 @@ export default function Loading() {
     >
       <div style={{ textAlign: "center" }}>
         <div
+          className="pindrizzle-loading-spinner"
           aria-hidden="true"
           style={{
             width: 34,
@@ -29,7 +30,7 @@ export default function Loading() {
           Getting the latest page ready.
         </span>
       </div>
-      <style>{`@keyframes pindrizzle-loading-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){div[aria-hidden="true"]{animation:none!important}}`}</style>
+      <style>{`@keyframes pindrizzle-loading-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.pindrizzle-loading-spinner{animation:none!important}}`}</style>
     </main>
   );
 }
