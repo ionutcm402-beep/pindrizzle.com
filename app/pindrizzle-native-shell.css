@@ -188,16 +188,11 @@ body[data-ping-global-nav-active="true"] .app-shell main:not(.map-v3-screen){
     overflow:hidden!important;
   }
 
-  /* Safe-area left/right apply to scrollable content; edge-to-edge backgrounds still fill the WebView. */
+  /* Transparent safe-area borders preserve each screen's own padding and typography. */
   .app-shell main:not(.map-v3-screen){
-    padding-left:max(var(--pd-safe-left),0px);
-    padding-right:max(var(--pd-safe-right),0px);
-  }
-
-  .app-header,
-  .simple-header,
-  .my-pings-v3-header{
-    padding-top:calc(var(--pd-safe-top) + 16px)!important;
+    border-top:var(--pd-safe-top) solid transparent;
+    border-left:var(--pd-safe-left) solid transparent;
+    border-right:var(--pd-safe-right) solid transparent;
   }
 
   /* True native tab bar: flush to the screen bottom, including home-indicator space. */
