@@ -152,8 +152,8 @@ export default function PasswordAuthOverlay() {
             emailRedirectTo: authRedirectUrl("confirm"),
             data: {
               age_13_plus_declared: true,
-              ping_terms_version: "2026-08-26",
-              ping_privacy_notice_version: "2026-08-26",
+              ping_terms_version: "2026-08-28",
+              ping_privacy_notice_version: "2026-08-28",
               ping_closed_beta_signup: isClosedBeta,
               ping_release_stage: releaseStage,
             },
@@ -216,7 +216,7 @@ export default function PasswordAuthOverlay() {
   const heading = mode === "signup" ? (isClosedBeta ? "Join the Pindrizzle closed beta." : "Create your Pindrizzle account.") : mode === "recovery" ? "Reset your password." : "Welcome back.";
   const signupCopy = isClosedBeta
     ? "New accounts currently need a beta invite. Pindrizzle accounts are for people aged 13 or over, and your email is never shown publicly."
-    : "Create an account to post, confirm, reply and follow useful local updates. Pindrizzle accounts are for people aged 13 or over, and your email is never shown publicly.";
+    : "Create an account to post, chat, confirm, reply and follow useful local updates. Pindrizzle accounts are for people aged 13 or over, and your email is never shown publicly.";
 
   return (
     <>
