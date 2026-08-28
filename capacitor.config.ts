@@ -17,15 +17,25 @@ const config: CapacitorConfig = {
   appId: "com.pindrizzle.app",
   appName: "Pindrizzle",
   webDir: "native-shell",
+  backgroundColor: "#eef5f7",
   server: {
     url: parsed.origin,
     cleartext: false,
+    allowNavigation: ["pindrizzle.com", "*.pindrizzle.com", "*.vercel.app"],
   },
   ios: {
-    contentInset: "automatic",
+    backgroundColor: "#eef5f7",
+    contentInset: "never",
+    preferredContentMode: "mobile",
   },
   android: {
+    backgroundColor: "#eef5f7",
     allowMixedContent: false,
+  },
+  plugins: {
+    PushNotifications: {
+      presentationOptions: ["badge", "sound", "banner", "list"],
+    },
   },
 };
 
