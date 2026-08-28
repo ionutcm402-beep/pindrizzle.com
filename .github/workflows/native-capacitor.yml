@@ -55,10 +55,30 @@ jobs:
           mkdir -p assets
           cp public/pindrizzle-icon-512.png assets/logo.png
           npm run native:assets
+          node scripts/ensure-ios-icon-sizes.mjs
           rm -rf assets
 
-      - name: Apply Pindrizzle native permissions and deep links
+      - name: Apply Pindrizzle native App Store configuration
         run: node scripts/configure-native-projects.mjs
+
+      - name: Verify iOS submission configuration files
+        shell: bash
+        run: |
+          plutil -lint ios/App/App/Info.plist
+          plutil -lint ios/App/App/App.entitlements
+          grep -q 'PRODUCT_BUNDLE_IDENTIFIER = com.pindrizzle.app;' ios/App/App.xcodeproj/project.pbxproj
+          grep -q 'IPHONEOS_DEPLOYMENT_TARGET = 15.0;' ios/App/App.xcodeproj/project.pbxproj
+          grep -q 'CODE_SIGN_ENTITLEMENTS = App/App.entitlements;' ios/App/App.xcodeproj/project.pbxproj
+          grep -q 'com.apple.Push' ios/App/App.xcodeproj/project.pbxproj
+          grep -q '<string>UIInterfaceOrientationPortrait</string>' ios/App/App/Info.plist
+          if grep -q 'UIInterfaceOrientationLandscape' ios/App/App/Info.plist; then
+            echo 'Landscape orientation is still enabled.' >&2
+            exit 1
+          fi
+          if grep -q 'NSLocationAlwaysAndWhenInUseUsageDescription' ios/App/App/Info.plist; then
+            echo 'Background location purpose key must not be present.' >&2
+            exit 1
+          fi
 
       - name: Verify Android native compile
         shell: bash
@@ -67,17 +87,45 @@ jobs:
           cd android
           ./gradlew assembleDebug --no-daemon
 
-      - name: Verify iOS simulator compile without signing
+      - name: Build, install and launch on iOS Simulator
         shell: bash
         run: |
+          DEVICE_UDID="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ && /Shutdown/ {print $2; exit}')"
+          if [ -z "$DEVICE_UDID" ]; then
+            echo 'No available iPhone Simulator was found.' >&2
+            xcrun simctl list devices available
+            exit 1
+          fi
+
+          echo "Using iOS Simulator $DEVICE_UDID"
+          xcrun simctl boot "$DEVICE_UDID" || true
+          xcrun simctl bootstatus "$DEVICE_UDID" -b
+
+          rm -rf /tmp/pindrizzle-derived-data
           xcodebuild \
             -project ios/App/App.xcodeproj \
             -scheme App \
             -configuration Debug \
             -sdk iphonesimulator \
-            -destination 'generic/platform=iOS Simulator' \
+            -destination "id=$DEVICE_UDID" \
+            -derivedDataPath /tmp/pindrizzle-derived-data \
             CODE_SIGNING_ALLOWED=NO \
             build
+
+          APP_PATH="/tmp/pindrizzle-derived-data/Build/Products/Debug-iphonesimulator/App.app"
+          test -d "$APP_PATH"
+          xcrun simctl install "$DEVICE_UDID" "$APP_PATH"
+          xcrun simctl launch "$DEVICE_UDID" com.pindrizzle.app
+          sleep 6
+          xcrun simctl io "$DEVICE_UDID" screenshot /tmp/pindrizzle-ios-simulator.png
+
+      - name: Upload iOS Simulator launch screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: pindrizzle-ios-simulator
+          path: /tmp/pindrizzle-ios-simulator.png
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Commit generated native projects
         shell: bash
@@ -89,5 +137,5 @@ jobs:
             echo 'Native projects already current.'
             exit 0
           fi
-          git commit -m 'build: generate Capacitor iOS and Android projects'
+          git commit -m 'build: refresh Capacitor iOS and Android projects'
           git push origin HEAD:${GITHUB_REF_NAME}
