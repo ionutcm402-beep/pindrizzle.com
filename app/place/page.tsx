@@ -100,29 +100,29 @@ export default function PlacePage() {
         <main className="place15-screen">
           <header className="place15-head">
             <a href="/" aria-label="Back to Feed"><PingIcon name="back" size={18}/></a>
-            <div><div className="brand small">pindrizzle</div><p>Local area</p></div>
+            <div><div className="brand small">Pindrizzle</div><p>Local area</p></div>
             <a href="/map" aria-label="Open Map"><PingIcon name="map" size={18}/></a>
           </header>
 
           <section className="place15-hero">
             <span>Approximate area</span>
             <h1>{place.label}</h1>
-            <p>Pindrizzle uses neighbourhood-scale context here. The exact device location is not published.</p>
+            <p>Pindrizzle uses neighbourhood-scale context here. Your exact device location is not published.</p>
           </section>
 
           {!locationReady && (
             <section className="place15-location pd-moment">
               <span className="place15-location-icon"><PingIcon name="location" size={26}/></span>
-              <h2>{locationState === "denied" ? "Location is blocked" : "See what your area looks like right now"}</h2>
-              <p>{locationState === "denied" ? "Enable location in your device or browser settings, then try again." : "Use your location to calculate a privacy-safe neighbourhood snapshot."}</p>
-              <button type="button" className="pd-button-primary" onClick={() => void askForLocation()} disabled={locationState === "requesting" || locationState === "checking"}>{locationState === "requesting" || locationState === "checking" ? "Checking…" : "Use my location"}</button>
+              <h2>{locationState === "denied" ? "Location is off" : "See nearby activity"}</h2>
+              <p>{locationState === "denied" ? "Allow location in your device or browser settings, then try again." : "Use location to see a privacy-safe snapshot of your area."}</p>
+              <button type="button" className="pd-button-primary" onClick={() => void askForLocation()} disabled={locationState === "requesting" || locationState === "checking"}>{locationState === "requesting" || locationState === "checking" ? "Checking…" : "Use location"}</button>
             </section>
           )}
 
           {locationReady && (
             <>
               <section className="place15-toolbar">
-                <label><span>Snapshot radius</span><select value={radius} onChange={(event) => changeRadius(Number(event.target.value) as Radius)}><option value={0.5}>0.5 mi</option><option value={1}>1 mi</option><option value={3}>3 mi</option><option value={5}>5 mi</option></select></label>
+                <label><span>Nearby radius</span><select value={radius} onChange={(event) => changeRadius(Number(event.target.value) as Radius)}><option value={0.5}>0.5 mi</option><option value={1}>1 mi</option><option value={3}>3 mi</option><option value={5}>5 mi</option></select></label>
               </section>
 
               <section className="place15-stats" aria-label="Local snapshot totals">
@@ -132,7 +132,7 @@ export default function PlacePage() {
               </section>
 
               <section className="place15-card">
-                <div className="place15-cardhead"><div><span>Live mix</span><h2>What is active nearby</h2></div><b>{radius} mi</b></div>
+                <div className="place15-cardhead"><div><span>Nearby categories</span><h2>Active nearby</h2></div><b>{radius} mi</b></div>
                 {categoryCounts.length ? (
                   <div className="place15-mix">
                     {categoryCounts.map(([category, count]) => {
@@ -141,13 +141,13 @@ export default function PlacePage() {
                       return <div key={category} className="place15-mix-row"><div><span><i><PingIcon name={item.icon} size={15}/></i>{item.label}</span><strong>{count}</strong></div><em><b style={{ width: `${width}%` }} /></em></div>;
                     })}
                   </div>
-                ) : <p className="place15-quiet">No active pins inside this radius right now.</p>}
+                ) : <p className="place15-quiet">No active pins within this radius.</p>}
               </section>
 
               <section className="place15-card">
-                <span className="place15-eyebrow">Freshest activity</span>
-                <h2>{newest?.title || "Quiet around here"}</h2>
-                <p>{newest ? `${CATEGORY_DEFINITIONS[newest.category].label} · ${(newest.distance_meters / 1609.344).toFixed(1)} mi away · ${age(newest.created_at)}` : "There is no current local activity to highlight."}</p>
+                <span className="place15-eyebrow">Latest activity</span>
+                <h2>{newest?.title || "No active pins"}</h2>
+                <p>{newest ? `${CATEGORY_DEFINITIONS[newest.category].label} · ${(newest.distance_meters / 1609.344).toFixed(1)} mi away · ${age(newest.created_at)}` : "No active pins to highlight."}</p>
                 <div className="place15-links"><a className="pd-button-secondary" href="/search">Explore nearby</a><a className="pd-button-primary" href="/map">Open map</a></div>
               </section>
             </>

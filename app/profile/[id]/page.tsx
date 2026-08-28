@@ -84,7 +84,7 @@ export default function PublicProfilePage() {
         <main className="phase12-public-screen public-profile-v3">
           <header className="phase12-public-header">
             <a href="/" className="phase12-public-back" aria-label="Back to Feed">‹</a>
-            <div className="brand small">pindrizzle</div>
+            <div className="brand small">Pindrizzle</div>
             <span />
           </header>
 
@@ -93,7 +93,7 @@ export default function PublicProfilePage() {
             <section className="phase12-public-state pd-moment">
               <div><PingIcon name="user" size={30}/></div>
               <h1>Profile unavailable</h1>
-              <p>This neighbour profile could not be found.</p>
+              <p>This profile could not be found.</p>
               <a href="/">Back to Feed</a>
             </section>
           )}
@@ -109,21 +109,21 @@ export default function PublicProfilePage() {
               </section>
 
               <section className="phase12-public-signals" aria-label="Community reputation signals">
-                <div><strong>{profile.helpful_pings}</strong><span>Helpful earned</span></div>
-                <div><strong>{profile.confirmations}</strong><span>Confirms earned</span></div>
-                <div><strong>{profile.reputation_points}</strong><span>Reputation pts</span></div>
+                <div><strong>{profile.helpful_pings}</strong><span>Helpful marks</span></div>
+                <div><strong>{profile.confirmations}</strong><span>Confirmations</span></div>
+                <div><strong>{profile.reputation_points}</strong><span>Reputation points</span></div>
               </section>
 
               <section className="phase12-public-reputation">
-                <div><strong>How reputation works</strong><span>{profile.reputation_level}</span></div>
-                <p>Pindrizzle uses visible community signals rather than a hidden trust score. Helpful earned counts for 3 points and confirmations earned count for 1 point.</p>
+                <div><strong>Reputation</strong><span>{profile.reputation_level}</span></div>
+                <p>Reputation is based on visible community activity. Helpful marks count for 3 points and confirmations count for 1 point.</p>
                 <div className="phase12-public-progress"><span style={{ width: `${progress}%` }} /></div>
                 <small>{profile.next_level_points ? `${profile.next_level_points - profile.reputation_points} points to the next level` : "Highest current reputation level"}</small>
               </section>
 
               <section className="phase12-public-privacy">
                 <span><PingIcon name="shield" size={20}/></span>
-                <div><strong>Privacy by design</strong><p>Public profiles do not show email, exact location or a home address. Reputation is community activity, not identity verification.</p></div>
+                <div><strong>Privacy</strong><p>Public profiles do not show email, exact location or a home address. Reputation reflects community activity, not identity verification.</p></div>
               </section>
             </>
           )}
