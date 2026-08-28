@@ -3,12 +3,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { withTimeout } from "@/lib/async-timeout";
 import { requestPingLocation, type PingLocationResult } from "@/lib/ping-location";
 import PingIcon from "@/components/PingIcon";
 
 type Stage = "checking-auth" | "waiting-auth" | "locating" | "error";
 
 const COMPOSE_LOCATION_TIMEOUT_MS = 13500;
+const COMPOSE_AUTH_TIMEOUT_MS = 8000;
 
 function requestLocationWithTimeout(): Promise<PingLocationResult> {
   return new Promise((resolve) => {
@@ -29,53 +31,80 @@ export default function ComposeStartPage() {
   const [stage, setStage] = useState<Stage>("checking-auth");
   const [message, setMessage] = useState("");
   const requestIdRef = useRef(0);
+  const locationInProgressRef = useRef(false);
 
   const startLocation = useCallback(async () => {
+    if (locationInProgressRef.current) return;
+    locationInProgressRef.current = true;
     const requestId = ++requestIdRef.current;
     setStage("locating");
     setMessage("");
 
-    const result = await requestLocationWithTimeout();
-    if (requestIdRef.current !== requestId) return;
+    try {
+      const result = await requestLocationWithTimeout();
+      if (requestIdRef.current !== requestId) return;
 
-    if (result.state === "granted" && result.coordinates) {
-      router.replace("/#ping");
-      return;
+      if (result.state === "granted" && result.coordinates) {
+        router.replace("/#ping");
+        return;
+      }
+
+      setStage("error");
+      setMessage(
+        result.state === "denied"
+          ? "Location permission is blocked. Allow location in your browser settings, then try again."
+          : "We couldn’t get your location. Check your connection and location settings, then try again.",
+      );
+    } finally {
+      if (requestIdRef.current === requestId) locationInProgressRef.current = false;
     }
-
-    setStage("error");
-    setMessage(
-      result.state === "denied"
-        ? "Location permission is blocked. Allow location in your browser settings, then try again."
-        : "We couldn’t get your location. Check your connection and location settings, then try again.",
-    );
   }, [router]);
 
-  useEffect(() => {
-    const supabase = createClient();
-    let active = true;
-
-    void supabase.auth.getSession().then(({ data }) => {
-      if (!active) return;
+  const checkAuthAndStart = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
+    locationInProgressRef.current = false;
+    setStage("checking-auth");
+    setMessage("");
+    try {
+      const supabase = createClient();
+      const { data } = await withTimeout(supabase.auth.getSession(), COMPOSE_AUTH_TIMEOUT_MS, "Sign-in check timed out.");
+      if (requestIdRef.current !== requestId) return;
       if (data.session?.user) {
         void startLocation();
         return;
       }
       setStage("waiting-auth");
       window.dispatchEvent(new CustomEvent("ping:auth-needed", { detail: { message: "Sign in once to post useful Pings nearby." } }));
-    });
+    } catch (error) {
+      if (requestIdRef.current !== requestId) return;
+      console.error("Pin creation preflight failed", error);
+      setStage("error");
+      setMessage("Pin creation couldn’t start. Check your connection and try again.");
+    }
+  }, [startLocation]);
 
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!active || !session?.user) return;
+  useEffect(() => {
+    let active = true;
+    void checkAuthAndStart();
+    const supabase = createClient();
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!active || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") return;
+      if (!session?.user) {
+        locationInProgressRef.current = false;
+        requestIdRef.current += 1;
+        setStage("waiting-auth");
+        return;
+      }
       void startLocation();
     });
 
     return () => {
       active = false;
+      locationInProgressRef.current = false;
       requestIdRef.current += 1;
       data.subscription.unsubscribe();
     };
-  }, [startLocation]);
+  }, [checkAuthAndStart, startLocation]);
 
   const locating = stage === "checking-auth" || stage === "locating";
 
@@ -85,7 +114,7 @@ export default function ComposeStartPage() {
         <span className={`compose-start-icon${locating ? " loading" : ""}`} aria-hidden="true"><PingIcon name="location" size={24} /></span>
         <strong>{stage === "waiting-auth" ? "Sign in to continue" : stage === "error" ? "Location needed" : "Getting your location…"}</strong>
         {stage === "waiting-auth" ? <p>Complete sign in, then pin creation will continue automatically.</p> : stage === "error" ? <p>{message}</p> : <p>Preparing pin creation. This should only take a moment.</p>}
-        {stage === "error" && <div className="compose-start-actions"><button type="button" className="primary" onClick={() => void startLocation()}>Try again</button><button type="button" onClick={() => router.replace("/my-pings")}>Cancel</button></div>}
+        {stage === "error" && <div className="compose-start-actions"><button type="button" className="primary" onClick={() => void checkAuthAndStart()}>Try again</button><button type="button" onClick={() => router.replace("/my-pings")}>Cancel</button></div>}
         {stage === "waiting-auth" && <button type="button" className="compose-start-cancel" onClick={() => router.replace("/my-pings")}>Cancel</button>}
       </section>
       <style jsx global>{`
