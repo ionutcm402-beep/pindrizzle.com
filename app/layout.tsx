@@ -21,6 +21,7 @@ import Phase22LegalSettingsEntry from "@/components/Phase22LegalSettingsEntry";
 import Phase24BetaBridge from "@/components/Phase24BetaBridge";
 import Phase25LocationChoiceBridge from "@/components/Phase25LocationChoiceBridge";
 import SiteHeader from "@/components/SiteHeader";
+import CommercialSafetyBridge from "@/components/CommercialSafetyBridge";
 import PindrizzleCopyBridge from "@/components/PindrizzleCopyBridge";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
@@ -57,8 +58,8 @@ import "./site-shell.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://pindrizzle.com"),
-  title: "Pindrizzle — Drop in daily",
-  description: "Drop in daily for useful local pins, deals, Marketplace listings and real-time updates around you.",
+  title: "Pindrizzle — Useful local updates nearby",
+  description: "Useful local pins, deals, Marketplace listings and real-time updates around you.",
   applicationName: "Pindrizzle",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
@@ -68,7 +69,7 @@ export const metadata: Metadata = {
   },
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Pindrizzle — Drop in daily",
+    title: "Pindrizzle — Useful local updates nearby",
     description: "Useful local pins and real-time updates around you.",
     url: "https://pindrizzle.com",
     siteName: "Pindrizzle",
@@ -119,6 +120,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Phase24BetaBridge />
         <Phase25LocationChoiceBridge />
         <Phase21AccessibilityBridge />
+        <CommercialSafetyBridge />
         <PindrizzleCopyBridge />
       </body>
     </html>
