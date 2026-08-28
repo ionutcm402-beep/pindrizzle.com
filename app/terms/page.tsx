@@ -12,7 +12,7 @@ export default function TermsPage() {
     <LegalPageShell title="Terms of Use" kicker="COMMUNITY RULES" active="terms">
       <section className="legal-intro">
         <h2>Use Pindrizzle for useful, lawful local information.</h2>
-        <p>These terms describe the rules for using Pindrizzle, including local content, safety controls, Marketplace listings, Deals and promoted placements.</p>
+        <p>These terms describe the rules for using Pindrizzle, including pins, Local Chat, safety controls, Marketplace listings, Deals and promoted placements.</p>
       </section>
 
       {!operatorPublished && <section className="legal-card legal-warning">
@@ -28,12 +28,12 @@ export default function TermsPage() {
 
       <section className="legal-card">
         <h2>1. Eligibility and accounts</h2>
-        <p>You must be at least 13 years old to create a Pindrizzle account. Keep your login details secure and use accurate account information. A display name or reputation score is not identity verification, and Pindrizzle does not guarantee that another user is who they claim to be.</p>
+        <p>You must be at least 13 years old to create a Pindrizzle account. Signup requires a 13+ declaration. Keep your login details secure and use accurate account information. A display name or reputation score is not identity verification, and Pindrizzle does not guarantee that another user is who they claim to be.</p>
       </section>
 
       <section className="legal-card">
         <h2>2. What you may post</h2>
-        <p>Pindrizzle is for useful local information such as alerts, traffic, lost and found items, free items, requests for help, local updates, events, Deals, Marketplace listings and nearby property or vehicle listings. You are responsible for content you submit and must have the right to post any text, photo or external listing link you add.</p>
+        <p>Pindrizzle is for useful local information such as alerts, traffic, lost and found items, free items, requests for help, local updates, events, Deals, Marketplace listings and nearby conversation in Local Chat. You are responsible for every pin, reply, Local Chat message, photo or external listing link you submit and must have the right to post it.</p>
         <p>You give Pindrizzle a non-exclusive licence to host, process, reproduce and display your submitted content only as reasonably needed to operate, secure, moderate and improve the service.</p>
       </section>
 
@@ -48,19 +48,21 @@ export default function TermsPage() {
           <li>Deceptive impersonation, spam, repetitive promotion or manipulated information intended to mislead neighbours.</li>
           <li>Exact home, school or other sensitive location details where sharing them creates an avoidable safety risk.</li>
         </ul>
+        <div className="legal-links"><a href="/safety#chat-guidelines">Local Chat community guidelines</a></div>
       </section>
 
       <section className="legal-card">
-        <h2>4. Location and safety</h2>
+        <h2>4. Location, Local Chat and safety</h2>
         <p>New pins default to <b>Private location</b>, which publishes an approximate nearby point instead of the precise point you selected. You may deliberately choose <b>Exact location</b>; if you do, the selected exact point is visible to people who can see that pin and is used for its public Map position and nearby distance.</p>
-        <p>Do not choose Exact location for a home, school or other sensitive place unless you genuinely intend to publish that precise point. Do not place private addresses, phone numbers, school details or other sensitive identifiers in a pin unless you have a lawful and appropriate reason to make them public. Photos can reveal a location visually even when metadata has been removed.</p>
+        <p>Local Chat uses your current location and the radius shared with Feed/Map to decide which nearby group conversation you can access. Local Chat is public to eligible signed-in people in that relevant radius; it is not a private-message service. Chat messages store an approximate snapped area point for radius matching rather than the precise device coordinate used to request nearby access.</p>
+        <p>Do not choose Exact pin location for a home, school or other sensitive place unless you genuinely intend to publish that precise point. Do not place private addresses, phone numbers, school details or other sensitive identifiers in a pin or Local Chat message unless you have a lawful and appropriate reason to make them public. Photos can reveal a location visually even when metadata has been removed.</p>
       </section>
 
       <section className="legal-card">
         <h2>5. Reports, moderation and appeals</h2>
-        <p>Users can report pins and use block/hide controls. Pindrizzle may hide, restrict, reject, expire or remove content and may restrict accounts where needed for safety, legality, spam prevention or service integrity. Moderation decisions are not guaranteed to be immediate.</p>
-        <p>If you disagree with a moderation outcome or need to make a wider safety complaint, use the Safety page. A request submitted there receives a tracked status.</p>
-        <div className="legal-links"><a href="/safety">Safety and complaints</a></div>
+        <p>Users can report pins and Local Chat messages and can use block/hide controls. Reports for both features enter the same moderation system. Pindrizzle may hide, restrict, reject, expire or remove content and may restrict accounts where needed for safety, legality, spam prevention or service integrity. Moderation decisions are not guaranteed to be immediate.</p>
+        <p>When a moderator removes a Local Chat message, the author can be shown the recorded removal reason. If you disagree with a moderation outcome or need to make a wider safety complaint, use the Safety page and its tracked moderation-appeal route.</p>
+        <div className="legal-links"><a href="/safety#moderation-appeals">Safety, removal reasons and appeals</a></div>
       </section>
 
       <section className="legal-card">
@@ -72,8 +74,9 @@ export default function TermsPage() {
       </section>
 
       <section className="legal-card">
-        <h2>7. Service availability and expiry</h2>
-        <p>Pindrizzle may change, suspend or discontinue features as the product develops. Pins are designed to be temporary local information and use category-appropriate expiry periods that may be selected or adjusted when posting. Expired or resolved pins may remain in private history, moderation, payment or legal records where appropriate. The service is provided for local information and is not a guaranteed source of verified facts.</p>
+        <h2>7. Service availability, expiry and retention</h2>
+        <p>Pindrizzle may change, suspend or discontinue features as the product develops. Pins are designed to be temporary local information and use category-appropriate expiry periods that may be selected or adjusted when posting. Local Chat messages use a 90-day default retention period and are automatically anonymised after that period unless a still-pending safety/moderation review requires a temporary hold. Safety, moderation, payment or legal records may remain longer where appropriate.</p>
+        <p>The service is provided for local information and conversation and is not a guaranteed source of verified facts.</p>
       </section>
 
       <section className="legal-card legal-callout">
