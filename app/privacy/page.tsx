@@ -43,14 +43,14 @@ export default function PrivacyPage() {
           <li><b>Location:</b> device coordinates are used to find nearby activity and create pins. New pins default to Private location, which publishes an approximate nearby area. If you explicitly choose Exact location, the selected exact point is public to people who can see that pin.</li>
           <li><b>Safety and rights records:</b> reports, blocks, hidden content, moderation decisions, privacy-rights requests, safety complaints and moderation appeals needed to operate safety and compliance controls.</li>
           <li><b>Notifications:</b> notification preferences and, if enabled, browser push subscription details needed to deliver push messages.</li>
-          <li><b>Promotions and payments:</b> promotion requests and payment-status metadata. Payment processing is handled through Stripe; Pindrizzle does not need your full card number.</li>
+          <li><b>Promotions and payments:</b> promotion requests and payment-status metadata are used if paid promotion features are enabled. When payments are enabled, Stripe handles payment processing; Pindrizzle does not need your full card number.</li>
           <li><b>Optional product analytics:</b> only after you choose Allow analytics, Pindrizzle records a random browser-session identifier and coarse events such as Feed, Map or Search use. It does not record search text or exact location in the product analytics table.</li>
         </ul>
       </section>
 
       <section className="legal-card">
         <h2>Why the information is used</h2>
-        <p>Pindrizzle uses account and service data to provide the features you ask for, including authentication, nearby results, posting, replies, notifications and promotions. Safety and security information is used to prevent abuse, investigate reports and protect the service. Optional product analytics is based on your browser choice and is used to understand whether core product areas are useful.</p>
+        <p>Pindrizzle uses account and service data to provide the features you ask for, including authentication, nearby results, posting, replies, notifications and promotions when enabled. Safety and security information is used to prevent abuse, investigate reports and protect the service. Optional product analytics is based on your browser choice and is used to understand whether core product areas are useful.</p>
         <p>Depending on the processing, the intended UK data-protection basis may include performance of the service, legitimate interests in safety/security/service operation, consent for optional analytics, and legal obligations where applicable. These bases must be confirmed in the final launch legal review.</p>
       </section>
 
@@ -68,7 +68,7 @@ export default function PrivacyPage() {
 
       <section className="legal-card">
         <h2>Service providers</h2>
-        <p>Pindrizzle currently relies on Supabase for database/authentication/storage services, Vercel for application hosting, Stripe for payment processing, browser/web-push infrastructure for push delivery, and OpenStreetMap-derived map/place services for map and place features. Those providers can receive ordinary technical request information needed to deliver their services.</p>
+        <p>Pindrizzle currently relies on Supabase for database/authentication/storage services, Vercel for application hosting, browser/web-push infrastructure for push delivery, and OpenStreetMap-derived map/place services for map and place features. Stripe is used for payment processing only when paid features are enabled. Those providers can receive ordinary technical request information needed to deliver their services.</p>
         <p>Some providers may process information outside the UK. The final launch review must document the relevant provider locations and applicable contractual or transfer safeguards rather than assuming one mechanism fits every provider.</p>
       </section>
 

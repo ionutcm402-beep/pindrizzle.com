@@ -47,7 +47,7 @@ export default function NotificationSettingsPage() {
       setPreferences(data ? (data as Preferences) : defaults);
     } catch (error) {
       console.error("Notification preferences failed", error);
-      setMessage("Your notification settings could not load right now.");
+      setMessage("Notification settings are unavailable. Try again in a moment.");
     } finally {
       setLoading(false);
     }
@@ -65,7 +65,7 @@ export default function NotificationSettingsPage() {
   }, [load]);
 
   const openAuth = () => {
-    window.dispatchEvent(new CustomEvent("ping:auth-needed", { detail: { message: "Sign in to manage your Pindrizzle notifications." } }));
+    window.dispatchEvent(new CustomEvent("ping:auth-needed", { detail: { message: "Sign in to manage notification settings." } }));
   };
 
   const toggle = async (key: keyof Preferences) => {
@@ -85,15 +85,15 @@ export default function NotificationSettingsPage() {
     } catch (error) {
       console.error("Save notification preference failed", error);
       setPreferences(preferences);
-      setMessage("That setting could not be saved. Please try again.");
+      setMessage("That setting could not be saved. Try again.");
     } finally {
       setSaving(null);
     }
   };
 
   const rows: Array<{ key: keyof Preferences; icon: PingIconName; title: string; body: string }> = [
-    { key: "replies_enabled", icon: "replies", title: "Replies", body: "When someone replies to your pin or a pin you joined." },
-    { key: "confirmations_enabled", icon: "confirmations", title: "Confirmations", body: "When another neighbour confirms one of your pins." },
+    { key: "replies_enabled", icon: "replies", title: "Replies", body: "When someone replies to one of your pins or a pin you joined." },
+    { key: "confirmations_enabled", icon: "confirmations", title: "Confirmations", body: "When someone confirms one of your pins." },
     { key: "helpful_enabled", icon: "helpful", title: "Helpful", body: "When someone marks one of your pins Helpful." },
   ];
 
@@ -104,7 +104,7 @@ export default function NotificationSettingsPage() {
           <header className="notification-settings-header">
             <a href="/you" className="notification-settings-back" aria-label="Back to You"><PingIcon name="back" size={18}/></a>
             <div>
-              <div className="brand small">pindrizzle</div>
+              <div className="brand small">Pindrizzle</div>
               <h1>Notifications</h1>
             </div>
           </header>
@@ -112,15 +112,15 @@ export default function NotificationSettingsPage() {
           {!userId && !loading ? (
             <section className="notification-settings-empty">
               <span className="notification-settings-empty-icon"><PingIcon name="alerts" size={26}/></span>
-              <h2>Choose what deserves your attention.</h2>
-              <p>Sign in to control which community events appear in Activity.</p>
+              <h2>Sign in to manage notifications</h2>
+              <p>Choose which activity appears in Pindrizzle.</p>
               <button type="button" onClick={openAuth}>Sign in / Sign up</button>
             </section>
           ) : (
             <>
               <section className="notification-settings-intro">
-                <strong>Useful activity only.</strong>
-                <p>These controls affect Pindrizzle’s in-app Activity, live badges and any push notifications you enable. Security emails such as password resets are always kept separate.</p>
+                <strong>Notification preferences</strong>
+                <p>Choose which replies, confirmations and Helpful activity appears in Activity and push notifications. Security emails such as password resets are separate.</p>
               </section>
 
               <Phase16PushSettings userId={userId} authLoading={loading} />
@@ -139,8 +139,8 @@ export default function NotificationSettingsPage() {
               </section>
 
               <section className="notification-settings-note">
-                <strong>What Pindrizzle will not do</strong>
-                <p>No “we miss you” spam, follower alerts or engagement bait. Notifications are tied to real community actions.</p>
+                <strong>No engagement reminders</strong>
+                <p>Notifications are tied to real replies, confirmations, Helpful marks and followed outcomes.</p>
               </section>
 
               {email && <div className="notification-settings-account">Settings for <strong>{email}</strong></div>}
