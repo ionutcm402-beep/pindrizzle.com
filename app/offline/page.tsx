@@ -1,14 +1,26 @@
 export const metadata = { title: "Offline — Pindrizzle" };
 
+const reconnectScript = `
+(() => {
+  const returnOnline = () => window.location.replace("/");
+  if (navigator.onLine) {
+    returnOnline();
+    return;
+  }
+  window.addEventListener("online", returnOnline, { once: true });
+})();
+`;
+
 export default function OfflinePage() {
   return (
     <div className="pindrizzle-offline-page">
+      <script dangerouslySetInnerHTML={{ __html: reconnectScript }} />
       <main className="pindrizzle-offline-moment">
         <div className="brand">Pindrizzle</div>
         <span className="pindrizzle-offline-icon" aria-hidden="true"><i /></span>
         <div className="pindrizzle-offline-eyebrow">OFFLINE</div>
         <h1>Pindrizzle needs a connection for live local updates.</h1>
-        <p>We deliberately do not show an old Feed or Map as if it were current. Once you are back online, Pindrizzle will refresh nearby activity normally.</p>
+        <p>We deliberately do not show an old Feed or Map as if it were current. When your connection returns, Pindrizzle will take you back to fresh nearby activity automatically.</p>
         <a href="/" className="pd-button-primary">Try again</a>
         <small>Posting, replies, maps, search and Activity all require a live connection.</small>
       </main>
