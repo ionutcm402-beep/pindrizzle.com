@@ -96,6 +96,15 @@ async function sanitizePingUploadBody(body: BodyInit | null | undefined) {
   return body;
 }
 
+function announcePublishedPin(response: Response, choice: PublishLocationChoice) {
+  if (response.ok) {
+    window.dispatchEvent(new CustomEvent("pindrizzle:pin-published", {
+      detail: { precision: choice.precision },
+    }));
+  }
+  return response;
+}
+
 const pingAwareFetch: typeof fetch = async (input, init) => {
   const baseFetch = globalThis.fetch.bind(globalThis);
   if (typeof window === "undefined") return baseFetch(input, init);
@@ -129,9 +138,11 @@ const pingAwareFetch: typeof fetch = async (input, init) => {
     const nextInit = { ...init, body: JSON.stringify(body) };
     if (input instanceof Request) {
       const nextRequest = new Request(nextUrl, input);
-      return baseFetch(nextRequest, nextInit);
+      const response = await baseFetch(nextRequest, nextInit);
+      return announcePublishedPin(response, choice);
     }
-    return baseFetch(nextUrl, nextInit);
+    const response = await baseFetch(nextUrl, nextInit);
+    return announcePublishedPin(response, choice);
   } catch (error) {
     console.error("Ping could not prepare the selected location privacy for publishing", error);
     return baseFetch(input, init);
