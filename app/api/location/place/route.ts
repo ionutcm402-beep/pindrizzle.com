@@ -5,6 +5,7 @@ export const runtime = "nodejs";
 
 const GRID = 0.004;
 const CACHE_MS = 30 * 24 * 60 * 60 * 1000;
+const NOMINATIM_TIMEOUT_MS = 8000;
 let adminClient: SupabaseClient | null | undefined;
 
 type PlaceRequest = { lat?: number; lng?: number };
@@ -110,11 +111,12 @@ export async function POST(request: NextRequest) {
 
     const response = await fetch(`https://nominatim.openstreetmap.org/reverse?${params.toString()}`, {
       headers: {
-        "User-Agent": "Pindrizzle/1.0 (+https://github.com/ionutcm402-beep/pindrizzle.com)",
+        "User-Agent": "Pindrizzle/1.0 (+https://pindrizzle.com)",
         "Accept-Language": "en",
         Accept: "application/json",
       },
       cache: "no-store",
+      signal: AbortSignal.timeout(NOMINATIM_TIMEOUT_MS),
     });
 
     if (!response.ok) {
