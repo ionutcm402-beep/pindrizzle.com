@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import PingIcon from "@/components/PingIcon";
 
@@ -38,12 +38,25 @@ function shouldUseBrowserNavigation(event: React.MouseEvent<HTMLAnchorElement>) 
 export default function SiteHeader() {
   const pathname = usePathname();
   const router = useRouter();
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activityUnread, setActivityUnread] = useState(0);
 
   useEffect(() => {
     setMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setMenuOpen(false);
+      window.setTimeout(() => menuButtonRef.current?.focus(), 0);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [menuOpen]);
 
   useEffect(() => {
     const updateUnread = (event: Event) => {
@@ -115,10 +128,13 @@ export default function SiteHeader() {
             <span>Drop a pin</span>
           </a>
           <button
+            ref={menuButtonRef}
             type="button"
             className="site-menu-toggle"
             aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-controls="site-primary-navigation-mobile"
             aria-expanded={menuOpen}
+            aria-haspopup="true"
             onClick={() => setMenuOpen((open) => !open)}
           >
             <span />
@@ -129,7 +145,7 @@ export default function SiteHeader() {
       </div>
 
       {menuOpen && (
-        <nav className="site-nav-mobile" aria-label="Primary navigation">
+        <nav id="site-primary-navigation-mobile" className="site-nav-mobile" aria-label="Primary navigation">
           {NAV_LINKS.map(renderNavLink)}
         </nav>
       )}
