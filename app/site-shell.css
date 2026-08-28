@@ -1,0 +1,170 @@
+/* ============================================================
+   SITE SHELL — loaded LAST so it wins the cascade over the
+   26 older design-system/patch files. This is the single
+   source of truth for "does it look like a website, not an app".
+   ============================================================ */
+
+:root {
+  --site-header-height: 64px;
+  --site-max-width: 1120px;
+  --site-border: #e3e8ee;
+  --site-bg: #ffffff;
+  --site-text: #10202f;
+  --site-brand: #082f4a;
+}
+
+/* Hide the old bottom app tab-bar and floating create button wherever
+   they were left behind by older CSS files. */
+.ping-global-nav,
+.ping-global-create,
+.bottom-nav,
+[data-ping-global-nav] {
+  display: none !important;
+}
+
+/* Undo the "reserve space for a bottom bar" padding that the app
+   shell added to every page. */
+body[data-ping-global-nav-active="true"] {
+  padding-bottom: 0 !important;
+}
+
+/* -------------------- Top navigation -------------------- */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: var(--site-bg);
+  border-bottom: 1px solid var(--site-border);
+}
+
+.site-header-row {
+  max-width: var(--site-max-width);
+  margin: 0 auto;
+  height: var(--site-header-height);
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.site-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--site-brand);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+
+.site-nav-link {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #52606d;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+
+.site-nav-link:hover {
+  background: #f2f5f8;
+  color: var(--site-text);
+}
+
+.site-nav-link.active {
+  background: #e8f0fb;
+  color: var(--site-brand);
+}
+
+.site-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.site-cta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--site-brand);
+  color: #fff;
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.site-cta:hover {
+  opacity: 0.9;
+}
+
+.site-menu-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+}
+
+.site-menu-toggle span {
+  width: 20px;
+  height: 2px;
+  background: var(--site-text);
+  border-radius: 1px;
+}
+
+.site-nav-mobile {
+  display: none;
+}
+
+/* -------------------- Page container -------------------- */
+/* Give every page a normal centered website column instead of
+   full-bleed app screens. Pages can still opt out with
+   .site-full-bleed on their root element if they truly need it
+   (e.g. the map). */
+main:not(.site-full-bleed) {
+  max-width: var(--site-max-width);
+  margin: 0 auto;
+  padding: 24px 20px 64px;
+}
+
+/* -------------------- Responsive: collapse to mobile menu -------------------- */
+@media (max-width: 720px) {
+  .site-nav {
+    display: none;
+  }
+
+  .site-cta span {
+    display: none;
+  }
+
+  .site-menu-toggle {
+    display: flex;
+  }
+
+  .site-nav-mobile {
+    display: flex;
+    flex-direction: column;
+    max-width: var(--site-max-width);
+    margin: 0 auto;
+    padding: 8px 20px 16px;
+    border-top: 1px solid var(--site-border);
+  }
+
+  .site-nav-mobile .site-nav-link {
+    padding: 12px 8px;
+  }
+}
