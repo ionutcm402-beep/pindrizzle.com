@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ label: "Nearby", source: "fallback" });
     }
 
-    // Only the centre of the same approximate 0.004° privacy cell used by Ping is sent upstream.
+    // Only the centre of the same approximate 0.004° privacy cell used by Pindrizzle is sent upstream.
     const centerLat = Number(coarseCell(lat).toFixed(6));
     const centerLng = Number(coarseCell(lng).toFixed(6));
     const gridKey = `${centerLat.toFixed(3)}:${centerLng.toFixed(3)}`;
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
 
     const response = await fetch(`https://nominatim.openstreetmap.org/reverse?${params.toString()}`, {
       headers: {
-        "User-Agent": "PingLocal/1.0 (+https://github.com/ionutcm402-beep/ping-app)",
+        "User-Agent": "Pindrizzle/1.0 (+https://github.com/ionutcm402-beep/pindrizzle.com)",
         "Accept-Language": "en",
         Accept: "application/json",
       },
