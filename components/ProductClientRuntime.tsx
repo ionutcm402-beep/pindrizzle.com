@@ -12,6 +12,7 @@ import Phase19ProductAnalytics from "@/components/Phase19ProductAnalytics";
 import Phase22StorageChoice from "@/components/Phase22StorageChoice";
 import Phase24BetaBridge from "@/components/Phase24BetaBridge";
 import PindrizzleCopyBridge from "@/components/PindrizzleCopyBridge";
+import LegacyComposeLinkBridge from "@/components/LegacyComposeLinkBridge";
 
 const FirstRunOnboarding = dynamic(() => import("@/components/FirstRunOnboarding"));
 const Phase7VisibilityBridge = dynamic(() => import("@/components/Phase7VisibilityBridge"));
@@ -29,6 +30,7 @@ const InternalWebsiteBrandBridge = dynamic(() => import("@/components/InternalWe
 
 const COMMERCIAL_POLISH_PATHS = new Set(["/promote", "/business", "/search"]);
 const VISIBILITY_SYNC_PATHS = new Set(["/", "/map", "/search", "/following"]);
+const COPY_BRIDGE_DEFER_PATHS = new Set(["/map", "/search", "/my-pings", "/alerts", "/you"]);
 
 export default function ProductClientRuntime() {
   const pathname = usePathname();
@@ -38,6 +40,7 @@ export default function ProductClientRuntime() {
   const needsVisibilitySync = VISIBILITY_SYNC_PATHS.has(pathname);
   const needsCommercialPolish = COMMERCIAL_POLISH_PATHS.has(pathname);
   const needsInternalBranding = pathname === "/ops" || pathname.startsWith("/moderation");
+  const needsCopyBridge = detailEnhancementsActive || !COPY_BRIDGE_DEFER_PATHS.has(pathname);
 
   useEffect(() => {
     const activateFromHash = () => {
@@ -61,6 +64,7 @@ export default function ProductClientRuntime() {
       <PrivacySafetyCenter />
       <PasswordAuthOverlay />
       <Phase6NotificationBadge />
+      <LegacyComposeLinkBridge />
       {needsVisibilitySync && <Phase7VisibilityBridge />}
       {detailEnhancementsActive && <Phase7ContributorContext />}
       {isFeed && <Phase8SinceLastVisit />}
@@ -76,7 +80,7 @@ export default function ProductClientRuntime() {
       <Phase24BetaBridge />
       {isFeed && <Phase25LocationChoiceBridge />}
       {needsCommercialPolish && <CommercialSafetyBridge />}
-      <PindrizzleCopyBridge />
+      {needsCopyBridge && <PindrizzleCopyBridge />}
       {needsInternalBranding && <InternalWebsiteBrandBridge />}
     </>
   );
