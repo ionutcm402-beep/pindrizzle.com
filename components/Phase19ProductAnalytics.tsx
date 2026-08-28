@@ -9,6 +9,7 @@ type ProductEvent =
   | "session_start"
   | "feed_view"
   | "map_view"
+  | "chat_view"
   | "search_view"
   | "place_view"
   | "alerts_view"
@@ -17,7 +18,10 @@ type ProductEvent =
   | "business_view"
   | "ping_open"
   | "onboarding_complete"
-  | "onboarding_skip";
+  | "onboarding_skip"
+  | "chat_message_sent"
+  | "chat_message_reported"
+  | "chat_user_blocked";
 
 const SESSION_KEY = "ping-product-session-v1";
 const SEEN_PREFIX = "ping-product-seen-v1:";
@@ -26,6 +30,7 @@ const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}
 const routeEvents: Record<string, ProductEvent> = {
   "/": "feed_view",
   "/map": "map_view",
+  "/chat": "chat_view",
   "/search": "search_view",
   "/place": "place_view",
   "/alerts": "alerts_view",
@@ -33,6 +38,14 @@ const routeEvents: Record<string, ProductEvent> = {
   "/promote": "promote_view",
   "/business": "business_view",
 };
+
+const dispatchedEvents = new Set<ProductEvent>([
+  "onboarding_complete",
+  "onboarding_skip",
+  "chat_message_sent",
+  "chat_message_reported",
+  "chat_user_blocked",
+]);
 
 function analyticsAllowed() {
   try { return window.localStorage.getItem(ANALYTICS_CHOICE_KEY) === "allow"; } catch { return false; }
@@ -103,7 +116,7 @@ export default function Phase19ProductAnalytics() {
     const onPingOpen = () => void record("ping_open");
     const onProductEvent = (event: Event) => {
       const eventType = (event as CustomEvent<{ eventType?: ProductEvent }>).detail?.eventType;
-      if (eventType === "onboarding_complete" || eventType === "onboarding_skip") void record(eventType);
+      if (eventType && dispatchedEvents.has(eventType)) void record(eventType);
     };
 
     window.addEventListener("ping:open-detail", onPingOpen);
