@@ -1,0 +1,28 @@
+/* Functional web fixes only. No brand or design-system changes. */
+
+/* The document/root shell is intentionally fixed to the viewport. Every normal
+   content surface must therefore own its own vertical scrolling at every width. */
+.app-shell > .screen-content,
+.app-shell main:not(.map-v3-screen):not(.compose-start-screen){
+  height:100dvh!important;
+  min-height:100svh!important;
+  max-height:100dvh!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  overscroll-behavior-y:contain!important;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-y!important;
+  scroll-padding-bottom:calc(var(--pd-tabbar-total) + 16px)!important;
+}
+
+body[data-ping-global-nav-active="true"] .app-shell > .screen-content,
+body[data-ping-global-nav-active="true"] .app-shell main:not(.map-v3-screen):not(.compose-start-screen){
+  padding-bottom:calc(var(--pd-tabbar-total) + 18px)!important;
+}
+
+/* Fixed chrome must never become the scroll owner. */
+.page-shell,
+.app-shell,
+.ping-global-nav{
+  overscroll-behavior:none;
+}
