@@ -92,7 +92,7 @@ export default function Phase8FollowBridge() {
     }
 
     const frame = window.requestAnimationFrame(() => {
-      const actions = document.querySelector<HTMLElement>(".phase5-detail-sheet .phase5-detail-actions");
+      const actions = document.querySelector<HTMLElement>(".detail-v3-sheet .detail-v3-actions");
       if (!actions) {
         setHost(null);
         return;
@@ -103,7 +103,7 @@ export default function Phase8FollowBridge() {
 
     return () => {
       window.cancelAnimationFrame(frame);
-      document.querySelector<HTMLElement>(".phase5-detail-actions.phase8-follow-enabled")?.classList.remove("phase8-follow-enabled");
+      document.querySelector<HTMLElement>(".detail-v3-actions.phase8-follow-enabled")?.classList.remove("phase8-follow-enabled");
       setHost(null);
     };
   }, [pingId]);
@@ -120,7 +120,7 @@ export default function Phase8FollowBridge() {
   const toggleFollow = async () => {
     if (!pingId || busy) return;
     if (!currentUserId) {
-      window.dispatchEvent(new CustomEvent("ping:auth-needed", { detail: { message: "Sign in to follow this Ping and get its outcome." } }));
+      window.dispatchEvent(new CustomEvent("ping:auth-needed", { detail: { message: "Sign in to follow this pin and get its outcome." } }));
       return;
     }
 
@@ -140,7 +140,7 @@ export default function Phase8FollowBridge() {
 
   const resolvePing = async () => {
     if (!pingId || !currentUserId || currentUserId !== ownerId || busy) return;
-    if (!window.confirm("Mark this Ping as resolved? It will leave the live Feed and followers will be told the outcome.")) return;
+    if (!window.confirm("Mark this pin as resolved? It will leave the live Feed and followers will be told the outcome.")) return;
 
     setBusy(true);
     try {
@@ -150,8 +150,8 @@ export default function Phase8FollowBridge() {
       window.history.replaceState(null, "", window.location.pathname + window.location.search);
       window.location.reload();
     } catch (error) {
-      console.error("Resolve Ping failed", error);
-      window.alert("This Ping could not be resolved right now.");
+      console.error("Resolve pin failed", error);
+      window.alert("This pin could not be resolved right now.");
       setBusy(false);
     }
   };
@@ -172,11 +172,11 @@ export default function Phase8FollowBridge() {
         </button>
       )}
       <style jsx global>{`
-        .phase5-detail-actions.phase8-follow-enabled{grid-template-columns:repeat(5,1fr)}
-        .phase5-detail-actions .phase8-follow-action{border-color:#cfe1ca;background:#f4faef;color:#35643b}
-        .phase5-detail-actions .phase8-follow-action.selected{background:#dff3d9;border-color:#a8dca0;color:#285f30}
-        .phase5-detail-actions .phase8-follow-action.phase8-resolve{background:#edf5e9;border-color:#c9dfc4;color:#32613a}
-        @media(max-width:520px){.phase5-detail-actions.phase8-follow-enabled{grid-template-columns:repeat(2,1fr)}}
+        .detail-v3-actions.phase8-follow-enabled{grid-template-columns:repeat(5,1fr)}
+        .detail-v3-actions .phase8-follow-action{border-color:#cfe1ca;background:#f4faef;color:#35643b}
+        .detail-v3-actions .phase8-follow-action.selected{background:#dff3d9;border-color:#a8dca0;color:#285f30}
+        .detail-v3-actions .phase8-follow-action.phase8-resolve{background:#edf5e9;border-color:#c9dfc4;color:#32613a}
+        @media(max-width:520px){.detail-v3-actions.phase8-follow-enabled{grid-template-columns:repeat(2,1fr)}}
       `}</style>
     </>,
     host,
