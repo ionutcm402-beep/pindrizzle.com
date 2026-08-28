@@ -70,7 +70,6 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Pindrizzle — Useful local updates nearby",
     description: "Useful local pins and real-time updates around you.",
-    url: "https://pindrizzle.com",
     siteName: "Pindrizzle",
     type: "website",
   },
