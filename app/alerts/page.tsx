@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { withTimeout } from "@/lib/async-timeout";
 import PingIcon, { type PingIconName } from "@/components/PingIcon";
@@ -38,31 +38,42 @@ export default function AlertsPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [message, setMessage] = useState("");
+  const loadInFlightRef = useRef<Promise<void> | null>(null);
 
-  const load = useCallback(async (mode: LoadMode = "refresh") => {
-    if (mode === "initial") setLoading(true); else setRefreshing(true);
-    setLoadError("");
-    if (mode === "initial") setMessage("");
-    try {
-      const supabase = createClient();
-      const { data: authData } = await withTimeout(supabase.auth.getSession(), LOAD_TIMEOUT_MS, "Session check timed out.");
-      const session = authData.session;
-      setUserId(session?.user.id || null);
-      if (!session?.user) { setNotifications([]); return; }
-      const { data, error } = await withTimeout(
-        supabase.from("notifications").select("id,user_id,actor_id,ping_id,kind,title,body,read_at,created_at").eq("user_id", session.user.id).order("created_at", { ascending:false }).limit(100),
-        LOAD_TIMEOUT_MS,
-        "Activity request timed out.",
-      );
-      if (error) throw error;
-      setNotifications((data || []) as NotificationRow[]);
-    } catch (error) {
-      console.error("Activity failed", error);
-      setLoadError("Activity could not load right now. Check your connection and try again.");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+  const load = useCallback((mode: LoadMode = "refresh") => {
+    if (loadInFlightRef.current) return loadInFlightRef.current;
+
+    const run = (async () => {
+      if (mode === "initial") setLoading(true); else setRefreshing(true);
+      setLoadError("");
+      if (mode === "initial") setMessage("");
+      try {
+        const supabase = createClient();
+        const { data: authData } = await withTimeout(supabase.auth.getSession(), LOAD_TIMEOUT_MS, "Session check timed out.");
+        const session = authData.session;
+        setUserId(session?.user.id || null);
+        if (!session?.user) { setNotifications([]); return; }
+        const { data, error } = await withTimeout(
+          supabase.from("notifications").select("id,user_id,actor_id,ping_id,kind,title,body,read_at,created_at").eq("user_id", session.user.id).order("created_at", { ascending:false }).limit(100),
+          LOAD_TIMEOUT_MS,
+          "Activity request timed out.",
+        );
+        if (error) throw error;
+        setNotifications((data || []) as NotificationRow[]);
+      } catch (error) {
+        console.error("Activity failed", error);
+        setLoadError("Activity could not load right now. Check your connection and try again.");
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    })();
+
+    loadInFlightRef.current = run;
+    void run.finally(() => {
+      if (loadInFlightRef.current === run) loadInFlightRef.current = null;
+    });
+    return run;
   }, []);
 
   useEffect(() => {
@@ -122,14 +133,14 @@ export default function AlertsPage() {
     ); })}</div></section>
   ) : null;
 
-  const errorState = loadError && !loading && notifications.length === 0 && Boolean(userId);
+  const errorState = Boolean(loadError) && !loading && notifications.length === 0;
 
   return (
     <div className="page-shell"><div className="app-shell"><main className="activity-screen">
       <header className="activity-header"><div><div className="brand small">Pindrizzle</div><div className="activity-title"><h1>Activity</h1>{unread > 0 && <span>{unread} new</span>}</div><p>Only useful things that happened around your pins.</p></div>{userId && unread > 0 && <button type="button" onClick={() => void markAllRead()}>Read all</button>}</header>
 
-      {!userId && !loading ? <section className="activity-empty"><span><PingIcon name="alerts" size={26} /></span><h2>Your useful activity lives here.</h2><p>Sign in to see replies, confirmations, Helpful marks and outcomes from pins you follow.</p><button type="button" onClick={openAuth}>Sign in / Sign up</button></section>
-      : errorState ? <section className="activity-empty"><span><PingIcon name="alert" size={26} /></span><h2>Activity didn’t load.</h2><p>{loadError}</p><button type="button" onClick={() => void load("initial")}>Retry</button></section>
+      {errorState ? <section className="activity-empty"><span><PingIcon name="alert" size={26} /></span><h2>Activity didn’t load.</h2><p>{loadError}</p><button type="button" onClick={() => void load("initial")}>Retry</button></section>
+      : !userId && !loading ? <section className="activity-empty"><span><PingIcon name="alerts" size={26} /></span><h2>Your useful activity lives here.</h2><p>Sign in to see replies, confirmations, Helpful marks and outcomes from pins you follow.</p><button type="button" onClick={openAuth}>Sign in / Sign up</button></section>
       : loading ? <section className="activity-empty"><h2>Checking your activity…</h2></section>
       : notifications.length ? <>{renderGroup("TODAY", today)}{renderGroup("EARLIER", earlier)}</>
       : <section className="activity-empty"><span><PingIcon name="check" size={26} /></span><h2>You’re all caught up.</h2><p>Useful replies, confirmations, Helpful marks and followed outcomes will appear here.</p></section>}
