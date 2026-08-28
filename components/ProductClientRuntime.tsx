@@ -32,6 +32,7 @@ const COMMERCIAL_POLISH_PATHS = new Set(["/promote", "/business", "/search"]);
 const VISIBILITY_SYNC_PATHS = new Set(["/", "/map", "/search", "/following"]);
 const COPY_BRIDGE_DEFER_PATHS = new Set([
   "/map",
+  "/chat",
   "/search",
   "/my-pings",
   "/alerts",
