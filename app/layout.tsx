@@ -47,6 +47,7 @@ import "./pindrizzle-premium-business.css";
 import "./pindrizzle-design-system.css";
 import "./pindrizzle-design-system-routes.css";
 import "./pindrizzle-native-shell.css";
+import "./pindrizzle-design-system-final.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://pindrizzle.com"),
