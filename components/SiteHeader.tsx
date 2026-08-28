@@ -54,6 +54,7 @@ export default function SiteHeader() {
           href="/"
           className="site-logo"
           onClick={(event) => navigate(event, "/")}
+          aria-label="Pindrizzle home"
         >
           <PingIcon name="feed" size={20} />
           <span>Pindrizzle</span>
@@ -78,6 +79,7 @@ export default function SiteHeader() {
             href="/compose-start"
             onClick={(event) => navigate(event, "/compose-start")}
             className="site-cta"
+            aria-label="Drop a pin"
           >
             <PingIcon name="plus" size={16} />
             <span>Drop a pin</span>
@@ -85,7 +87,7 @@ export default function SiteHeader() {
           <button
             type="button"
             className="site-menu-toggle"
-            aria-label="Toggle menu"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((open) => !open)}
           >
@@ -97,7 +99,7 @@ export default function SiteHeader() {
       </div>
 
       {menuOpen && (
-        <nav className="site-nav-mobile" aria-label="Primary navigation (mobile)">
+        <nav className="site-nav-mobile" aria-label="Primary navigation">
           {NAV_LINKS.map((link) => (
             <a
               key={link.href}
