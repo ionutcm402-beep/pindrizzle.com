@@ -264,8 +264,10 @@ body .phase22-storage-actions button:not(.allow){
 .phase12-reputation-card,
 .settings-list,
 .my-pings-v3-card,
+.my-pings-v3-tabs,
 .notification-rule,
 .activity-list,
+.activity-empty,
 .following-v3-card,
 .following-v3-intro,
 .phase9-promote-intro,
@@ -287,7 +289,8 @@ body .phase22-storage-actions button:not(.allow){
 .phase5-blocked-user,
 .phase5-privacy-summary,
 .phase5-privacy-empty,
-.first-run-privacy{
+.first-run-privacy,
+.first-run-local-visual{
   box-shadow:var(--pd-elevation-1)!important;
 }
 
@@ -295,6 +298,7 @@ body .phase22-storage-actions button:not(.allow){
 .map-v3-topbar,
 .map-v3-controls,
 .map-v3-quiet,
+.my-pings-v3-menu,
 .phase23-install-hero,
 .phase12-public-reputation,
 .compose-start-card{
