@@ -8,9 +8,12 @@ const routeNames: Record<string, string> = {
   "/map": "Map",
   "/search": "Search",
   "/place": "Local area",
+  "/my-pings": "My Pins",
   "/alerts": "Activity",
+  "/notifications": "Notification settings",
   "/following": "Following pins",
   "/you": "Your profile",
+  "/compose-start": "Drop a pin",
   "/promote": "Promote a pin",
   "/business": "Promoter dashboard",
   "/moderation": "Moderation",
@@ -25,6 +28,7 @@ const routeNames: Record<string, string> = {
   "/install": "Install Pindrizzle",
   "/offline": "Offline",
   "/beta": "Closed Beta",
+  "/reset-password": "Reset password",
   "/ops": "Operations",
 };
 
