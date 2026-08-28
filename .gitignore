@@ -1,0 +1,20 @@
+node_modules/
+.next/
+out/
+.vercel/
+.capacitor-build-excluded/
+assets/
+.DS_Store
+
+# Native build outputs/signing material
+android/.gradle/
+android/app/build/
+android/build/
+ios/App/DerivedData/
+*.xcarchive
+*.ipa
+*.keystore
+*.jks
+
+# Credentials that must be supplied manually
+android/app/google-services.json
