@@ -44,6 +44,7 @@ import "./pindrizzle-premium-my-pins.css";
 import "./pindrizzle-premium-layout-fixes.css";
 import "./pindrizzle-premium-auth.css";
 import "./pindrizzle-premium-business.css";
+import "./pindrizzle-native-shell.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://pindrizzle.com"),
@@ -71,6 +72,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: "cover",
   themeColor: "#eef8fb",
 };
