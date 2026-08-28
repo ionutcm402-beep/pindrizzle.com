@@ -1,0 +1,103 @@
+/* Pindrizzle premium treatment for the My Pins public class hooks. */
+
+.my-pings-v3{background:transparent!important}
+.my-pings-v3-header{padding:28px 20px 18px!important}
+.my-pings-v3-header h1{
+  margin:13px 0 5px!important;
+  color:var(--pd-navy-deep)!important;
+  font-size:32px!important;
+  line-height:.98!important;
+  font-weight:790!important;
+  letter-spacing:-.055em!important;
+}
+.my-pings-v3-header p{color:#718995!important;font-size:11px!important;line-height:1.5!important}
+
+.my-pings-v3-tabs{
+  padding:6px!important;
+  border:1px solid rgba(20,78,107,.07)!important;
+  border-radius:20px!important;
+  background:rgba(255,255,255,.78)!important;
+  box-shadow:0 10px 28px rgba(8,47,74,.055)!important;
+  backdrop-filter:blur(18px)!important;
+  -webkit-backdrop-filter:blur(18px)!important;
+}
+.my-pings-v3-tabs button{border-radius:15px!important;min-height:47px!important}
+.my-pings-v3-tabs button[aria-selected="true"]{
+  background:linear-gradient(145deg,#e9f8fc,#dff3f9)!important;
+  color:var(--pd-navy)!important;
+  box-shadow:inset 0 0 0 1px rgba(45,150,208,.07)!important;
+}
+
+.my-pings-v3-list{gap:14px!important}
+.my-pings-v3-card{
+  padding:18px!important;
+  border:1px solid rgba(20,78,107,.07)!important;
+  border-radius:24px!important;
+  background:linear-gradient(155deg,#fff 0%,#fff 70%,#f8fcfd 100%)!important;
+  box-shadow:var(--pd-shadow-card)!important;
+}
+.my-pings-v3-card h2{
+  margin-top:14px!important;
+  color:var(--pd-navy-deep)!important;
+  font-size:19px!important;
+  font-weight:770!important;
+  letter-spacing:-.035em!important;
+}
+.my-pings-v3-card [class*="category"] i{
+  background:linear-gradient(145deg,#f1fafc,#e6f5f9)!important;
+  color:#315f77!important;
+  box-shadow:inset 0 0 0 1px rgba(20,78,107,.05)!important;
+}
+.my-pings-v3-card [class*="status"]{
+  background:rgba(57,181,222,.10)!important;
+  color:#087297!important;
+  font-weight:850!important;
+}
+.my-pings-v3-card [class*="meta"]{color:#7e96a2!important}
+.my-pings-v3-card [class*="timeRow"]{color:#9aadb7!important}
+
+.my-pings-v3-actions{gap:8px!important;margin-top:15px!important}
+.my-pings-v3-actions>button,.my-pings-v3-more{
+  min-height:40px!important;
+  border-radius:12px!important;
+}
+.my-pings-v3-open{
+  border-color:var(--pd-navy)!important;
+  background:linear-gradient(180deg,#104564,var(--pd-navy-deep))!important;
+  color:#fff!important;
+  box-shadow:0 9px 20px rgba(6,38,61,.17)!important;
+}
+.my-pings-v3-edit{
+  border-color:rgba(45,150,208,.08)!important;
+  background:#eaf7fb!important;
+  color:#0a6688!important;
+}
+.my-pings-v3-more{
+  border-color:rgba(20,78,107,.07)!important;
+  background:rgba(246,251,253,.88)!important;
+  color:#66808d!important;
+}
+.my-pings-v3-menu{
+  padding:8px!important;
+  border:1px solid rgba(255,255,255,.75)!important;
+  border-radius:16px!important;
+  background:rgba(251,254,255,.94)!important;
+  box-shadow:0 18px 44px rgba(6,38,61,.17)!important;
+  backdrop-filter:blur(22px) saturate(145%)!important;
+  -webkit-backdrop-filter:blur(22px) saturate(145%)!important;
+}
+.my-pings-v3-menu button{border-radius:11px!important}
+.my-pings-v3-menu button:hover{background:#ecf7fa!important}
+.my-pings-v3-resolve-menu{color:#315c70!important}
+
+@media(hover:hover) and (pointer:fine){
+  .my-pings-v3-card{transition:transform .22s var(--pd-ease),box-shadow .22s var(--pd-ease)!important}
+  .my-pings-v3-card:hover{transform:translateY(-2px);box-shadow:0 17px 42px rgba(8,47,74,.105)!important}
+  .my-pings-v3-open:hover,.my-pings-v3-edit:hover,.my-pings-v3-more:hover{transform:translateY(-1px)}
+}
+
+@media(max-width:380px){
+  .my-pings-v3-header{padding-left:16px!important;padding-right:16px!important}
+  .my-pings-v3-header h1{font-size:30px!important}
+  .my-pings-v3-card{border-radius:22px!important;padding:16px!important}
+}

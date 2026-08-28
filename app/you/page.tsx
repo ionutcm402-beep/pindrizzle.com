@@ -1,289 +1,48 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
+import PingIcon, { type PingIconName } from "@/components/PingIcon";
+import { getPingLocationSilently, requestPingLocation, type PingLocationState } from "@/lib/ping-location";
+import { readPingRadius, subscribePingLocalPreferences, writePingRadius } from "@/lib/ping-local-preferences";
+import type { Radius } from "@/lib/ping-categories";
+import styles from "./you.module.css";
 
-type Radius = 0.5 | 1 | 3 | 5;
-type LocationState = "idle" | "requesting" | "granted" | "denied";
-type ProfileSummary = {
-  profile_id: string;
-  display_name: string;
-  helpful_pings: number;
-  confirmations: number;
-  member_since: string;
-  reputation_points: number;
-  reputation_level: string;
-  next_level_points: number | null;
-};
+type ProfileSummary={profile_id:string;display_name:string;helpful_pings:number;confirmations:number;member_since:string;reputation_points:number;reputation_level:string;next_level_points:number|null;};
+const RADII:Radius[]=[0.5,1,3,5];
+function firstRow<T>(value:unknown):T|null{if(Array.isArray(value))return(value[0]as T|undefined)||null;if(value&&typeof value==="object")return value as T;return null;}
+function memberLabel(value:string){const days=Math.max(0,Math.floor((Date.now()-new Date(value).getTime())/86400000));if(days<1)return"Joined today";if(days<30)return`Member for ${days}d`;const months=Math.floor(days/30);return months<12?`Member for ${months}mo`:`Member for ${Math.floor(months/12)}y`;}
+function levelFloor(level:string){if(level==="Community regular")return 60;if(level==="Local contributor")return 20;if(level==="Active neighbour")return 5;return 0;}
+function SettingButton({icon,title,detail,onClick,tone}:{icon:PingIconName;title:string;detail:string;onClick:()=>void;tone?:"location"|"danger"}){return <button type="button" onClick={onClick}><span className={tone==="location"?styles.locationIcon:tone==="danger"?styles.dangerIcon:undefined}><PingIcon name={icon}/></span><div><strong>{title}</strong><small>{detail}</small></div><b aria-hidden="true"><PingIcon name="chevron" size={16}/></b></button>;}
+function SettingSection({title,children,className}:{title:string;children:ReactNode;className?:string}){return <section className={`${styles.settingSection}${className?` ${className}`:""}`}><h2>{title}</h2>{children}</section>;}
 
-const RADII: Radius[] = [0.5, 1, 3, 5];
+export default function YouPage(){
+  const[email,setEmail]=useState<string|null>(null);const[userId,setUserId]=useState<string|null>(null);const[profile,setProfile]=useState<ProfileSummary|null>(null);const[radius,setRadius]=useState<Radius>(1);const[locationState,setLocationState]=useState<PingLocationState>("checking");const[moderator,setModerator]=useState(false);const[followedCount,setFollowedCount]=useState(0);const[editingName,setEditingName]=useState(false);const[nameDraft,setNameDraft]=useState("");const[nameSaving,setNameSaving]=useState(false);const[nameMessage,setNameMessage]=useState("");
+  const loadAccount=useCallback(async()=>{const supabase=createClient();const{data}=await supabase.auth.getSession();const session=data.session;setEmail(session?.user.email||null);setUserId(session?.user.id||null);if(!session?.user){setProfile(null);setModerator(false);setFollowedCount(0);setEditingName(false);setNameDraft("");return;}try{const[profileResult,moderatorResult,followResult]=await Promise.all([supabase.rpc("public_profile",{target_profile_id:session.user.id}),supabase.rpc("is_moderator"),supabase.from("ping_follows").select("ping_id",{count:"exact",head:true}).eq("user_id",session.user.id)]);if(profileResult.error)throw profileResult.error;const next=firstRow<ProfileSummary>(profileResult.data);setProfile(next);if(next&&!editingName)setNameDraft(next.display_name);setModerator(!moderatorResult.error&&Boolean(moderatorResult.data));setFollowedCount(followResult.error?0:Number(followResult.count||0));}catch(error){console.error("You account failed",error);setProfile(null);setModerator(false);setFollowedCount(0);}},[editingName]);
+  useEffect(()=>{setRadius(readPingRadius());const unsubscribe=subscribePingLocalPreferences(next=>setRadius(next.radius));void getPingLocationSilently().then(result=>setLocationState(result.state));const handleLocation=()=>setLocationState("granted");window.addEventListener("ping:location-changed",handleLocation);void loadAccount();const supabase=createClient();const{data}=supabase.auth.onAuthStateChange(()=>window.setTimeout(()=>void loadAccount(),0));const handleFollow=()=>void loadAccount();window.addEventListener("ping:follow-changed",handleFollow);return()=>{unsubscribe();data.subscription.unsubscribe();window.removeEventListener("ping:follow-changed",handleFollow);window.removeEventListener("ping:location-changed",handleLocation);};},[loadAccount]);
+  const requestLocation=async()=>{setLocationState("requesting");const result=await requestPingLocation();setLocationState(result.state);};
+  const openAuth=()=>window.dispatchEvent(new CustomEvent("ping:auth-needed",{detail:{message:"Sign in or create your Pindrizzle account."}}));
+  const signOut=async()=>{await createClient().auth.signOut();setEmail(null);setUserId(null);setProfile(null);setModerator(false);setFollowedCount(0);};
+  const startEditingName=()=>{setNameDraft(profile?.display_name||"");setNameMessage("");setEditingName(true);};
+  const saveDisplayName=async()=>{const trimmed=nameDraft.trim();if(trimmed.length<2||trimmed.length>32){setNameMessage("Use 2–32 characters.");return;}setNameSaving(true);setNameMessage("");try{const{data,error}=await createClient().rpc("update_my_display_name",{requested_display_name:trimmed});if(error)throw error;setNameDraft(String(data||trimmed));setEditingName(false);await loadAccount();setNameMessage("Display name updated.");}catch{setNameMessage("That name can’t be used. Avoid links and reserved Pindrizzle roles.");}finally{setNameSaving(false);}};
+  const initials=useMemo(()=>{const source=profile?.display_name?.trim()||email||"You";return source.slice(0,2).toUpperCase();},[profile?.display_name,email]);
+  const progress=useMemo(()=>{if(!profile)return 0;if(!profile.next_level_points)return 100;const floor=levelFloor(profile.reputation_level);const span=profile.next_level_points-floor;return span<=0?100:Math.max(0,Math.min(100,((profile.reputation_points-floor)/span)*100));},[profile]);
+  const locationDetail=locationState==="granted"?"Active for Feed, Map and local posting":locationState==="checking"||locationState==="requesting"?"Checking your location permission…":locationState==="denied"?"Blocked in this browser — tap after changing permission":"Enable once for Feed, Map and local posting";
 
-function firstRow<T>(value: unknown): T | null {
-  if (Array.isArray(value)) return (value[0] as T | undefined) || null;
-  if (value && typeof value === "object") return value as T;
-  return null;
-}
-
-function readRadius(): Radius {
-  try {
-    const value = Number(localStorage.getItem("ping-radius") || 1);
-    if (RADII.includes(value as Radius)) return value as Radius;
-  } catch {}
-  return 1;
-}
-
-function memberLabel(value: string) {
-  const joined = new Date(value).getTime();
-  const days = Math.max(0, Math.floor((Date.now() - joined) / 86400000));
-  if (days < 1) return "Joined today";
-  if (days < 30) return `Member for ${days}d`;
-  const months = Math.floor(days / 30);
-  if (months < 12) return `Member for ${months}mo`;
-  return `Member for ${Math.floor(months / 12)}y`;
-}
-
-function levelFloor(level: string) {
-  if (level === "Community regular") return 60;
-  if (level === "Local contributor") return 20;
-  if (level === "Active neighbour") return 5;
-  return 0;
-}
-
-export default function YouPage() {
-  const [email, setEmail] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [profile, setProfile] = useState<ProfileSummary | null>(null);
-  const [radius, setRadius] = useState<Radius>(1);
-  const [locationState, setLocationState] = useState<LocationState>("idle");
-  const [moderator, setModerator] = useState(false);
-  const [followedCount, setFollowedCount] = useState(0);
-  const [editingName, setEditingName] = useState(false);
-  const [nameDraft, setNameDraft] = useState("");
-  const [nameSaving, setNameSaving] = useState(false);
-  const [nameMessage, setNameMessage] = useState("");
-
-  const loadAccount = useCallback(async () => {
-    const supabase = createClient();
-    const { data } = await supabase.auth.getSession();
-    const session = data.session;
-    setEmail(session?.user.email || null);
-    setUserId(session?.user.id || null);
-
-    if (!session?.user) {
-      setProfile(null);
-      setModerator(false);
-      setFollowedCount(0);
-      setEditingName(false);
-      setNameDraft("");
-      return;
-    }
-
-    try {
-      const [profileResult, moderatorResult, followResult] = await Promise.all([
-        supabase.rpc("public_profile", { target_profile_id: session.user.id }),
-        supabase.rpc("is_moderator"),
-        supabase.from("ping_follows").select("ping_id", { count: "exact", head: true }).eq("user_id", session.user.id),
-      ]);
-
-      if (profileResult.error) throw profileResult.error;
-      const nextProfile = firstRow<ProfileSummary>(profileResult.data);
-      setProfile(nextProfile);
-      if (nextProfile && !editingName) setNameDraft(nextProfile.display_name);
-      setModerator(!moderatorResult.error && Boolean(moderatorResult.data));
-      setFollowedCount(followResult.error ? 0 : Number(followResult.count || 0));
-    } catch {
-      setProfile(null);
-      setModerator(false);
-      setFollowedCount(0);
-    }
-  }, [editingName]);
-
-  useEffect(() => {
-    setRadius(readRadius());
-    void loadAccount();
-    const supabase = createClient();
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      setEmail(session?.user.email || null);
-      setUserId(session?.user.id || null);
-      setTimeout(() => void loadAccount(), 0);
-    });
-    const handleFollowChanged = () => void loadAccount();
-    window.addEventListener("ping:follow-changed", handleFollowChanged);
-    return () => {
-      data.subscription.unsubscribe();
-      window.removeEventListener("ping:follow-changed", handleFollowChanged);
-    };
-  }, [loadAccount]);
-
-  const chooseRadius = (next: Radius) => {
-    setRadius(next);
-    try { localStorage.setItem("ping-radius", String(next)); } catch {}
-  };
-
-  const requestLocation = () => {
-    if (!navigator.geolocation) {
-      setLocationState("denied");
-      return;
-    }
-    setLocationState("requesting");
-    navigator.geolocation.getCurrentPosition(
-      () => setLocationState("granted"),
-      () => setLocationState("denied"),
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 },
-    );
-  };
-
-  const openAuth = () => {
-    window.dispatchEvent(new CustomEvent("ping:auth-needed", { detail: { message: "Sign in or create your Ping account." } }));
-  };
-
-  const signOut = async () => {
-    await createClient().auth.signOut();
-    setEmail(null);
-    setUserId(null);
-    setProfile(null);
-    setModerator(false);
-    setFollowedCount(0);
-  };
-
-  const startEditingName = () => {
-    setNameDraft(profile?.display_name || "");
-    setNameMessage("");
-    setEditingName(true);
-  };
-
-  const saveDisplayName = async () => {
-    const trimmed = nameDraft.trim();
-    if (trimmed.length < 2 || trimmed.length > 32) {
-      setNameMessage("Use 2–32 characters.");
-      return;
-    }
-
-    setNameSaving(true);
-    setNameMessage("");
-    try {
-      const { data, error } = await createClient().rpc("update_my_display_name", { requested_display_name: trimmed });
-      if (error) throw error;
-      setNameDraft(String(data || trimmed));
-      setEditingName(false);
-      await loadAccount();
-      setNameMessage("Display name updated.");
-    } catch {
-      setNameMessage("That name can’t be used. Avoid links and reserved Ping roles.");
-    } finally {
-      setNameSaving(false);
-    }
-  };
-
-  const initials = useMemo(() => {
-    const source = profile?.display_name?.trim() || email || "You";
-    return source.slice(0, 2).toUpperCase();
-  }, [profile?.display_name, email]);
-
-  const progress = useMemo(() => {
-    if (!profile) return 0;
-    if (!profile.next_level_points) return 100;
-    const floor = levelFloor(profile.reputation_level);
-    const span = profile.next_level_points - floor;
-    if (span <= 0) return 100;
-    return Math.max(0, Math.min(100, ((profile.reputation_points - floor) / span) * 100));
-  }, [profile]);
-
-  return (
-    <div className="page-shell">
-      <div className="app-shell">
-        <main className="you-page-screen">
-          <header className="you-page-header">
-            <a href="/" className="you-page-back" aria-label="Back to Feed">‹</a>
-            <div>
-              <div className="brand small">ping<span>.</span></div>
-              <h1>You</h1>
-            </div>
-          </header>
-
-          <section className="profile-card phase12-profile-card">
-            <div className="avatar">{initials}</div>
-            <div className="phase12-profile-copy">
-              <h2>{profile?.display_name || (email ? "Your Ping account" : "Join your local community")}</h2>
-              <p>{email || "Sign in or sign up to post, reply and confirm Pings."}</p>
-              {profile && <small>{memberLabel(profile.member_since)}</small>}
-            </div>
-            {profile && !editingName && <button type="button" className="phase12-edit-name" onClick={startEditingName}>Edit</button>}
-          </section>
-
-          {editingName && (
-            <section className="phase12-name-editor" aria-label="Edit display name">
-              <label htmlFor="display-name">Display name</label>
-              <div>
-                <input id="display-name" value={nameDraft} maxLength={32} onChange={(event) => setNameDraft(event.target.value)} autoComplete="nickname" />
-                <button type="button" onClick={saveDisplayName} disabled={nameSaving}>{nameSaving ? "Saving…" : "Save"}</button>
-              </div>
-              <small>This is the name neighbours see on your public Ping profile.</small>
-              <button type="button" className="phase12-cancel-name" onClick={() => { setEditingName(false); setNameMessage(""); }}>Cancel</button>
-            </section>
-          )}
-          {nameMessage && <div className="phase12-name-message" role="status">{nameMessage}</div>}
-
-          {profile ? (
-            <section className="phase12-reputation-card">
-              <div className="phase12-reputation-top">
-                <div>
-                  <span>REPUTATION</span>
-                  <h2>{profile.reputation_level}</h2>
-                </div>
-                <strong>{profile.reputation_points} pts</strong>
-              </div>
-              <p>Built from community signals you earn: <b>+3</b> per Helpful and <b>+1</b> per confirmation.</p>
-              <div className="phase12-progress"><span style={{ width: `${progress}%` }} /></div>
-              <small>{profile.next_level_points ? `${profile.next_level_points - profile.reputation_points} points to the next level` : "Highest current reputation level"}</small>
-              <em>Reputation reflects activity, not identity verification.</em>
-            </section>
-          ) : null}
-
-          <section className="trust-row">
-            <div><strong>{profile ? profile.helpful_pings : email ? 0 : "—"}</strong><span>Helpful earned</span></div>
-            <div><strong>{profile ? profile.confirmations : email ? 0 : "—"}</strong><span>Confirms earned</span></div>
-            <div><strong>{radius} mi</strong><span>Your radius</span></div>
-          </section>
-
-          <section className="settings-list">
-            {!email && (
-              <button type="button" onClick={openAuth}>
-                <span>👤</span><div><strong>Sign in / Sign up</strong><small>Email + password</small></div><b>›</b>
-              </button>
-            )}
-            {profile && userId && <button type="button" onClick={() => window.location.assign(`/profile/${userId}`)}><span>○</span><div><strong>View public profile</strong><small>See what other neighbours can see</small></div><b>›</b></button>}
-            <button type="button" onClick={requestLocation}>
-              <span>📍</span><div><strong>Location</strong><small>{locationState === "granted" ? "Location permission active" : locationState === "requesting" ? "Checking location…" : locationState === "denied" ? "Location unavailable or blocked" : "Tap to enable location"}</small></div><b>›</b>
-            </button>
-            <div className="radius-setting">
-              <span>↔</span><div><strong>Nearby radius</strong><small>Control how local your feed feels</small></div>
-              <select value={radius} onChange={(event) => chooseRadius(Number(event.target.value) as Radius)} aria-label="Nearby radius">
-                <option value={0.5}>0.5 mi</option><option value={1}>1 mi</option><option value={3}>3 mi</option><option value={5}>5 mi</option>
-              </select>
-            </div>
-            {email && <button type="button" onClick={() => window.location.assign("/following")}><span>★</span><div><strong>Followed Pings</strong><small>{followedCount ? `${followedCount} ${followedCount === 1 ? "Ping" : "Pings"} you’re following` : "Keep track of useful local outcomes"}</small></div><b>›</b></button>}
-            {email && <button type="button" onClick={() => window.location.assign("/promote")}><span>↗</span><div><strong>Promote a Ping</strong><small>Paid local reach for one of your live Pings</small></div><b>›</b></button>}
-            <button type="button" onClick={() => window.location.assign("/notifications")}><span>🔔</span><div><strong>Notifications</strong><small>Replies, confirmations and Helpful</small></div><b>›</b></button>
-            <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("ping:open-privacy"))}><span>🛡️</span><div><strong>Privacy & safety</strong><small>Blocked users, reports, location privacy</small></div><b>›</b></button>
-            {moderator && <button type="button" onClick={() => window.location.assign("/moderation")}><span>🧭</span><div><strong>Moderation</strong><small>Review reported Pings</small></div><b>›</b></button>}
-            {moderator && <button type="button" onClick={() => window.location.assign("/moderation/promotions")}><span>↗</span><div><strong>Promotion review</strong><small>Approve or reject paid local placement requests</small></div><b>›</b></button>}
-            {email && <button type="button" onClick={signOut}><span>↪</span><div><strong>Sign out</strong><small>Leave this account on this device</small></div><b>›</b></button>}
-          </section>
-        </main>
-
-        <nav className="bottom-nav" aria-label="Primary navigation">
-          <a href="/"><span>⌂</span>Feed</a>
-          <a href="/map"><span>⌖</span>Map</a>
-          <a href="/#ping" className="compose-nav"><span>+</span>Ping</a>
-          <a href="/alerts"><span>♢</span>Alerts</a>
-          <a href="/you" className="active"><span>○</span>You</a>
-        </nav>
-      </div>
-
-      <style jsx global>{`
-        .you-page-screen{padding-bottom:104px;min-height:100%}.you-page-header{display:flex;gap:14px;align-items:flex-start;padding:24px 22px 18px}.you-page-header h1{font-size:31px;letter-spacing:-1px;margin:17px 0 0}.you-page-back{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;text-decoration:none;color:#233329;background:#fff;box-shadow:0 8px 24px rgba(31,41,32,.08);font-size:29px;line-height:1}.bottom-nav a{height:100%;border:0;background:transparent;color:#8a928b;font-size:10px;font-weight:800;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:3px;position:relative;text-decoration:none}.bottom-nav a>span{font-size:22px;line-height:1}.bottom-nav a.active{color:#1f5420}.bottom-nav a.compose-nav{color:#1f5420}.phase12-profile-card{position:relative}.phase12-profile-copy{min-width:0;flex:1}.phase12-profile-copy h2,.phase12-profile-copy p{overflow:hidden;text-overflow:ellipsis}.phase12-profile-copy small{display:block;margin-top:5px;color:#899188;font-size:9px;font-weight:750}.phase12-edit-name{border:0;background:#eef7ea;color:#2d6631;border-radius:10px;padding:8px 10px;font-size:10px;font-weight:900}.phase12-name-editor{margin:0 15px 12px;padding:15px;border:1px solid #dfe7dc;border-radius:19px;background:#fff}.phase12-name-editor label{display:block;margin-bottom:8px;font-size:10px;font-weight:900;color:#4f5b51}.phase12-name-editor>div{display:grid;grid-template-columns:1fr auto;gap:8px}.phase12-name-editor input{min-width:0;border:1px solid #d9e0d7;border-radius:12px;padding:11px 12px;outline:none}.phase12-name-editor input:focus{border-color:#65d75d;box-shadow:0 0 0 3px rgba(101,215,93,.12)}.phase12-name-editor>div button{border:0;border-radius:12px;padding:0 13px;background:#59d951;color:#153416;font-weight:900;font-size:11px}.phase12-name-editor small{display:block;margin-top:8px;color:#7c857d;font-size:9px;line-height:1.4}.phase12-cancel-name{margin-top:8px;border:0;background:transparent;color:#717a72;font-size:10px;font-weight:850;padding:3px 0}.phase12-name-message{margin:0 15px 12px;padding:10px 12px;border-radius:13px;background:#f2f5ef;color:#536056;font-size:10px;font-weight:750}.phase12-reputation-card{margin:0 15px 14px;padding:17px;border-radius:22px;background:linear-gradient(145deg,#19261b,#2c3d2e);color:#fff;box-shadow:0 13px 30px rgba(28,43,30,.17)}.phase12-reputation-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.phase12-reputation-top span{display:block;color:#9fafa1;font-size:8px;font-weight:950;letter-spacing:.8px}.phase12-reputation-top h2{margin:4px 0 0;font-size:20px;letter-spacing:-.35px}.phase12-reputation-top>strong{padding:7px 9px;border-radius:999px;background:rgba(255,255,255,.1);font-size:10px;white-space:nowrap}.phase12-reputation-card p{margin:11px 0 10px;color:#ced8cf;font-size:10px;line-height:1.45}.phase12-reputation-card p b{color:#70e768}.phase12-progress{height:7px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden}.phase12-progress span{display:block;height:100%;border-radius:inherit;background:#62e45a}.phase12-reputation-card small{display:block;margin-top:7px;color:#bdc8bf;font-size:8px}.phase12-reputation-card em{display:block;margin-top:10px;color:#8fa092;font-size:8px;font-style:normal}.trust-row{margin-top:0}
-      `}</style>
+  return <div className="page-shell"><div className="app-shell"><main className={`${styles.screen} you-v3-screen`}>
+    <header className="you-v3-header"><div className="brand small">Pindrizzle</div><h1>You</h1></header>
+    <section className={styles.profileCard}><div className={styles.avatar}>{initials}</div><div className={styles.profileCopy}><h2>{profile?.display_name||(email?"Your Pindrizzle account":"Join your local community")}</h2><p>{email||"Browse freely. Sign in when you want to participate."}</p>{profile&&<small>{memberLabel(profile.member_since)}</small>}</div>{profile&&!editingName&&<button type="button" className={styles.editButton} onClick={startEditingName}>Edit</button>}</section>
+    {editingName&&<section className={styles.nameEditor}><label htmlFor="display-name">Display name</label><div><input id="display-name" value={nameDraft} maxLength={32} onChange={e=>setNameDraft(e.target.value)} autoComplete="nickname"/><button type="button" onClick={()=>void saveDisplayName()} disabled={nameSaving}>{nameSaving?"Saving…":"Save"}</button></div><small>This is the name neighbours see on your public Pindrizzle profile.</small><button type="button" className={styles.cancelButton} onClick={()=>{setEditingName(false);setNameMessage("");}}>Cancel</button></section>}{nameMessage&&<div className={styles.nameMessage} role="status">{nameMessage}</div>}
+    {profile&&<section className={`${styles.reputationCard} you-v3-reputation`}><div className={styles.reputationTop}><div><span>REPUTATION</span><h2>{profile.reputation_level}</h2></div><strong>{profile.reputation_points} pts</strong></div><div className={styles.progress}><span style={{width:`${progress}%`}}/></div><div className="you-v3-reputation-foot"><span>{profile.next_level_points?`${profile.next_level_points-profile.reputation_points} points to next level`:"Highest current level"}</span><span>Activity, not identity verification</span></div></section>}
+    <section className={styles.stats}><div><strong>{profile?profile.helpful_pings:email?0:"—"}</strong><span>Helpful earned</span></div><div><strong>{profile?profile.confirmations:email?0:"—"}</strong><span>Confirms earned</span></div><div><strong>{radius} mi</strong><span>Nearby radius</span></div></section>
+    <div className={styles.settingsStack}>
+      <SettingSection title="ACTIVITY"><div className={styles.settingsGroup} id="you-activity-settings">{email&&<SettingButton icon="following" title="Followed Pins" detail={followedCount?`${followedCount} ${followedCount===1?"pin":"pins"} you’re following`:"Keep track of useful local outcomes"} onClick={()=>window.location.assign("/following")}/>}<SettingButton icon="bell" title="Notification settings" detail="Control replies, confirmations and Helpful notifications" onClick={()=>window.location.assign("/notifications")}/></div></SettingSection>
+      <SettingSection title="LOCAL"><div className={styles.settingsGroup} id="you-local-settings"><SettingButton icon="location" title="Location" detail={locationDetail} onClick={()=>void requestLocation()} tone="location"/><div className={styles.row}><span><PingIcon name="radius"/></span><div><strong>Nearby radius</strong><small>One radius for Feed and Map</small></div><select value={radius} onChange={e=>writePingRadius(Number(e.target.value)as Radius)} aria-label="Nearby radius">{RADII.map(value=><option key={value} value={value}>{value} mi</option>)}</select></div></div></SettingSection>
+      <SettingSection title="ACCOUNT"><div className={styles.settingsGroup} id="you-account-settings">{!email&&<SettingButton icon="user" title="Sign in / Sign up" detail="Participate when you’re ready" onClick={openAuth}/>} {profile&&userId&&<SettingButton icon="profile" title="View public profile" detail="See what other neighbours can see" onClick={()=>window.location.assign(`/profile/${userId}`)}/>} {profile&&<SettingButton icon="edit" title="Edit profile" detail="Change your public display name" onClick={startEditingName}/>}</div></SettingSection>
+      <SettingSection title="PRIVACY & SAFETY"><div className={styles.settingsGroup} id="you-privacy-settings"><SettingButton icon="shield" title="Privacy & safety" detail="Blocked users, reports and location privacy" onClick={()=>window.dispatchEvent(new CustomEvent("ping:open-privacy"))}/></div></SettingSection>
+      {email&&<SettingSection title="BUSINESS"><div className={styles.settingsGroup} id="you-business-settings"><SettingButton icon="deals" title="Post local Deals" detail="Offers, discounts, new stock and restocks" onClick={()=>window.location.assign("/#ping")}/><SettingButton icon="promote" title="Promote a Pin" detail="Paid local reach for one of your live pins" onClick={()=>window.location.assign("/promote")}/></div></SettingSection>}
+      {moderator&&<details className="you-v3-admin"><summary>Beta & admin</summary><div id="you-admin-settings" className={styles.settingsGroup}><SettingButton icon="moderation" title="Moderation" detail="Review reported pins" onClick={()=>window.location.assign("/moderation")}/><SettingButton icon="review" title="Promotion review" detail="Approve or reject local promotion requests" onClick={()=>window.location.assign("/moderation/promotions")}/></div></details>}
+      {email&&<SettingSection title="ACCOUNT ACTION"><div className={`${styles.settingsGroup} ${styles.actionGroup}`}><SettingButton icon="signout" title="Sign out" detail="Leave this account on this device" onClick={()=>void signOut()} tone="danger"/></div></SettingSection>}
     </div>
-  );
+  </main></div><style jsx global>{`.you-v3-screen{padding-bottom:120px!important}.you-v3-header{padding:25px 20px 12px}.you-v3-header h1{margin:10px 0 0;font-size:31px;letter-spacing:-1px}.you-v3-reputation{padding-bottom:14px!important}.you-v3-reputation p,.you-v3-reputation>small,.you-v3-reputation>em{display:none!important}.you-v3-reputation-foot{display:flex;justify-content:space-between;gap:10px;margin-top:7px;color:var(--ping-muted-2);font-size:7.5px}.you-v3-admin{margin-top:18px}.you-v3-admin summary{cursor:pointer;list-style:none;color:var(--ping-muted);font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;padding:10px 2px}.you-v3-admin summary::-webkit-details-marker{display:none}.you-v3-admin[open] summary{color:var(--ping-ink-2)}.you-v3-admin>div{margin-top:5px}`}</style></div>;
 }

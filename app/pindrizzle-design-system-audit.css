@@ -1,0 +1,326 @@
+/*
+ * Final Pindrizzle design-system audit.
+ * This file is imported last so legacy route/component styles cannot re-introduce
+ * one-off action, icon or elevation treatments.
+ *
+ * Action hierarchy is exactly three treatments:
+ * 1. Primary   = solid navy pill
+ * 2. Secondary = light/outlined pill
+ * 3. Tertiary  = text-only action
+ * Tabs, chips, segmented controls, menu rows and icon-only controls remain
+ * controls rather than fourth/fifth action styles.
+ */
+
+/* --------------------------------------------------------------------------
+   PRIMARY ACTION
+   -------------------------------------------------------------------------- */
+.publish-button,
+.first-run-primary,
+.password-auth-primary,
+.feed-v3-location-card>button,
+.map-v3-location>button,
+.ping-global-create,
+.my-pings-v3-open,
+.activity-empty button,
+.following-v3-empty button,
+.phase9-promote-empty button,
+.phase18-empty button,
+.phase9-submit,
+.phase18-actions>a,
+.phase23-install-actions .primary,
+.reset-card .primary,
+.phase12-public-state>a,
+.legal-button.primary,
+.legal-button.dark,
+.search-v3-location button,
+.detail-v3-actions button.primary,
+.detail-v3-compose button,
+.detail-v3-wide,
+.phase22-storage-actions button.allow,
+.compose-start-actions button.primary{
+  min-height:var(--pd-action-height)!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:var(--pd-space-2)!important;
+  padding:0 var(--pd-space-3)!important;
+  border:1px solid var(--pd-ink-900)!important;
+  border-radius:var(--pd-radius-pill)!important;
+  background:var(--pd-ink-900)!important;
+  color:#fff!important;
+  box-shadow:0 7px 18px rgba(8,43,73,.14)!important;
+  font-weight:var(--pd-action-weight)!important;
+  text-decoration:none!important;
+}
+
+/* --------------------------------------------------------------------------
+   SECONDARY ACTION
+   -------------------------------------------------------------------------- */
+.first-run-secondary,
+.feed-v3-widen,
+.my-pings-v3-edit,
+.ping-actions button,
+.following-v3-unfollow,
+.phase18-card-actions button,
+.legal-button:not(.primary):not(.dark),
+.reset-card .secondary,
+.detail-v3-actions button:not(.primary),
+.phase5-blocked-user button,
+.detail-v3-danger-box button,
+.map-v3-quiet button,
+.phase22-storage-actions button:not(.allow),
+.compose-start-actions button:not(.primary),
+.compose-start-cancel{
+  min-height:var(--pd-action-height)!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:var(--pd-space-2)!important;
+  padding:0 var(--pd-space-3)!important;
+  border:1px solid var(--pd-line-strong)!important;
+  border-radius:var(--pd-radius-pill)!important;
+  background:rgba(255,255,255,.82)!important;
+  color:var(--pd-ink-800)!important;
+  box-shadow:none!important;
+  font-weight:var(--pd-action-weight)!important;
+  text-decoration:none!important;
+}
+
+/* Destructive actions stay within Secondary structure; only semantic colour changes. */
+.detail-v3-danger-box button.danger{
+  border-color:rgba(239,111,100,.42)!important;
+  background:#fff7f5!important;
+  color:#984a43!important;
+  box-shadow:none!important;
+}
+
+/* --------------------------------------------------------------------------
+   TERTIARY ACTION
+   -------------------------------------------------------------------------- */
+.first-run-skip,
+.password-auth-link,
+.password-auth-header>button,
+.map-v3-filter-head button,
+.feed-v3-listing-link,
+.activity-header>button,
+.phase9-promote-back,
+.phase18-business-header>a,
+.phase12-public-back,
+.phase18-card-actions>a,
+.phase9-no-pings>a,
+.phase18-no-campaigns>a,
+.phase23-install-footer a,
+.legal-back,
+.legal-footer a,
+.detail-v3-head button,
+.phase5-privacy-sheet header button,
+.detail-v3-safety,
+.detail-v3-reply-top button{
+  min-height:44px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:var(--pd-space-1)!important;
+  padding:0 var(--pd-space-2)!important;
+  border:0!important;
+  border-radius:var(--pd-radius-pill)!important;
+  background:transparent!important;
+  color:#0b6a82!important;
+  box-shadow:none!important;
+  font-weight:var(--pd-action-weight)!important;
+  text-decoration:none!important;
+}
+
+/* Privacy choice is the same primary/secondary hierarchy, never its own gradient style. */
+body .phase22-storage-actions button.allow{
+  background:var(--pd-ink-900)!important;
+  border-color:var(--pd-ink-900)!important;
+  color:#fff!important;
+  box-shadow:0 7px 18px rgba(8,43,73,.14)!important;
+}
+body .phase22-storage-actions button:not(.allow){
+  background:rgba(255,255,255,.08)!important;
+  border-color:rgba(255,255,255,.32)!important;
+  color:#fff!important;
+  box-shadow:none!important;
+}
+
+/* --------------------------------------------------------------------------
+   CONTROL EXCEPTIONS
+   Chips/tabs/segmented/icon-only controls are not action-button variants.
+   -------------------------------------------------------------------------- */
+.filter-row button,
+.feed-v3-filters button,
+.my-pings-v3-tabs button,
+.password-auth-tabs button,
+.composer-v3-category-grid button,
+.composer-v3-source-toggle button,
+.composer-v3-market-type button,
+.map-v3-filter-grid button,
+.first-run-radius,
+.search-v3-chips button{
+  box-shadow:none!important;
+}
+
+/* --------------------------------------------------------------------------
+   ICONOGRAPHY
+   All product SVGs use the canonical 1.75px line language and brand colours.
+   -------------------------------------------------------------------------- */
+.pd-icon,
+.ping-global-nav svg,
+.feed-v3-category svg,
+.ping-actions svg,
+.settings-list svg,
+.my-pings-v3 svg,
+.activity-screen svg,
+.you-v3-screen svg,
+.following-v3-screen svg,
+.phase9-promote-screen svg,
+.phase18-business-screen svg,
+.phase12-public-screen svg,
+.phase23-install-screen svg,
+.legal-page svg,
+.search-v3-page svg,
+.map-v3-filter-sheet svg,
+.password-auth-sheet svg,
+.first-run-sheet svg,
+.detail-v3-sheet svg,
+.phase5-privacy-sheet svg,
+.compose-start-screen svg{
+  stroke-width:1.75!important;
+  vector-effect:non-scaling-stroke;
+}
+
+/* Legacy refresh glyph becomes a custom 1.75px brand-line icon. */
+.map-v3-top-actions button:last-child{
+  font-size:0!important;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230d3d60' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 11a8 8 0 1 0-2.3 5.7'/%3E%3Cpath d='M20 4v7h-7'/%3E%3C/svg%3E")!important;
+  background-repeat:no-repeat!important;
+  background-position:center!important;
+  background-size:15px 15px!important;
+}
+
+/* Legacy onboarding arrow glyphs become the same line-chevron language. */
+.first-run-primary>span[aria-hidden="true"]{
+  position:relative!important;
+  width:14px!important;
+  height:14px!important;
+  display:inline-block!important;
+  font-size:0!important;
+}
+.first-run-primary>span[aria-hidden="true"]::before{
+  content:"";
+  position:absolute;
+  left:3px;
+  top:3px;
+  width:6px;
+  height:6px;
+  border-top:1.75px solid currentColor;
+  border-right:1.75px solid currentColor;
+  transform:rotate(45deg);
+}
+
+/* Hidden legacy map pager still obeys the icon system if re-enabled. */
+.map-v3-card-pager button{
+  position:relative;
+  font-size:0!important;
+  color:var(--pd-ink-800)!important;
+}
+.map-v3-card-pager button::before{
+  content:"";
+  width:7px;
+  height:7px;
+  border-top:1.75px solid currentColor;
+  border-right:1.75px solid currentColor;
+  transform:rotate(45deg);
+}
+.map-v3-card-pager button:first-child::before{transform:rotate(-135deg)}
+
+/* Icon containers stay in the navy/aqua family. */
+.activity-icon,
+.feed-v3-category>span,
+.first-run-icon,
+.first-run-note-icon,
+.quiet-icon,
+.phase5-blocked-avatar,
+.search-v3-location>span,
+.compose-start-icon{
+  color:var(--pd-ink-800)!important;
+  background:var(--pd-aqua-100)!important;
+}
+
+/* --------------------------------------------------------------------------
+   DEPTH / MATERIAL
+   Elevation 1 = content cards; 2 = floating app chrome; 3 = sheets/dialogs.
+   -------------------------------------------------------------------------- */
+.ping-card,
+.feed-v3-summary,
+.feed-v3-location-card,
+.feed-v3-market-filters,
+.quiet-card,
+.notice-card,
+.profile-card,
+.phase12-profile-card,
+.phase12-reputation-card,
+.settings-list,
+.my-pings-v3-card,
+.my-pings-v3-tabs,
+.notification-rule,
+.activity-list,
+.activity-empty,
+.following-v3-card,
+.following-v3-intro,
+.phase9-promote-intro,
+.phase18-business-intro,
+.phase9-builder,
+.phase9-quote,
+.phase9-request-history article,
+.phase18-overview div,
+.phase18-card,
+.phase23-install-card,
+.legal-card,
+.phase12-public-signals div,
+.phase12-public-privacy,
+.search-v3-searchbox,
+.search-v3-location,
+.search-v3-card,
+.detail-v3-trust div,
+.detail-v3-replies article,
+.phase5-blocked-user,
+.phase5-privacy-summary,
+.phase5-privacy-empty,
+.first-run-privacy,
+.first-run-local-visual{
+  box-shadow:var(--pd-elevation-1)!important;
+}
+
+.ping-global-nav,
+.map-v3-topbar,
+.map-v3-controls,
+.map-v3-quiet,
+.my-pings-v3-menu,
+.phase23-install-hero,
+.phase12-public-reputation,
+.compose-start-card{
+  box-shadow:var(--pd-elevation-2)!important;
+}
+
+.password-auth-sheet,
+.composer-sheet,
+.composer-v3-sheet,
+.map-v3-filter-sheet,
+.first-run-sheet,
+.detail-v3-sheet,
+.phase5-privacy-sheet,
+body .phase22-storage-choice{
+  box-shadow:var(--pd-elevation-3)!important;
+}
+
+/* Cards never invent stronger local shadows. */
+.activity-card,
+.settings-list button,
+.my-pings-v3-menu button,
+.detail-v3-actions button,
+.ping-actions button{
+  box-shadow:none!important;
+}

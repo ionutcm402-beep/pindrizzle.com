@@ -1,0 +1,76 @@
+/* Regression guards only. Do not use this file for new visual design work. */
+
+/*
+ * The design-system final pass accidentally hid substantive onboarding content
+ * (`.first-run-benefits`) and collapsed the working benefits + radar layout.
+ * Restore the original onboarding structure from ping-onboarding-system.css.
+ */
+.first-run-step-one .first-run-benefits{
+  display:block!important;
+}
+
+.first-run-step-one .first-run-content-grid{
+  display:grid!important;
+  grid-template-columns:minmax(0,1.08fr) minmax(245px,.92fr)!important;
+  gap:32px!important;
+  align-items:center!important;
+  justify-items:stretch!important;
+  margin:30px 0 0!important;
+}
+
+.first-run-step-one .first-run-local-visual{
+  margin:0!important;
+}
+
+.first-run-step-one .first-run-intro{
+  text-align:left!important;
+}
+
+.first-run-step-one .first-run-actions{
+  display:flex!important;
+  justify-items:normal!important;
+  text-align:left!important;
+}
+
+.first-run-step-one .first-run-actions:not(.two) .first-run-primary{
+  width:auto!important;
+  min-width:250px!important;
+}
+
+@media(max-width:640px){
+  .first-run-step-one .first-run-content-grid{
+    grid-template-columns:1fr!important;
+    gap:22px!important;
+    margin-top:28px!important;
+  }
+
+  .first-run-step-one .first-run-local-visual{
+    grid-row:1!important;
+    min-height:156px!important;
+  }
+
+  .first-run-step-one .first-run-benefits{
+    grid-row:2!important;
+  }
+
+  .first-run-step-one .first-run-actions:not(.two) .first-run-primary{
+    width:100%!important;
+    min-width:0!important;
+  }
+}
+
+@media(max-width:380px){
+  .first-run-step-one .first-run-local-visual{
+    min-height:142px!important;
+  }
+}
+
+@media(max-height:700px) and (min-width:641px){
+  .first-run-step-one .first-run-content-grid{
+    margin-top:21px!important;
+  }
+
+  .first-run-step-one .first-run-local-visual{
+    min-height:205px!important;
+  }
+}

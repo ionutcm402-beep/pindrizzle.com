@@ -2,22 +2,39 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import PingIcon from "@/components/PingIcon";
 
 type BetaState = { has_access: boolean; access_source: string | null; granted_at: string | null };
+type ReleaseStage = "closed_beta" | "public";
 
 export default function Phase24BetaBridge() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [releaseStage, setReleaseStage] = useState<ReleaseStage>("closed_beta");
   const [signedIn, setSignedIn] = useState(false);
   const [state, setState] = useState<BetaState | null>(null);
   const [target, setTarget] = useState<Element | null>(null);
+  const [composerOpen, setComposerOpen] = useState(false);
 
   const refresh = useCallback(async () => {
     const supabase = createClient();
+    const stageResult = await supabase.rpc("public_release_stage");
+    const rawStage = Array.isArray(stageResult.data) ? stageResult.data[0] : stageResult.data;
+    const currentStage: ReleaseStage = !stageResult.error && rawStage === "public" ? "public" : "closed_beta";
+    setReleaseStage(currentStage);
+
     const { data: auth } = await supabase.auth.getSession();
     const user = auth.session?.user || null;
     setSignedIn(Boolean(user));
+
+    if (currentStage === "public") {
+      try { localStorage.removeItem("ping-beta-pending-invite"); } catch {}
+      setState(null);
+      return;
+    }
+
     if (!user) {
       setState(null);
       return;
@@ -49,17 +66,25 @@ export default function Phase24BetaBridge() {
   }, [refresh]);
 
   useEffect(() => {
-    if (pathname !== "/you") {
+    const sync = () => setComposerOpen(Boolean(document.querySelector(".composer-backdrop")));
+    sync();
+    const observer = new MutationObserver(sync);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [pathname]);
+
+  useEffect(() => {
+    if (pathname !== "/you" || releaseStage !== "closed_beta") {
       setTarget(null);
       return;
     }
-    const timer = window.setTimeout(() => setTarget(document.querySelector(".settings-list")), 0);
+    const timer = window.setTimeout(() => setTarget(document.querySelector("#you-admin-settings") || document.querySelector(".settings-list")), 0);
     return () => window.clearTimeout(timer);
-  }, [pathname]);
+  }, [pathname, releaseStage]);
 
-  const entry = target ? createPortal(
-    <button type="button" onClick={() => window.location.assign("/beta?from=/you")}>
-      <span>β</span><div><strong>Closed beta</strong><small>{state?.has_access ? "Access active · send feedback" : signedIn ? "Invite required to participate" : "Tester access & feedback"}</small></div><b>›</b>
+  const entry = target && releaseStage === "closed_beta" ? createPortal(
+    <button type="button" onClick={() => router.push("/beta?from=/you")}>
+      <span><PingIcon name="beta" /></span><div><strong>Closed beta</strong><small>{state?.has_access ? "Access active · send feedback" : signedIn ? "Invite required to participate" : "Tester access & feedback"}</small></div><b><PingIcon name="chevron" size={16} /></b>
     </button>,
     target,
   ) : null;
@@ -67,14 +92,14 @@ export default function Phase24BetaBridge() {
   return (
     <>
       {entry}
-      {signedIn && state && !state.has_access && pathname !== "/beta" && (
+      {releaseStage === "closed_beta" && signedIn && state && !state.has_access && pathname !== "/beta" && !composerOpen && (
         <div className="phase24-beta-banner" role="status">
-          <div><strong>Ping is in closed beta.</strong><span>Your account can browse, but participation needs an invite.</span></div>
-          <a href={`/beta?from=${encodeURIComponent(pathname)}`}>Enter invite</a>
+          <div><strong>Pindrizzle is in closed beta.</strong><span>Your account can browse, but participation needs an invite.</span></div>
+          <button type="button" onClick={() => router.push(`/beta?from=${encodeURIComponent(pathname)}`)}>Enter invite</button>
         </div>
       )}
       <style jsx global>{`
-        .phase24-beta-banner{position:fixed;z-index:180;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(calc(100% - 24px),430px);display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;border:1px solid #d7e6d3;border-radius:16px;background:rgba(248,250,245,.97);box-shadow:0 14px 38px rgba(25,36,27,.17);backdrop-filter:blur(10px)}.phase24-beta-banner strong,.phase24-beta-banner span{display:block}.phase24-beta-banner strong{font-size:10px;color:#234827}.phase24-beta-banner span{font-size:9px;color:#6d786f;margin-top:2px}.phase24-beta-banner a{flex:0 0 auto;border-radius:11px;background:#183924;color:#fff;text-decoration:none;padding:10px 11px;font-size:9px;font-weight:900}@media(max-width:360px){.phase24-beta-banner span{display:none}}
+        .phase24-beta-banner{position:fixed;z-index:180;left:50%;bottom:calc(var(--pd-tabbar-total) + 12px);transform:translateX(-50%);width:min(calc(100% - 24px),430px);display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border:1px solid rgba(37,189,200,.20);border-radius:var(--pd-radius-card);background:rgba(244,251,254,.97);box-shadow:var(--pd-elevation-2);backdrop-filter:blur(14px)}.phase24-beta-banner strong,.phase24-beta-banner span{display:block}.phase24-beta-banner strong{font-size:10px;color:var(--pd-ink-950)}.phase24-beta-banner span{font-size:9px;color:var(--pd-text-2);margin-top:2px}.phase24-beta-banner button{flex:0 0 auto;min-height:44px;border:1px solid var(--pd-ink-900);border-radius:var(--pd-radius-pill);background:var(--pd-ink-900);color:#fff;padding:0 14px;font-size:9px;font-weight:var(--pd-action-weight)}@media(max-width:360px){.phase24-beta-banner span{display:none}}
       `}</style>
     </>
   );

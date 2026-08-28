@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import PingIcon from "@/components/PingIcon";
 
 type ProfileSummary = {
   profile_id: string;
@@ -80,17 +81,17 @@ export default function PublicProfilePage() {
   return (
     <div className="page-shell">
       <div className="app-shell">
-        <main className="phase12-public-screen">
+        <main className="phase12-public-screen public-profile-v3">
           <header className="phase12-public-header">
-            <button type="button" onClick={() => window.history.length > 1 ? window.history.back() : window.location.assign("/")} aria-label="Go back">‹</button>
-            <div className="brand small">ping<span>.</span></div>
+            <a href="/" className="phase12-public-back" aria-label="Back to Feed">‹</a>
+            <div className="brand small">pindrizzle</div>
             <span />
           </header>
 
-          {state === "loading" && <section className="phase12-public-state"><strong>Loading profile…</strong></section>}
+          {state === "loading" && <section className="phase12-public-state pd-moment"><strong>Loading profile…</strong></section>}
           {state === "missing" && (
-            <section className="phase12-public-state">
-              <div>○</div>
+            <section className="phase12-public-state pd-moment">
+              <div><PingIcon name="user" size={30}/></div>
               <h1>Profile unavailable</h1>
               <p>This neighbour profile could not be found.</p>
               <a href="/">Back to Feed</a>
@@ -100,11 +101,11 @@ export default function PublicProfilePage() {
           {state === "ready" && profile && (
             <>
               <section className="phase12-public-hero">
-                <div className="phase12-public-avatar">{initials}</div>
+                <div className="phase12-public-avatar" data-user-content>{initials}</div>
                 <span>LOCAL PROFILE</span>
-                <h1>{profile.display_name}</h1>
+                <h1 data-user-content>{profile.display_name}</h1>
                 <p>{memberLabel(profile.member_since)}</p>
-                <div className="phase12-public-level">✓ {profile.reputation_level}</div>
+                <div className="phase12-public-level"><PingIcon name="check" size={14}/>{profile.reputation_level}</div>
               </section>
 
               <section className="phase12-public-signals" aria-label="Community reputation signals">
@@ -115,30 +116,22 @@ export default function PublicProfilePage() {
 
               <section className="phase12-public-reputation">
                 <div><strong>How reputation works</strong><span>{profile.reputation_level}</span></div>
-                <p>Ping uses visible community signals rather than a hidden trust score. Helpful earned counts for 3 points and confirmations earned count for 1 point.</p>
+                <p>Pindrizzle uses visible community signals rather than a hidden trust score. Helpful earned counts for 3 points and confirmations earned count for 1 point.</p>
                 <div className="phase12-public-progress"><span style={{ width: `${progress}%` }} /></div>
                 <small>{profile.next_level_points ? `${profile.next_level_points - profile.reputation_points} points to the next level` : "Highest current reputation level"}</small>
               </section>
 
               <section className="phase12-public-privacy">
-                <span>🛡️</span>
+                <span><PingIcon name="shield" size={20}/></span>
                 <div><strong>Privacy by design</strong><p>Public profiles do not show email, exact location or a home address. Reputation is community activity, not identity verification.</p></div>
               </section>
             </>
           )}
         </main>
-
-        <nav className="bottom-nav" aria-label="Primary navigation">
-          <a href="/"><span>⌂</span>Feed</a>
-          <a href="/map"><span>⌖</span>Map</a>
-          <a href="/#ping" className="compose-nav"><span>+</span>Ping</a>
-          <a href="/alerts"><span>♢</span>Alerts</a>
-          <a href="/you" className="active"><span>○</span>You</a>
-        </nav>
       </div>
 
       <style jsx global>{`
-        .phase12-public-screen{min-height:100%;padding-bottom:104px}.phase12-public-header{display:grid;grid-template-columns:42px 1fr 42px;align-items:center;padding:20px 20px 12px}.phase12-public-header>.brand{text-align:center}.phase12-public-header>button{width:40px;height:40px;border:0;border-radius:50%;background:#fff;color:#233329;box-shadow:0 8px 24px rgba(31,41,32,.08);font-size:29px;line-height:1}.phase12-public-hero{text-align:center;padding:20px 22px 18px}.phase12-public-avatar{width:82px;height:82px;margin:0 auto 14px;border-radius:26px;background:linear-gradient(145deg,#5ce253,#3cab42);display:grid;place-items:center;color:#fff;font-size:24px;font-weight:950;box-shadow:0 13px 28px rgba(67,177,67,.22)}.phase12-public-hero>span{font-size:8px;font-weight:950;letter-spacing:.9px;color:#839085}.phase12-public-hero h1{margin:7px 0 4px;font-size:27px;letter-spacing:-.8px}.phase12-public-hero p{margin:0;color:#7b857d;font-size:10px}.phase12-public-level{display:inline-flex;margin-top:12px;padding:8px 11px;border-radius:999px;background:#edf8e9;color:#2e6832;font-size:10px;font-weight:900}.phase12-public-signals{margin:0 15px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.phase12-public-signals div{padding:15px 8px;border:1px solid #e2e7df;border-radius:18px;background:#fff;text-align:center}.phase12-public-signals strong{display:block;font-size:19px}.phase12-public-signals span{display:block;margin-top:3px;color:#737e75;font-size:8px;line-height:1.25}.phase12-public-reputation{margin:0 15px 14px;padding:17px;border-radius:21px;background:#1c291e;color:#fff}.phase12-public-reputation>div:first-child{display:flex;align-items:center;justify-content:space-between;gap:10px}.phase12-public-reputation>div:first-child strong{font-size:13px}.phase12-public-reputation>div:first-child span{padding:6px 8px;border-radius:999px;background:rgba(255,255,255,.1);color:#cfe0d1;font-size:8px;font-weight:850}.phase12-public-reputation p{margin:10px 0;color:#c8d3ca;font-size:10px;line-height:1.5}.phase12-public-progress{height:7px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden}.phase12-public-progress span{display:block;height:100%;border-radius:inherit;background:#62e45a}.phase12-public-reputation small{display:block;margin-top:7px;color:#aebcaf;font-size:8px}.phase12-public-privacy{margin:0 15px;padding:15px;display:flex;gap:11px;border:1px solid #dfe5dc;border-radius:19px;background:#f3f6f0}.phase12-public-privacy>span{font-size:20px}.phase12-public-privacy strong{font-size:11px}.phase12-public-privacy p{margin:4px 0 0;color:#737d74;font-size:9px;line-height:1.45}.phase12-public-state{margin:32px 15px;padding:34px 22px;border:1px solid #e2e7df;border-radius:24px;background:#fff;text-align:center}.phase12-public-state>div{font-size:34px}.phase12-public-state h1{margin:9px 0 5px}.phase12-public-state p{margin:0 0 15px;color:#758077;font-size:12px}.phase12-public-state a{display:inline-block;padding:11px 14px;border-radius:13px;background:#59d951;color:#173618;text-decoration:none;font-size:11px;font-weight:900}.bottom-nav a{height:100%;border:0;background:transparent;color:#8a928b;font-size:10px;font-weight:800;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:3px;position:relative;text-decoration:none}.bottom-nav a>span{font-size:22px;line-height:1}.bottom-nav a.active{color:#1f5420}.bottom-nav a.compose-nav{color:#1f5420}
+        .phase12-public-screen{min-height:100%;padding-bottom:120px}.phase12-public-header{display:grid;grid-template-columns:42px 1fr 42px;align-items:center;padding:24px 20px 12px}.phase12-public-header>.brand{align-items:center!important;text-align:center}.phase12-public-back{width:40px;height:40px;border:1px solid rgba(20,78,107,.07);border-radius:50%;display:grid;place-items:center;text-decoration:none;background:rgba(255,255,255,.9);color:var(--pd-navy-deep);box-shadow:0 8px 24px rgba(8,47,74,.08);font-size:29px;line-height:1}.phase12-public-hero{text-align:center;padding:22px 22px 20px}.phase12-public-avatar{width:82px;height:82px;margin:0 auto 15px;border-radius:26px;background:linear-gradient(145deg,var(--pd-aqua),var(--pd-blue));display:grid;place-items:center;color:#fff;font-size:24px;font-weight:850;box-shadow:0 13px 30px rgba(45,150,208,.2),inset 0 1px 0 rgba(255,255,255,.35)}.phase12-public-hero>span{font-size:8px;font-weight:850;letter-spacing:.12em;color:#7c98a7}.phase12-public-hero h1{margin:8px 0 4px;color:var(--pd-navy-deep);font-size:28px;font-weight:780;letter-spacing:-.04em}.phase12-public-hero p{margin:0;color:#7d94a1;font-size:10px}.phase12-public-level{display:inline-flex;align-items:center;gap:5px;margin-top:13px;padding:8px 11px;border-radius:999px;background:#e8f7fb;color:#0b7198;font-size:10px;font-weight:800;box-shadow:inset 0 0 0 1px rgba(20,78,107,.05)}.phase12-public-signals{margin:0 15px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.phase12-public-signals div{padding:15px 8px;border:1px solid rgba(20,78,107,.07);border-radius:18px;background:rgba(255,255,255,.92);text-align:center;box-shadow:0 8px 24px rgba(8,47,74,.045)}.phase12-public-signals strong{display:block;color:var(--pd-navy-deep);font-size:19px}.phase12-public-signals span{display:block;margin-top:3px;color:#738b98;font-size:8px;line-height:1.25}.phase12-public-reputation{margin:0 15px 14px;padding:18px;border-radius:22px;background:linear-gradient(155deg,#0d4567,var(--pd-navy-deep));color:#fff;box-shadow:0 16px 36px rgba(6,38,61,.16),inset 0 1px 0 rgba(255,255,255,.1)}.phase12-public-reputation>div:first-child{display:flex;align-items:center;justify-content:space-between;gap:10px}.phase12-public-reputation>div:first-child strong{font-size:13px}.phase12-public-reputation>div:first-child span{padding:6px 8px;border-radius:999px;background:rgba(255,255,255,.1);color:#d6edf5;font-size:8px;font-weight:800}.phase12-public-reputation p{margin:10px 0;color:#d0e2ea;font-size:10px;line-height:1.55}.phase12-public-progress{height:7px;border-radius:999px;background:rgba(255,255,255,.11);overflow:hidden}.phase12-public-progress span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--pd-rain),var(--pd-aqua))}.phase12-public-reputation small{display:block;margin-top:7px;color:#aac4d1;font-size:8px}.phase12-public-privacy{margin:0 15px;padding:15px;display:flex;gap:11px;border:1px solid rgba(20,78,107,.07);border-radius:19px;background:linear-gradient(145deg,#f8fcfd,#eaf7fb);box-shadow:0 8px 24px rgba(8,47,74,.04)}.phase12-public-privacy>span{width:36px;height:36px;display:grid;place-items:center;border-radius:12px;background:var(--ping-accent-soft);color:var(--ping-accent-ink)}.phase12-public-privacy strong{color:var(--pd-navy-deep);font-size:11px}.phase12-public-privacy p{margin:4px 0 0;color:#6f8794;font-size:9px;line-height:1.45}.phase12-public-state{margin:32px 15px;padding:34px 22px;border:1px solid rgba(20,78,107,.07);border-radius:24px;background:rgba(255,255,255,.94);text-align:center;box-shadow:var(--pd-shadow-card)}.phase12-public-state>div{width:52px;height:52px;display:grid;place-items:center;margin:0 auto;color:var(--ping-accent-ink);background:var(--ping-accent-soft);border-radius:16px}.phase12-public-state h1{margin:9px 0 5px;color:var(--pd-navy-deep)}.phase12-public-state p{margin:0 0 15px;color:#758c98;font-size:12px}.phase12-public-state a{display:inline-flex;min-height:44px;align-items:center;padding:0 16px;border-radius:999px;background:var(--pd-navy);color:#fff;text-decoration:none;font-size:11px;font-weight:800;box-shadow:0 10px 24px rgba(6,38,61,.18)}
       `}</style>
     </div>
   );

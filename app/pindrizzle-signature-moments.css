@@ -1,0 +1,198 @@
+/* Rare Pindrizzle signature moments. Motion is event-bound only: app open, refresh, publish. */
+
+.pd-droplet-mark{display:block;color:var(--pd-aqua-500)}
+
+/* First-open moment: under one second, pointer-transparent, never loops. */
+.pd-open-moment{
+  position:fixed;
+  inset:0;
+  z-index:5000;
+  display:grid;
+  place-items:center;
+  align-content:center;
+  gap:var(--pd-space-3);
+  pointer-events:none;
+  background:var(--pd-canvas);
+}
+.pd-open-moment-stage{position:relative;width:82px;height:82px;display:grid;place-items:center}
+.pd-open-ripple{
+  position:absolute;
+  left:50%;top:61%;
+  width:40px;height:16px;
+  border:1.5px solid rgba(37,189,200,.42);
+  border-radius:50%;
+  transform:translate(-50%,-50%) scale(.35);
+  opacity:0;
+}
+.pd-open-pin,
+.pd-pin-drop-pin{
+  position:relative;
+  width:31px;height:31px;
+  display:grid;
+  place-items:center;
+  border:2px solid rgba(255,255,255,.96);
+  border-radius:50% 50% 50% 8px;
+  background:linear-gradient(135deg,var(--pd-blue-600),var(--pd-aqua-500));
+  box-shadow:0 8px 18px rgba(8,43,73,.18),inset 0 1px 0 rgba(255,255,255,.18);
+  transform:rotate(-45deg);
+}
+.pd-open-pin i,
+.pd-pin-drop-pin i{width:8px;height:8px;border:2px solid #fff;border-radius:50%;transform:rotate(45deg)}
+.pd-open-wordmark{
+  font-family:Inter,ui-rounded,"SF Pro Rounded",system-ui,-apple-system,sans-serif;
+  font-size:var(--pd-wordmark-size);
+  line-height:1;
+  font-weight:var(--pd-wordmark-weight);
+  letter-spacing:var(--pd-wordmark-tracking);
+  background:var(--pd-wordmark-gradient);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+
+@media(prefers-reduced-motion:no-preference){
+  .pd-open-moment{animation:pdOpenMomentOut 780ms ease both}
+  .pd-open-pin{animation:pdOpenPinDrop 620ms cubic-bezier(.18,.82,.25,1) both}
+  .pd-open-ripple{animation:pdOpenRipple 520ms ease-out 210ms both}
+  .pd-open-wordmark{animation:pdOpenWordmark 560ms ease 110ms both}
+}
+@keyframes pdOpenMomentOut{0%,72%{opacity:1}100%{opacity:0}}
+@keyframes pdOpenPinDrop{0%{opacity:0;transform:translateY(-34px) rotate(-45deg) scale(.86)}46%{opacity:1;transform:translateY(3px) rotate(-45deg) scale(1.04)}68%,100%{opacity:1;transform:translateY(0) rotate(-45deg) scale(1)}}
+@keyframes pdOpenRipple{0%{opacity:0;transform:translate(-50%,-50%) scale(.35)}30%{opacity:.72}100%{opacity:0;transform:translate(-50%,-50%) scale(1.55)}}
+@keyframes pdOpenWordmark{0%{opacity:0;transform:translateY(4px)}100%{opacity:1;transform:translateY(0)}}
+
+/* Pull-to-refresh: visible only while the user pulls or a refresh is actively running. */
+.pd-refresh-indicator{
+  position:fixed;
+  z-index:420;
+  left:50%;
+  top:calc(var(--pd-safe-top) + 8px);
+  width:34px;height:34px;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(8,43,73,.08);
+  border-radius:50%;
+  background:rgba(250,253,254,.94);
+  box-shadow:var(--pd-elevation-1);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  opacity:0;
+  pointer-events:none;
+  transform:translate(-50%,-18px) scale(calc(.74 + (var(--pd-refresh-progress) * .26)));
+  transition:opacity 120ms ease,transform 120ms ease;
+}
+.pd-refresh-indicator.visible{
+  opacity:calc(.22 + (var(--pd-refresh-progress) * .78));
+  transform:translate(-50%,calc(-18px + (var(--pd-refresh-progress) * 22px))) scale(calc(.74 + (var(--pd-refresh-progress) * .26)));
+}
+.pd-refresh-indicator .pd-droplet-mark{position:relative;z-index:2;color:var(--pd-aqua-500)}
+.pd-refresh-ripple{position:absolute;width:16px;height:7px;border:1px solid rgba(37,189,200,.42);border-radius:50%;opacity:0}
+@media(prefers-reduced-motion:no-preference){
+  .pd-refresh-indicator.refreshing .pd-droplet-mark{animation:pdRefreshDroplet 720ms ease-in-out infinite}
+  .pd-refresh-indicator.refreshing .pd-refresh-ripple{animation:pdRefreshRipple 720ms ease-out infinite}
+}
+@keyframes pdRefreshDroplet{0%,100%{transform:translateY(-2px) scale(.94)}50%{transform:translateY(2px) scale(1)}}
+@keyframes pdRefreshRipple{0%{opacity:0;transform:translateY(8px) scale(.45)}35%{opacity:.58}100%{opacity:0;transform:translateY(8px) scale(1.45)}}
+
+/* Static Moment illustration for empty states: one soft droplet, no ambient animation. */
+.pd-empty-droplet{
+  --pd-empty-size:54px;
+  position:relative;
+  width:var(--pd-empty-size);
+  height:var(--pd-empty-size);
+  display:grid;
+  place-items:center;
+  margin:0 auto;
+}
+.pd-empty-droplet-soft{
+  position:absolute;
+  inset:3px;
+  border-radius:50%;
+  background:radial-gradient(circle at 50% 44%,rgba(230,248,250,.96),rgba(244,248,250,.72) 66%,rgba(244,248,250,0) 68%);
+  border:1px solid rgba(37,189,200,.10);
+}
+.pd-empty-droplet .pd-droplet-mark{position:relative;color:rgba(47,131,214,.72)}
+
+/* Existing Moment empty states inherit the same static droplet without source-level icon drift. */
+.feed-v3-quiet .quiet-icon,
+.search-v3-empty>svg,
+.following-v3-empty>svg,
+.notification-settings-empty>svg{display:none!important}
+.feed-v3-quiet .quiet-icon{
+  width:54px!important;height:54px!important;
+  border-radius:50%!important;
+  background:radial-gradient(circle at 50% 44%,rgba(230,248,250,.96),rgba(244,248,250,.72) 66%,rgba(244,248,250,0) 68%)!important;
+  box-shadow:inset 0 0 0 1px rgba(37,189,200,.10)!important;
+}
+.feed-v3-quiet .quiet-icon::before,
+.search-v3-empty::before,
+.following-v3-empty::before,
+.notification-settings-empty::before,
+.map-v3-quiet::before,
+.my-pings-v3-empty::before{
+  content:"";
+  width:24px;height:29px;
+  display:block;
+  margin:0 auto var(--pd-space-2);
+  border-radius:52% 48% 54% 46% / 38% 38% 62% 62%;
+  background:linear-gradient(160deg,rgba(47,131,214,.72),rgba(37,189,200,.66));
+  transform:rotate(0deg);
+  clip-path:polygon(50% 0,88% 48%,95% 68%,88% 84%,72% 96%,50% 100%,28% 96%,12% 84%,5% 68%,12% 48%);
+  box-shadow:0 7px 14px rgba(8,43,73,.08);
+}
+.feed-v3-quiet .quiet-icon::before{margin:0}
+.map-v3-quiet::before{width:20px;height:24px;margin-bottom:var(--pd-space-1)}
+.search-v3-empty>svg+*,.following-v3-empty>svg+*{margin-top:0!important}
+
+/* Publish confirmation: one ripple at the chosen exact marker, then rest. */
+.pindrizzle-picker-pin.pd-confirm-drop::before,
+.ping-map-pin.pd-pin-just-dropped::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  left:50%;bottom:2px;
+  width:32px;height:13px;
+  border:1.5px solid rgba(37,189,200,.58);
+  border-radius:50%;
+  transform:translate(-50%,50%) scale(.3);
+  opacity:0;
+}
+@media(prefers-reduced-motion:no-preference){
+  .pindrizzle-picker-pin.pd-confirm-drop,
+  .ping-map-pin.pd-pin-just-dropped{animation:pdPinSettle 560ms cubic-bezier(.18,.8,.22,1) both}
+  .pindrizzle-picker-pin.pd-confirm-drop::before,
+  .ping-map-pin.pd-pin-just-dropped::before{animation:pdPinRipple 520ms ease-out 90ms both}
+}
+@keyframes pdPinSettle{0%{transform:translateY(-12px) scale(.92)}48%{transform:translateY(2px) scale(1.04)}72%,100%{transform:translateY(0) scale(1)}}
+@keyframes pdPinRipple{0%{opacity:0;transform:translate(-50%,50%) scale(.3)}30%{opacity:.72}100%{opacity:0;transform:translate(-50%,50%) scale(1.65)}}
+
+/* Neutral publish fallback when an exact picker point is not currently on-screen. */
+.pd-pin-drop-moment{
+  position:fixed;
+  z-index:4800;
+  width:56px;height:56px;
+  display:grid;
+  place-items:center;
+  pointer-events:none;
+  transform:translate(-50%,-50%);
+}
+.pd-pin-drop-ripple{
+  position:absolute;
+  left:50%;top:66%;
+  width:30px;height:12px;
+  border:1.5px solid rgba(37,189,200,.48);
+  border-radius:50%;
+  transform:translate(-50%,-50%) scale(.3);
+  opacity:0;
+}
+.pd-pin-drop-pin{width:25px;height:25px}
+.pd-pin-drop-pin i{width:6px;height:6px;border-width:1.6px}
+@media(prefers-reduced-motion:no-preference){
+  .pd-pin-drop-pin{animation:pdPinSettle 520ms cubic-bezier(.18,.8,.22,1) both}
+  .pd-pin-drop-ripple{animation:pdPinRipple 480ms ease-out 70ms both}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .pd-open-moment{opacity:1}
+  .pd-refresh-indicator,.pd-refresh-indicator.visible{transition:none}
+}

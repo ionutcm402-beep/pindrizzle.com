@@ -1,4 +1,4 @@
-const OFFLINE_CACHE = "ping-offline-v1";
+const OFFLINE_CACHE = "pindrizzle-offline-v1";
 const OFFLINE_URL = "/offline";
 
 self.addEventListener("install", (event) => {
@@ -13,7 +13,7 @@ self.addEventListener("activate", (event) => {
     const keys = await caches.keys();
     await Promise.all(
       keys
-        .filter((key) => key.startsWith("ping-offline-") && key !== OFFLINE_CACHE)
+        .filter((key) => (key.startsWith("ping-offline-") || key.startsWith("pindrizzle-offline-")) && key !== OFFLINE_CACHE)
         .map((key) => caches.delete(key)),
     );
     await self.clients.claim();
@@ -28,7 +28,7 @@ self.addEventListener("fetch", (event) => {
     try {
       return await fetch(request);
     } catch {
-      return (await caches.match(OFFLINE_URL)) || new Response("Ping is offline.", {
+      return (await caches.match(OFFLINE_URL)) || new Response("Pindrizzle is offline.", {
         status: 503,
         headers: { "Content-Type": "text/plain; charset=utf-8" },
       });
@@ -41,15 +41,15 @@ self.addEventListener("push", (event) => {
   try {
     payload = event.data ? event.data.json() : {};
   } catch {
-    payload = { title: "Ping", body: event.data ? event.data.text() : "You have a new local update." };
+    payload = { title: "Pindrizzle", body: event.data ? event.data.text() : "You have a new local update." };
   }
 
-  const title = payload.title || "Ping";
+  const title = payload.title || "Pindrizzle";
   const options = {
     body: payload.body || "You have a new local update.",
-    icon: "/pwa-icon-192",
-    badge: "/pwa-icon-192",
-    tag: payload.notificationId ? `ping-${payload.notificationId}` : "ping-update",
+    icon: "/pindrizzle-icon-192.png",
+    badge: "/pindrizzle-icon-192.png",
+    tag: payload.notificationId ? `pindrizzle-${payload.notificationId}` : "pindrizzle-update",
     data: { url: payload.url || "/alerts" },
     renotify: false,
     silent: false,

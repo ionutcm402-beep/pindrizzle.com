@@ -1,0 +1,300 @@
+/* Final invariants that must win even over legacy component-local global styles. */
+
+/* One exact visual wordmark everywhere, including the compact Map header. */
+body .map-v3-topbar .map-v3-brand .brand::before{
+  content:"pindrizzle"!important;
+  font-family:Inter,ui-rounded,"SF Pro Rounded",system-ui,-apple-system,sans-serif!important;
+  font-size:var(--pd-wordmark-size)!important;
+  line-height:.95!important;
+  font-weight:var(--pd-wordmark-weight)!important;
+  letter-spacing:var(--pd-wordmark-tracking)!important;
+  text-transform:lowercase!important;
+  background:var(--pd-wordmark-gradient)!important;
+  -webkit-background-clip:text!important;
+  background-clip:text!important;
+  color:transparent!important;
+}
+
+/* Onboarding is a Moment flow: centered visual, headline, support copy and one action. */
+.first-run-step-one .first-run-benefits{display:none!important}
+.first-run-step-one .first-run-content-grid{
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  justify-items:center!important;
+  margin:var(--pd-space-4) 0!important;
+}
+.first-run-step-one .first-run-local-visual{margin:0 auto!important}
+.first-run-intro,.first-run-actions{justify-items:center!important;text-align:center!important}
+.first-run-actions{display:grid!important}
+.first-run-actions:not(.two) .first-run-primary{width:min(100%,320px)!important}
+
+/* Business intro uses a simplified flat Pindrizzle pin rather than a generic arrow glyph. */
+.phase18-business-intro>div:first-child{
+  font-size:0!important;
+  display:grid!important;
+  place-items:center!important;
+}
+.phase18-business-intro>div:first-child::before{
+  content:"";
+  width:20px;
+  height:20px;
+  border:2px solid rgba(255,255,255,.92);
+  border-radius:50% 50% 50% 6px;
+  background:linear-gradient(135deg,var(--pd-blue-600),var(--pd-aqua-500));
+  transform:rotate(-45deg);
+  box-shadow:0 4px 10px rgba(8,43,73,.12);
+}
+
+/* Legacy text chevrons become one consistent CSS chevron. */
+.phase18-business-header>a,
+.phase23-install-header>a,
+.legal-back,
+.phase12-public-back{
+  font-size:0!important;
+}
+.phase18-business-header>a::before,
+.phase23-install-header>a::before,
+.legal-back::before,
+.phase12-public-back::before{
+  content:"";
+  width:9px;
+  height:9px;
+  border-left:1.75px solid currentColor;
+  border-bottom:1.75px solid currentColor;
+  transform:rotate(45deg);
+  margin-left:4px;
+}
+
+/* Product-level navigation never inherits legacy unicode symbols. */
+body[data-ping-global-nav-active="true"] .bottom-nav{display:none!important}
+
+/* Exact app icon asset is the only install icon artwork. */
+.phase23-install-icon{
+  background:#fff url('/pindrizzle-icon-192.png') center/cover no-repeat!important;
+}
+.phase23-install-icon>*{display:none!important}
+
+/* Search is a Content-pattern route and uses the same spacing/material vocabulary. */
+.search-v3-page{
+  min-height:100dvh!important;
+  padding:0!important;
+  background:var(--pd-canvas)!important;
+}
+.search-v3-shell{
+  width:100%!important;
+  max-width:none!important;
+  min-height:100dvh!important;
+  padding:0 var(--pd-space-3) calc(96px + env(safe-area-inset-bottom))!important;
+}
+.search-v3-head{
+  grid-template-columns:44px 1fr 44px!important;
+  gap:var(--pd-space-2)!important;
+  padding:var(--pd-space-3) 0!important;
+}
+.search-v3-head>button{
+  width:44px!important;height:44px!important;
+  border:1px solid var(--pd-line)!important;
+  border-radius:var(--pd-radius-pill)!important;
+  background:rgba(255,255,255,.82)!important;
+  color:var(--pd-ink-800)!important;
+  box-shadow:none!important;
+}
+.search-v3-intro{padding:var(--pd-space-4) 0 var(--pd-space-2)!important}
+.search-v3-intro h1{margin:0 0 var(--pd-space-2)!important;color:var(--pd-ink-950)!important;letter-spacing:-.045em!important}
+.search-v3-intro p{margin:0!important;color:var(--pd-text-2)!important}
+.search-v3-searchbox{
+  height:52px!important;
+  margin:var(--pd-space-3) 0 var(--pd-space-2)!important;
+  border:1px solid var(--pd-line)!important;
+  border-radius:var(--pd-radius-control)!important;
+  background:rgba(255,255,255,.94)!important;
+  box-shadow:var(--pd-elevation-1)!important;
+}
+.search-v3-chips{gap:var(--pd-space-2)!important;padding-bottom:var(--pd-space-3)!important}
+.search-v3-chips button{
+  min-height:44px!important;
+  border:1px solid var(--pd-line)!important;
+  border-radius:var(--pd-radius-pill)!important;
+  background:rgba(255,255,255,.82)!important;
+  color:var(--pd-text-2)!important;
+  box-shadow:none!important;
+}
+.search-v3-chips button.active{border-color:var(--pd-ink-900)!important;background:var(--pd-ink-900)!important;color:#fff!important}
+.search-v3-controls{gap:var(--pd-space-2)!important;padding-bottom:var(--pd-space-3)!important}
+.search-v3-controls label{min-height:44px!important;padding:var(--pd-space-2)!important;border-radius:var(--pd-radius-control)!important;background:var(--pd-silver-100)!important}
+.search-v3-location{
+  padding:var(--pd-space-3)!important;
+  border:1px solid var(--pd-line)!important;
+  border-radius:var(--pd-radius-card)!important;
+  background:linear-gradient(135deg,var(--pd-aqua-100),rgba(255,255,255,.94))!important;
+  box-shadow:var(--pd-elevation-1)!important;
+}
+.search-v3-location>span{background:rgba(255,255,255,.80)!important;color:var(--pd-ink-800)!important}
+.search-v3-location button{min-height:44px!important;border-radius:var(--pd-radius-pill)!important;background:var(--pd-ink-900)!important;color:#fff!important;padding:0 var(--pd-space-3)!important}
+.search-v3-results{gap:var(--pd-space-2)!important}
+.search-v3-card{
+  padding:var(--pd-space-3)!important;
+  border:1px solid var(--pd-line)!important;
+  border-radius:var(--pd-radius-card)!important;
+  background:rgba(255,255,255,.94)!important;
+  box-shadow:var(--pd-elevation-1)!important;
+}
+.search-v3-empty{
+  display:grid!important;
+  justify-items:center!important;
+  gap:var(--pd-space-2)!important;
+  padding:var(--pd-space-5) var(--pd-space-4)!important;
+  border:1px solid var(--pd-line)!important;
+  border-radius:var(--pd-radius-card)!important;
+  background:rgba(255,255,255,.94)!important;
+  box-shadow:var(--pd-elevation-1)!important;
+  text-align:center!important;
+}
+.search-v3-empty h2,.search-v3-empty p{margin:0!important}
+.search-v3-empty p{max-width:320px;color:var(--pd-muted)!important}
+
+/* Pin detail = Content sheet. The native tab bar always stays visible. */
+.detail-v3-backdrop,
+.phase5-privacy-backdrop{
+  left:0!important;right:0!important;top:0!important;
+  bottom:var(--pd-tabbar-total)!important;
+  padding:0!important;
+  align-items:flex-end!important;
+  background:rgba(6,31,54,.28)!important;
+  backdrop-filter:blur(10px)!important;
+  -webkit-backdrop-filter:blur(10px)!important;
+}
+.detail-v3-sheet,
+.phase5-privacy-sheet{
+  width:100%!important;
+  max-width:none!important;
+  max-height:calc(100dvh - var(--pd-tabbar-total) - var(--pd-safe-top) - 8px)!important;
+  margin:0!important;
+  padding:var(--pd-space-2) var(--pd-space-3) var(--pd-space-4)!important;
+  border:1px solid var(--pd-line)!important;
+  border-bottom:0!important;
+  border-radius:var(--pd-radius-sheet) var(--pd-radius-sheet) 0 0!important;
+  background:var(--pd-canvas)!important;
+  box-shadow:var(--pd-elevation-3)!important;
+  overscroll-behavior-y:contain!important;
+}
+.detail-v3-head,
+.phase5-privacy-sheet header{min-height:44px!important}
+.detail-v3-head button,
+.phase5-privacy-sheet header button,
+.detail-v3-safety,
+.detail-v3-reply-top button{
+  min-height:44px!important;
+  border:0!important;
+  border-radius:var(--pd-radius-pill)!important;
+  background:transparent!important;
+  color:#0b6a82!important;
+  box-shadow:none!important;
+  font-weight:var(--pd-action-weight)!important;
+}
+.detail-v3-category{margin-top:var(--pd-space-3)!important;border-color:var(--pd-line)!important;background:var(--pd-aqua-100)!important;color:var(--pd-ink-800)!important}
+.detail-v3-sheet h1{color:var(--pd-ink-950)!important}
+.detail-v3-trust{gap:var(--pd-space-2)!important;margin:var(--pd-space-3) 0!important}
+.detail-v3-trust div,
+.detail-v3-replies article,
+.phase7-safety-stats div,
+.phase5-blocked-user{
+  border:1px solid var(--pd-line)!important;
+  border-radius:var(--pd-radius-control)!important;
+  background:rgba(255,255,255,.94)!important;
+  box-shadow:var(--pd-elevation-1)!important;
+}
+.detail-v3-actions{gap:var(--pd-space-2)!important}
+.detail-v3-actions button,
+.phase5-blocked-user button,
+.detail-v3-danger-box button{
+  min-height:44px!important;
+  border:1px solid var(--pd-line-strong)!important;
+  border-radius:var(--pd-radius-pill)!important;
+  background:rgba(255,255,255,.82)!important;
+  color:var(--pd-ink-800)!important;
+  box-shadow:none!important;
+  font-weight:var(--pd-action-weight)!important;
+}
+.detail-v3-actions button.primary,
+.detail-v3-compose button,
+.detail-v3-wide{
+  min-height:44px!important;
+  border:1px solid var(--pd-ink-900)!important;
+  border-radius:var(--pd-radius-pill)!important;
+  background:var(--pd-ink-900)!important;
+  color:#fff!important;
+  box-shadow:0 7px 18px rgba(8,43,73,.14)!important;
+}
+.detail-v3-actions button.selected{border-color:rgba(37,189,200,.25)!important;background:var(--pd-aqua-100)!important;color:#0c7187!important}
+.detail-v3-expiry{border-color:var(--pd-line)!important;background:var(--pd-silver-100)!important}
+.detail-v3-message{background:var(--pd-aqua-100)!important;color:#0b6577!important}
+.detail-v3-danger-box{border-color:rgba(239,111,100,.22)!important;background:#fff4f2!important;border-radius:var(--pd-radius-card)!important}
+.detail-v3-danger-box button.danger{border-color:#9b4f48!important;background:#9b4f48!important;color:#fff!important}
+.detail-v3-replies{gap:var(--pd-space-2)!important}
+.detail-v3-compose{bottom:calc(-1 * var(--pd-space-4))!important;margin:var(--pd-space-3) calc(-1 * var(--pd-space-3)) calc(-1 * var(--pd-space-4))!important;padding:var(--pd-space-2) var(--pd-space-3) var(--pd-space-3)!important;background:linear-gradient(to top,var(--pd-canvas) 82%,rgba(238,245,247,.82))!important}
+.detail-v3-compose textarea{min-height:48px!important;border-color:var(--pd-line)!important;border-radius:var(--pd-radius-control)!important}
+.detail-v3-hidden{background:var(--pd-aqua-100)!important;color:#0c7187!important;box-shadow:var(--pd-elevation-1)!important}
+
+/* Safety Center = Content sheet, not a centered Moment card. */
+.phase5-privacy-summary{
+  margin-top:var(--pd-space-3)!important;
+  padding:var(--pd-space-3)!important;
+  border:1px solid var(--pd-line)!important;
+  border-radius:var(--pd-radius-card)!important;
+  background:linear-gradient(135deg,var(--pd-aqua-100),rgba(255,255,255,.94))!important;
+  box-shadow:var(--pd-elevation-1)!important;
+}
+.phase5-privacy-summary>div:first-child{background:#fff!important;color:#0c7187!important}
+.phase7-safety-stats{gap:var(--pd-space-2)!important;margin-top:var(--pd-space-2)!important}
+.phase5-blocked-head{margin:var(--pd-space-4) 0 var(--pd-space-2)!important}
+.phase5-blocked-list{gap:var(--pd-space-2)!important}
+.phase5-blocked-user{padding:var(--pd-space-2)!important}
+.phase5-blocked-avatar{background:var(--pd-aqua-100)!important;color:var(--pd-ink-800)!important}
+.phase5-privacy-empty{
+  display:grid!important;justify-items:center!important;
+  padding:var(--pd-space-4)!important;
+  border:1px solid var(--pd-line)!important;
+  border-radius:var(--pd-radius-card)!important;
+  background:rgba(255,255,255,.94)!important;
+  color:var(--pd-muted)!important;
+  text-align:center!important;
+  box-shadow:var(--pd-elevation-1)!important;
+}
+.phase7-safety-note{margin-top:var(--pd-space-3)!important;padding:var(--pd-space-3)!important;border:1px solid var(--pd-line)!important;border-radius:var(--pd-radius-card)!important;background:var(--pd-silver-100)!important}
+.phase5-privacy-message{margin-top:var(--pd-space-2)!important;padding:var(--pd-space-3)!important;border-radius:var(--pd-radius-control)!important;background:var(--pd-aqua-100)!important;color:#0b6577!important}
+
+/* Keep elevation vocabulary strictly to the three system levels. */
+.phase9-builder,
+.phase9-request-history article,
+.phase18-card,
+.phase18-overview div,
+.activity-list,
+.following-v3-card,
+.following-v3-intro,
+.phase23-install-card,
+.legal-card,
+.phase12-public-signals div,
+.phase12-public-privacy,
+.search-v3-card,
+.detail-v3-trust div,
+.detail-v3-replies article,
+.phase5-blocked-user{
+  box-shadow:var(--pd-elevation-1)!important;
+}
+.phase23-install-hero,
+.phase12-public-reputation,
+.map-v3-topbar,
+.map-v3-controls,
+.ping-global-nav{
+  box-shadow:var(--pd-elevation-2)!important;
+}
+.password-auth-sheet,
+.composer-sheet,
+.composer-v3-sheet,
+.map-v3-filter-sheet,
+.first-run-sheet,
+.detail-v3-sheet,
+.phase5-privacy-sheet{
+  box-shadow:var(--pd-elevation-3)!important;
+}

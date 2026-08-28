@@ -1,0 +1,453 @@
+/*
+ * Pindrizzle design system
+ * Canonical visual rules derived from the supplied Pindrizzle identity.
+ * This layer is intentionally global: screens consume these tokens instead of
+ * inventing one-off spacing, button, icon, wordmark or elevation treatments.
+ */
+
+:root{
+  /* Brand palette */
+  --pd-ink-950:#061f36;
+  --pd-ink-900:#082b49;
+  --pd-ink-800:#0d3d60;
+  --pd-blue-600:#2f83d6;
+  --pd-blue-500:#3698e5;
+  --pd-aqua-500:#25bdc8;
+  --pd-aqua-400:#55cad3;
+  --pd-aqua-100:#e6f8fa;
+  --pd-silver-300:#dbe6eb;
+  --pd-silver-200:#e8eff2;
+  --pd-silver-100:#f4f8fa;
+  --pd-canvas:#eef5f7;
+  --pd-surface:#ffffff;
+  --pd-text:#0a2b46;
+  --pd-text-2:#496777;
+  --pd-muted:#7d939f;
+  --pd-line:rgba(8,43,73,.10);
+  --pd-line-strong:rgba(8,43,73,.16);
+  --pd-coral:#ef6f64;
+  --pd-amber:#e5a64d;
+
+  /* Strict 4 / 8 / 16 / 24 / 32 spacing scale */
+  --pd-space-1:4px;
+  --pd-space-2:8px;
+  --pd-space-3:16px;
+  --pd-space-4:24px;
+  --pd-space-5:32px;
+
+  /* Shape */
+  --pd-radius-control:12px;
+  --pd-radius-card:20px;
+  --pd-radius-sheet:24px;
+  --pd-radius-pill:999px;
+
+  /* Depth: exactly three elevation levels */
+  --pd-elevation-1:0 6px 18px rgba(7,39,64,.055),0 1px 3px rgba(7,39,64,.035);
+  --pd-elevation-2:0 14px 34px rgba(7,39,64,.105),0 2px 7px rgba(7,39,64,.045);
+  --pd-elevation-3:0 24px 60px rgba(7,39,64,.17),0 4px 14px rgba(7,39,64,.06);
+
+  /* Wordmark: one treatment everywhere */
+  --pd-wordmark-size:22px;
+  --pd-wordmark-weight:790;
+  --pd-wordmark-tracking:-.052em;
+  --pd-wordmark-gradient:linear-gradient(90deg,#082b49 0%,#2f83d6 58%,#25bdc8 100%);
+
+  /* Action hierarchy */
+  --pd-action-height:44px;
+  --pd-action-weight:760;
+
+  /* Rebind legacy product tokens to the canonical system. */
+  --pd-navy:var(--pd-ink-900);
+  --pd-navy-deep:var(--pd-ink-950);
+  --pd-blue:var(--pd-blue-600);
+  --pd-rain:var(--pd-blue-500);
+  --pd-aqua:var(--pd-aqua-500);
+  --pd-aqua-soft:var(--pd-aqua-100);
+  --pd-silver:var(--pd-silver-200);
+  --pd-silver-2:var(--pd-silver-100);
+  --pd-shadow-card:var(--pd-elevation-1);
+  --pd-shadow-float:var(--pd-elevation-2);
+  --ping-canvas:var(--pd-canvas);
+  --ping-surface:var(--pd-surface);
+  --ping-surface-soft:var(--pd-silver-100);
+  --ping-ink:var(--pd-text);
+  --ping-ink-2:var(--pd-text-2);
+  --ping-muted:var(--pd-muted);
+  --ping-muted-2:#a0afb7;
+  --ping-line:var(--pd-line);
+  --ping-line-strong:var(--pd-line-strong);
+  --ping-accent:var(--pd-aqua-500);
+  --ping-accent-ink:#0b6a82;
+  --ping-accent-soft:var(--pd-aqua-100);
+  --ping-blue:var(--pd-blue-600);
+}
+
+/* --------------------------------------------------------------------------
+   WORDMARK
+   The product name in prose remains “Pindrizzle”. Visual wordmarks are always
+   the same lowercase treatment used by the supplied brand identity.
+   -------------------------------------------------------------------------- */
+.brand,
+.first-run-brand{
+  font-size:0!important;
+  line-height:1!important;
+  letter-spacing:0!important;
+  text-transform:none!important;
+  display:inline-flex!important;
+  flex-direction:column;
+  align-items:flex-start;
+}
+.brand::before,
+.first-run-brand::before{
+  content:"pindrizzle"!important;
+  display:block;
+  font-family:Inter,ui-rounded,"SF Pro Rounded",system-ui,-apple-system,sans-serif;
+  font-size:var(--pd-wordmark-size)!important;
+  line-height:.95!important;
+  font-weight:var(--pd-wordmark-weight)!important;
+  letter-spacing:var(--pd-wordmark-tracking)!important;
+  text-transform:lowercase!important;
+  background:var(--pd-wordmark-gradient);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent!important;
+}
+.brand.small::before{font-size:var(--pd-wordmark-size)!important}
+.brand:not(.small)::after{
+  content:"Drop in daily"!important;
+  margin-top:var(--pd-space-1)!important;
+  color:#2c6f89!important;
+  font-size:7px!important;
+  line-height:1!important;
+  font-weight:740!important;
+  letter-spacing:.16em!important;
+  text-transform:uppercase!important;
+}
+.password-auth-header strong,
+.reset-auth-brand,
+.auth-brand,
+.install-brand{
+  font-family:Inter,ui-rounded,"SF Pro Rounded",system-ui,-apple-system,sans-serif!important;
+  font-size:var(--pd-wordmark-size)!important;
+  font-weight:var(--pd-wordmark-weight)!important;
+  letter-spacing:var(--pd-wordmark-tracking)!important;
+  text-transform:lowercase!important;
+  color:var(--pd-ink-900)!important;
+}
+
+/* --------------------------------------------------------------------------
+   TWO LAYOUT PATTERNS
+   Moment = centered single-purpose state. Content = left-aligned/scannable.
+   -------------------------------------------------------------------------- */
+.pd-moment,
+.quiet-card,
+.feed-v3-quiet,
+.map-v3-location,
+.first-run-step{
+  text-align:center!important;
+}
+.quiet-card,
+.feed-v3-quiet,
+.map-v3-location{
+  display:grid!important;
+  justify-items:center!important;
+  gap:var(--pd-space-2)!important;
+  padding:var(--pd-space-5) var(--pd-space-4)!important;
+}
+.quiet-card h2,
+.feed-v3-quiet h2,
+.map-v3-location h1{
+  margin:var(--pd-space-2) 0 0!important;
+}
+.quiet-card p,
+.feed-v3-quiet p,
+.map-v3-location p,
+.map-v3-location small{
+  margin:0!important;
+  max-width:320px;
+}
+
+.feed-v3-header,
+.feed-v3-summary,
+.feed-v3-list,
+.map-v3-screen,
+.my-pings-v3,
+.activity-screen,
+.alerts-screen,
+.you-screen,
+.you-page,
+.following-screen,
+.business-screen,
+.promote-screen,
+.public-profile-screen,
+.password-auth-sheet,
+.composer-sheet,
+.composer-v3-sheet,
+.settings-list{
+  text-align:left;
+}
+
+/* Canonical screen geometry from the spacing scale. */
+.app-header,
+.simple-header,
+.my-pings-v3-header,
+.activity-header,
+.alerts-header,
+.you-page-header{
+  padding:var(--pd-space-4) var(--pd-space-3) var(--pd-space-3)!important;
+}
+.feed-v3-summary,
+.feed-v3-location-card,
+.feed-v3-market-filters,
+.notice-card,
+.profile-card,
+.phase12-profile-card,
+.phase12-reputation-card,
+.settings-list,
+.notification-rule{
+  margin-left:var(--pd-space-3)!important;
+  margin-right:var(--pd-space-3)!important;
+}
+.feed-v3-summary,
+.feed-v3-location-card,
+.feed-v3-market-filters,
+.notice-card,
+.profile-card,
+.phase12-profile-card,
+.phase12-reputation-card{
+  padding:var(--pd-space-3)!important;
+}
+.filter-row,
+.feed-v3-filters{
+  padding-left:var(--pd-space-3)!important;
+  padding-right:var(--pd-space-3)!important;
+  padding-bottom:var(--pd-space-3)!important;
+}
+.feed-v3-list,
+.my-pings-v3-list{
+  padding-left:var(--pd-space-3)!important;
+  padding-right:var(--pd-space-3)!important;
+  gap:var(--pd-space-2)!important;
+}
+.ping-card.feed-v3-card,
+.my-pings-v3-card{
+  padding:var(--pd-space-3)!important;
+}
+.my-pings-v3-tabs{
+  margin:0 var(--pd-space-3) var(--pd-space-3)!important;
+}
+
+/* --------------------------------------------------------------------------
+   BUTTON HIERARCHY
+   Three action treatments only. Tabs/chips/icon-only controls are controls,
+   not action buttons, and use their dedicated system below.
+   -------------------------------------------------------------------------- */
+.pd-button-primary,
+.publish-button,
+.first-run-primary,
+.password-auth-primary,
+.feed-v3-location-card>button,
+.map-v3-location>button,
+.ping-global-create,
+.my-pings-v3-open{
+  min-height:var(--pd-action-height)!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:var(--pd-space-2)!important;
+  padding:0 var(--pd-space-3)!important;
+  border:1px solid var(--pd-ink-900)!important;
+  border-radius:var(--pd-radius-pill)!important;
+  background:var(--pd-ink-900)!important;
+  color:#fff!important;
+  box-shadow:0 7px 18px rgba(8,43,73,.14)!important;
+  font-weight:var(--pd-action-weight)!important;
+  text-decoration:none!important;
+}
+.pd-button-secondary,
+.first-run-secondary,
+.feed-v3-widen,
+.my-pings-v3-edit,
+.ping-actions button{
+  min-height:var(--pd-action-height)!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:var(--pd-space-2)!important;
+  padding:0 var(--pd-space-3)!important;
+  border:1px solid var(--pd-line-strong)!important;
+  border-radius:var(--pd-radius-pill)!important;
+  background:rgba(255,255,255,.78)!important;
+  color:var(--pd-ink-800)!important;
+  box-shadow:none!important;
+  font-weight:var(--pd-action-weight)!important;
+  text-decoration:none!important;
+}
+.pd-button-tertiary,
+.first-run-skip,
+.password-auth-link,
+.password-auth-header>button,
+.map-v3-filter-head button,
+.feed-v3-listing-link{
+  min-height:44px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:var(--pd-space-1)!important;
+  padding:0 var(--pd-space-2)!important;
+  border:0!important;
+  border-radius:var(--pd-radius-pill)!important;
+  background:transparent!important;
+  color:#0b6a82!important;
+  box-shadow:none!important;
+  font-weight:var(--pd-action-weight)!important;
+  text-decoration:none!important;
+}
+.pd-button-primary:active,
+.publish-button:active,
+.first-run-primary:active,
+.password-auth-primary:active,
+.pd-button-secondary:active,
+.first-run-secondary:active,
+.ping-actions button:active{transform:scale(.98)}
+
+/* Selection controls use one consistent segmented/chip language. */
+.filter-row button,
+.feed-v3-filters button,
+.my-pings-v3-tabs button,
+.password-auth-tabs button,
+.composer-v3-category-grid button,
+.composer-v3-source-toggle button,
+.composer-v3-market-type button,
+.map-v3-filter-grid button{
+  border-radius:var(--pd-radius-pill)!important;
+  border:1px solid var(--pd-line)!important;
+  background:rgba(255,255,255,.82)!important;
+  color:var(--pd-text-2)!important;
+  box-shadow:none!important;
+}
+.filter-row button.active,
+.feed-v3-filters button.active,
+.my-pings-v3-tabs button[aria-selected="true"],
+.password-auth-tabs button.active,
+.composer-v3-category-grid button.selected,
+.composer-v3-source-toggle button.selected,
+.composer-v3-market-type button.selected,
+.map-v3-filter-grid button.active{
+  border-color:var(--pd-ink-900)!important;
+  background:var(--pd-ink-900)!important;
+  color:#fff!important;
+}
+
+/* Icon-only controls: visually compact, native hit areas are supplied by the native shell. */
+.round-action,
+.icon-button,
+.map-v3-top-actions button,
+.my-pings-v3-more{
+  border:1px solid var(--pd-line)!important;
+  background:rgba(255,255,255,.84)!important;
+  color:var(--pd-ink-800)!important;
+  box-shadow:none!important;
+}
+
+/* --------------------------------------------------------------------------
+   ICONOGRAPHY
+   One line-icon language, one stroke weight, navy/aqua states.
+   -------------------------------------------------------------------------- */
+.pd-icon,
+.ping-global-nav svg,
+.feed-v3-category svg,
+.ping-actions svg,
+.settings-list svg,
+.my-pings-v3 svg,
+.map-v3-filter-sheet svg,
+.password-auth-sheet svg,
+.first-run-sheet svg{
+  stroke-width:1.75!important;
+  vector-effect:non-scaling-stroke;
+}
+.feed-v3-category>span,
+.category-badge,
+.first-run-icon,
+.first-run-note-icon,
+.quiet-icon{
+  color:var(--pd-ink-800)!important;
+  background:var(--pd-aqua-100)!important;
+  box-shadow:inset 0 0 0 1px rgba(37,189,200,.12)!important;
+}
+.ping-global-nav-item.active,
+.ping-global-nav-item.active svg{
+  color:#0c7187!important;
+}
+
+/* --------------------------------------------------------------------------
+   DEPTH / MATERIAL
+   Cards = elevation 1. Floating overlays/nav = 2. Sheets/dialogs = 3.
+   -------------------------------------------------------------------------- */
+.ping-card,
+.feed-v3-summary,
+.feed-v3-location-card,
+.feed-v3-market-filters,
+.quiet-card,
+.notice-card,
+.profile-card,
+.phase12-profile-card,
+.phase12-reputation-card,
+.settings-list,
+.my-pings-v3-card,
+.notification-rule{
+  border:1px solid var(--pd-line)!important;
+  border-radius:var(--pd-radius-card)!important;
+  background:rgba(255,255,255,.94)!important;
+  box-shadow:var(--pd-elevation-1)!important;
+}
+.ping-global-nav,
+.map-v3-topbar,
+.map-v3-controls,
+.map-v3-quiet{
+  box-shadow:var(--pd-elevation-2)!important;
+}
+.composer-sheet,
+.composer-v3-sheet,
+.map-v3-filter-sheet,
+.password-auth-sheet,
+.first-run-sheet{
+  border-radius:var(--pd-radius-sheet) var(--pd-radius-sheet) 0 0!important;
+  box-shadow:var(--pd-elevation-3)!important;
+}
+
+/* Form material */
+input,
+textarea,
+select{
+  border-color:var(--pd-line)!important;
+  background:rgba(255,255,255,.92)!important;
+  color:var(--pd-text)!important;
+}
+input:focus,
+textarea:focus,
+select:focus{
+  border-color:rgba(47,131,214,.42)!important;
+  box-shadow:0 0 0 3px rgba(37,189,200,.10)!important;
+}
+
+/* Map overlay geometry stays content-pattern: compact and left-scannable. */
+.map-v3-topbar,
+.map-v3-controls{
+  border-color:rgba(255,255,255,.66)!important;
+  background:rgba(246,251,252,.91)!important;
+  backdrop-filter:blur(20px) saturate(135%)!important;
+  -webkit-backdrop-filter:blur(20px) saturate(135%)!important;
+}
+.map-v3-radii,
+.map-v3-filter-button{
+  background:rgba(229,239,243,.86)!important;
+}
+.map-v3-radii button.active{
+  background:var(--pd-ink-900)!important;
+  color:#fff!important;
+}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}
+}

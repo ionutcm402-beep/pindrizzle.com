@@ -1,0 +1,25 @@
+/* Final premium layout safeguards: prevent control overlap and keep + Pin intentional. */
+
+/* The radius/filter glass panel extends lower than the legacy MapLibre control offset. */
+.map-v3-screen .maplibregl-ctrl-top-right{
+  top:158px!important;
+  right:14px!important;
+}
+
+/* On Map, keep + Pin clear of the selected/quiet card and bottom navigation. */
+body:has(.map-v3-screen) .ping-global-compose{
+  bottom:max(220px,calc(208px + env(safe-area-inset-bottom)))!important;
+}
+
+/* My Pins and Activity are management/history surfaces; posting belongs on Feed/Map. */
+body:has(.my-pings-v3) .ping-global-compose,
+body:has(.activity-screen) .ping-global-compose,
+body:has(.alerts-screen) .ping-global-compose{
+  display:none!important;
+}
+
+@media(max-height:650px){
+  body:has(.map-v3-screen) .ping-global-compose{
+    bottom:max(196px,calc(184px + env(safe-area-inset-bottom)))!important;
+  }
+}

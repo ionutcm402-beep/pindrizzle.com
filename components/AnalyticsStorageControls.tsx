@@ -24,7 +24,7 @@ export default function AnalyticsStorageControls() {
   return (
     <section className="legal-card legal-callout">
       <h2>Your analytics choice</h2>
-      <p>Optional product analytics is off unless you choose Allow analytics. Necessary storage continues because Ping needs it for sign-in, security and preferences.</p>
+      <p>Optional product analytics is off unless you choose Allow analytics. Necessary storage continues because Pindrizzle needs it for sign-in, security and preferences.</p>
       <div className="legal-choice-row" role="group" aria-label="Analytics choice">
         <button type="button" className={choice === "necessary" ? "selected" : ""} aria-pressed={choice === "necessary"} onClick={() => choose("necessary")}>Only necessary</button>
         <button type="button" className={choice === "allow" ? "allow" : ""} aria-pressed={choice === "allow"} onClick={() => choose("allow")}>Allow analytics</button>

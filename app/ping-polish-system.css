@@ -1,0 +1,211 @@
+/* Final visual-polish layer. Keep this last in layout imports. */
+
+/* One navigation system regardless of whether a route uses links or buttons. */
+.bottom-nav :is(a,button){
+  min-width:0!important;
+  min-height:0!important;
+  height:100%;
+  border:0;
+  background:transparent;
+  color:#858b86!important;
+  font-size:9.5px!important;
+  font-weight:650!important;
+  line-height:1;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  gap:4px;
+  position:relative;
+  text-decoration:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.bottom-nav :is(a,button).active{color:var(--ping-ink)!important}
+.bottom-nav :is(a,button)>span{
+  position:relative;
+  display:block;
+  width:21px;
+  height:21px;
+  flex:0 0 21px;
+  overflow:visible;
+  color:currentColor;
+  font-size:0!important;
+  line-height:1;
+}
+.bottom-nav :is(a,button)>span:before{
+  content:"";
+  position:absolute;
+  inset:1px;
+  background:currentColor;
+  mask-repeat:no-repeat;
+  mask-position:center;
+  mask-size:contain;
+  -webkit-mask-repeat:no-repeat;
+  -webkit-mask-position:center;
+  -webkit-mask-size:contain;
+}
+.bottom-nav :is(a,button):nth-child(1)>span:before{
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 10.7 12 3.8l8.5 6.9'/%3E%3Cpath d='M5.8 9.5v10.2h12.4V9.5'/%3E%3Cpath d='M9.6 19.7v-6.2h4.8v6.2'/%3E%3C/svg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 10.7 12 3.8l8.5 6.9'/%3E%3Cpath d='M5.8 9.5v10.2h12.4V9.5'/%3E%3Cpath d='M9.6 19.7v-6.2h4.8v6.2'/%3E%3C/svg%3E");
+}
+.bottom-nav :is(a,button):nth-child(2)>span:before{
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8'%3E%3Cpath d='M4 6.5 9 4l6 2.5L20 4v13.5L15 20l-6-2.5L4 20Z'/%3E%3Cpath d='M9 4v13.5M15 6.5V20'/%3E%3C/svg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8'%3E%3Cpath d='M4 6.5 9 4l6 2.5L20 4v13.5L15 20l-6-2.5L4 20Z'/%3E%3Cpath d='M9 4v13.5M15 6.5V20'/%3E%3C/svg%3E");
+}
+.bottom-nav :is(a,button):nth-child(4)>span:before{
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'%3E%3Cpath d='M18 9a6 6 0 1 0-12 0c0 7-2.5 7-2.5 8h17c0-1-2.5-1-2.5-8Z'/%3E%3Cpath d='M9.5 20h5'/%3E%3C/svg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'%3E%3Cpath d='M18 9a6 6 0 1 0-12 0c0 7-2.5 7-2.5 8h17c0-1-2.5-1-2.5-8Z'/%3E%3Cpath d='M9.5 20h5'/%3E%3C/svg%3E");
+}
+.bottom-nav :is(a,button):nth-child(5)>span:before{
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8'%3E%3Ccircle cx='12' cy='8.2' r='3.7'/%3E%3Cpath d='M4.8 20c.8-4 3-6.1 7.2-6.1s6.4 2.1 7.2 6.1'/%3E%3C/svg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8'%3E%3Ccircle cx='12' cy='8.2' r='3.7'/%3E%3Cpath d='M4.8 20c.8-4 3-6.1 7.2-6.1s6.4 2.1 7.2 6.1'/%3E%3C/svg%3E");
+}
+.bottom-nav .compose-nav{color:var(--ping-accent-ink)!important}
+.bottom-nav .compose-nav>span{
+  width:42px!important;
+  height:42px!important;
+  flex-basis:42px!important;
+  margin-top:-18px;
+  border-radius:14px;
+  background:var(--ping-accent);
+  color:var(--ping-accent-ink);
+  box-shadow:0 7px 18px rgba(70,214,111,.20);
+}
+.bottom-nav .compose-nav>span:before{
+  inset:12px!important;
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M11 4h2v7h7v2h-7v7h-2v-7H4v-2h7Z'/%3E%3C/svg%3E")!important;
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M11 4h2v7h7v2h-7v7h-2v-7H4v-2h7Z'/%3E%3C/svg%3E")!important;
+}
+.bottom-nav i{font-style:normal}
+
+/* Phase 25.5 composer + map hierarchy: the primary CTA is ink, while green
+   stays an accent; native map zoom controls live below Ping's own panel. */
+.composer-v3-sheet .publish-button{
+  background:var(--ping-ink)!important;
+  color:#fff!important;
+  box-shadow:0 10px 24px rgba(16,19,17,.16)!important;
+}
+.composer-v3-sheet .publish-button:hover{background:#202421!important}
+.composer-v3-sheet .publish-button:disabled{
+  background:#d9ded6!important;
+  color:#8f968f!important;
+  box-shadow:none!important;
+}
+.map-v3-screen .maplibregl-ctrl-top-right{
+  top:172px!important;
+  right:10px!important;
+}
+.map-v3-screen .maplibregl-ctrl-group{
+  border-radius:12px!important;
+  overflow:hidden;
+  box-shadow:0 8px 22px rgba(16,25,18,.10)!important;
+}
+
+/* Long-content resilience. */
+:where(.ping-card,.phase5-detail-sheet,.search14-card,.phase8-follow-card,.phase18-card,.phase9-builder,.profile-card,.settings-list,.notification-setting-row,.ops-case,.ops-history){
+  overflow-wrap:anywhere;
+  word-break:normal;
+}
+:where(.ping-card,.search14-card,.phase8-follow-card,.phase18-card) h2{
+  text-wrap:pretty;
+}
+:where(h1,h2){text-wrap:balance}
+
+/* Premium touch feedback without noisy animation. */
+@media(prefers-reduced-motion:no-preference){
+  :where(.bottom-nav a,.bottom-nav button,.ping-actions button,.filter-row button,.search14-chips button,.launch-map-radius button,.settings-list button,.notification-setting-row,.phase18-filter button,.phase9-choice-grid button){
+    transition:background-color .16s ease,color .16s ease,border-color .16s ease,transform .16s cubic-bezier(.2,.8,.2,1),opacity .16s ease;
+  }
+  :where(.ping-card,.search14-card,.phase8-follow-card,.launch-map-card){
+    transition:transform .18s cubic-bezier(.2,.8,.2,1),border-color .18s ease,background-color .18s ease;
+  }
+  :where(.ping-card,.search14-card,.launch-map-card):active{transform:scale(.992)}
+  :where(button,a)[href]:active,.bottom-nav button:active{transform:scale(.97)}
+  .composer-sheet,.password-auth-sheet,.phase5-detail-sheet,.first-run-sheet{animation:ping-sheet-in .22s cubic-bezier(.2,.8,.2,1)}
+  @keyframes ping-sheet-in{from{transform:translateY(14px);opacity:.96}to{transform:translateY(0);opacity:1}}
+}
+
+/* Phone widths: 320 / 360 / 390 / 430. */
+@media(max-width:430px){
+  .app-header,.simple-header{padding-left:17px;padding-right:17px}
+  .feed-list{padding-left:10px;padding-right:10px}
+  .ping-card{padding:16px 15px 13px}
+  .ping-card h2{font-size:17.5px}
+  .ping-body{font-size:13.5px}
+  .bottom-nav{height:calc(70px + env(safe-area-inset-bottom));padding-left:4px;padding-right:4px}
+  .screen-content{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+  :where(.phase6-alerts-screen,.you-page-screen,.phase8-following-screen,.notification-settings-screen,.phase18-business-screen,.phase9-promote-screen){padding-left:15px!important;padding-right:15px!important}
+  :where(.phase6-alerts-header,.you-page-header,.phase8-following-header,.notification-settings-header,.phase18-business-header,.phase9-promote-header){padding-left:0!important;padding-right:0!important}
+  :where(.phase6-title-row h1,.you-page-header h1,.phase8-following-header h1,.notification-settings-header h1,.phase18-business-header h1,.phase9-promote-header h1){font-size:clamp(26px,8vw,30px)!important}
+  .search14-intro h1{font-size:clamp(26px,8vw,29px)!important}
+  .launch-map-card{left:12px!important;right:12px!important}
+  .launch-map-topbar,.launch-map-panel{left:12px!important;right:12px!important}
+}
+
+@media(max-width:360px){
+  .brand{font-size:30px}
+  .brand.small{font-size:25px}
+  .app-header{padding-top:21px}
+  .hero-strip{margin-left:17px;margin-right:17px}
+  .location-status{margin-left:12px;margin-right:12px}
+  .filter-row{padding-left:12px;padding-right:12px}
+  .ping-card{border-radius:18px}
+  .ping-actions{justify-content:space-between}
+  .ping-actions button{padding-left:7px;padding-right:7px;font-size:10px}
+  .bottom-nav :is(a,button){font-size:9px!important}
+  .bottom-nav .compose-nav>span{width:40px!important;height:40px!important;flex-basis:40px!important}
+  .search14-controls{gap:7px!important}
+  .search14-controls label{min-width:0}
+  .search14-controls select{max-width:100%}
+  .phase18-overview,.phase12-public-signals{gap:6px!important}
+}
+
+@media(max-width:320px){
+  .app-header,.simple-header{padding-left:14px;padding-right:14px}
+  .feed-list{padding-left:8px;padding-right:8px}
+  .ping-card{padding-left:13px;padding-right:13px}
+  .ping-card h2{font-size:17px}
+  .ping-meta{font-size:10px;gap:5px}
+  .ping-meta span+span:before{margin-right:5px}
+  .bottom-nav{padding-left:0;padding-right:0}
+  .bottom-nav :is(a,button){font-size:8.5px!important;letter-spacing:-.02em}
+  .bottom-nav :is(a,button)>span{width:20px;height:20px;flex-basis:20px}
+  :where(.phase6-alerts-screen,.you-page-screen,.phase8-following-screen,.notification-settings-screen,.phase18-business-screen,.phase9-promote-screen){padding-left:12px!important;padding-right:12px!important}
+  .search14-chips{padding-left:12px!important;padding-right:12px!important}
+  .search14-controls{grid-template-columns:1fr!important}
+  .phase18-overview{grid-template-columns:1fr 1fr!important}
+  .trust-row span{font-size:9px!important}
+}
+
+/* Large text / zoom resilience: prefer reflow over clipping. */
+@media(max-width:520px){
+  :where(.settings-list button,.settings-list .radius-setting,.notification-setting-row){min-height:58px!important;height:auto!important}
+  :where(.settings-list button>div,.settings-list .radius-setting>div,.notification-setting-copy){min-width:0}
+  :where(.settings-list strong,.settings-list small,.notification-setting-copy strong,.notification-setting-copy small){white-space:normal!important}
+  .phase5-detail-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .phase5-detail-actions button{min-height:44px!important}
+  .phase18-actions{align-items:flex-start!important;flex-wrap:wrap}
+  .phase18-actions small{max-width:100%!important}
+  .phase9-step-heading{align-items:flex-start!important}
+}
+
+/* Short screens / landscape. */
+@media(max-height:560px) and (orientation:landscape){
+  .bottom-nav{height:58px}
+  .screen-content{padding-bottom:62px}
+  .launch-map-screen{bottom:58px!important}
+  .composer-sheet,.password-auth-sheet,.phase5-detail-sheet,.first-run-sheet{max-height:100dvh!important;border-radius:0!important}
+  .composer-backdrop,.password-auth-backdrop,.phase5-detail-backdrop,.first-run-backdrop{padding:0!important;align-items:stretch!important}
+  .launch-map-panel{top:62px!important}
+}
+
+/* Desktop preview should feel like a device surface, not a giant web page. */
+@media(min-width:521px){
+  .page-shell{padding-top:24px;padding-bottom:24px}
+  .app-shell{min-height:calc(100dvh - 48px)}
+}
+
+@media(hover:hover) and (pointer:fine){
+  .bottom-nav :is(a,button):hover{color:var(--ping-ink)!important}
+  :where(.settings-list button,.notification-setting-row,.search14-card,.phase8-follow-card):hover{background:var(--ping-surface-soft)!important}
+}

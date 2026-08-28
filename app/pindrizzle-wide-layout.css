@@ -1,0 +1,258 @@
+/*
+ * Pindrizzle wide-screen layout pass.
+ * Layout/responsiveness only: no brand, copy, colour, typography or component-style changes.
+ * Phone layouts remain unchanged below 700px.
+ */
+
+:root{
+  --pd-wide-gutter:clamp(20px,3vw,48px);
+  --pd-wide-content:1320px;
+}
+
+@media (min-width:700px){
+  /* ------------------------------------------------------------------------
+     FEED
+     Use the canvas deliberately: 2 cards across on tablet, expanding cards
+     when fewer results exist. Header/summary/filters share one wide measure.
+     ------------------------------------------------------------------------ */
+  .screen-content{
+    width:100%;
+    height:100dvh;
+    min-height:100dvh;
+    overflow-x:hidden;
+    overflow-y:auto;
+    padding-bottom:calc(var(--pd-tabbar-total) + 24px)!important;
+    overscroll-behavior-y:contain;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  .feed-v3-header,
+  .feed-v3-summary,
+  .feed-v3-location-card,
+  .feed-v3-filters,
+  .feed-v3-market-filters,
+  .feed-v3-list{
+    width:min(calc(100% - (var(--pd-wide-gutter) * 2)),var(--pd-wide-content))!important;
+    max-width:var(--pd-wide-content)!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+  }
+
+  .feed-v3-header{
+    padding-left:0!important;
+    padding-right:0!important;
+  }
+
+  .feed-v3-summary,
+  .feed-v3-location-card,
+  .feed-v3-market-filters{
+    margin-top:0!important;
+  }
+
+  .feed-v3-summary p,
+  .feed-v3-location-card small{
+    max-width:72ch;
+  }
+
+  .feed-v3-filters{
+    flex-wrap:wrap!important;
+    overflow:visible!important;
+    white-space:normal!important;
+    padding-left:0!important;
+    padding-right:0!important;
+  }
+
+  .feed-v3-list{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    align-items:stretch;
+    gap:16px!important;
+    padding-left:0!important;
+    padding-right:0!important;
+  }
+
+  .feed-v3-list>.feed-v3-card{
+    width:100%!important;
+    min-width:0;
+    height:100%;
+    margin:0!important;
+  }
+
+  .feed-v3-list>.feed-v3-quiet{
+    grid-column:1/-1;
+    width:min(100%,760px)!important;
+    justify-self:center;
+  }
+
+  /* A lone result should use the available canvas instead of looking like a
+     phone card abandoned at the left edge of a desktop page. */
+  .feed-v3-list:has(>.feed-v3-card:only-child){
+    grid-template-columns:minmax(0,1fr);
+  }
+
+  /* ------------------------------------------------------------------------
+     MY PINS
+     Same responsive list logic as Feed so management views do not revert to
+     a narrow mobile column on tablets/desktops.
+     ------------------------------------------------------------------------ */
+  .my-pings-v3{
+    width:100%!important;
+    max-width:none!important;
+    padding-left:var(--pd-wide-gutter)!important;
+    padding-right:var(--pd-wide-gutter)!important;
+  }
+
+  .my-pings-v3>.my-pings-v3-header,
+  .my-pings-v3>.my-pings-v3-tabs,
+  .my-pings-v3>.my-pings-v3-list,
+  .my-pings-v3>section:not(.my-pings-v3-list),
+  .my-pings-v3>div[role="status"]{
+    width:min(100%,var(--pd-wide-content))!important;
+    max-width:var(--pd-wide-content)!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+  }
+
+  .my-pings-v3-list{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:16px!important;
+  }
+
+  .my-pings-v3-list>.my-pings-v3-card{
+    min-width:0;
+    height:100%;
+  }
+
+  .my-pings-v3-list:has(>.my-pings-v3-card:only-child){
+    grid-template-columns:minmax(0,1fr);
+  }
+
+  /* ------------------------------------------------------------------------
+     ACTIVITY
+     Notifications become independent content cards in a responsive grid.
+     ------------------------------------------------------------------------ */
+  .activity-screen{
+    width:100%!important;
+    max-width:none!important;
+    padding-left:var(--pd-wide-gutter)!important;
+    padding-right:var(--pd-wide-gutter)!important;
+  }
+
+  .activity-screen>*{
+    width:min(100%,var(--pd-wide-content))!important;
+    max-width:var(--pd-wide-content)!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+  }
+
+  .activity-list{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:16px!important;
+    overflow:visible!important;
+    border:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+  }
+
+  .activity-card{
+    min-width:0;
+    height:100%;
+    border:1px solid var(--pd-line)!important;
+    border-radius:var(--pd-radius-card)!important;
+    box-shadow:var(--pd-elevation-1)!important;
+  }
+
+  .activity-list:has(>.activity-card:only-child){
+    grid-template-columns:minmax(0,1fr);
+  }
+
+  /* ------------------------------------------------------------------------
+     YOU
+     Keep account context full-width, then use a two-column settings matrix so
+     the page consumes tablet/desktop space without stretching each row across
+     the entire monitor.
+     ------------------------------------------------------------------------ */
+  .you-v3-screen{
+    width:100%!important;
+    max-width:none!important;
+    padding-left:var(--pd-wide-gutter)!important;
+    padding-right:var(--pd-wide-gutter)!important;
+  }
+
+  .you-v3-screen>*{
+    width:min(100%,var(--pd-wide-content))!important;
+    max-width:var(--pd-wide-content)!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+  }
+
+  .you-v3-screen>div[class*="settingsStack"]{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:18px!important;
+    align-items:start;
+  }
+
+  .you-v3-screen>div[class*="settingsStack"]>section,
+  .you-v3-screen>div[class*="settingsStack"]>details{
+    min-width:0;
+    margin:0!important;
+  }
+
+  /* ------------------------------------------------------------------------
+     MAP
+     The map already uses the full viewport. On wide screens, keep its chrome
+     in a deliberate compact control rail instead of stretching phone controls
+     across the map canvas.
+     ------------------------------------------------------------------------ */
+  .map-v3-topbar,
+  .map-v3-controls,
+  .map-v3-quiet{
+    left:var(--pd-wide-gutter)!important;
+    right:auto!important;
+    width:min(520px,calc(100vw - (var(--pd-wide-gutter) * 2)))!important;
+    max-width:520px!important;
+  }
+
+  .map-v3-filter-sheet{
+    width:min(560px,calc(100vw - (var(--pd-wide-gutter) * 2)))!important;
+    max-width:560px!important;
+  }
+}
+
+@media (min-width:1100px){
+  /* Three-column content density on desktop. */
+  .feed-v3-list,
+  .my-pings-v3-list,
+  .activity-list{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:18px!important;
+  }
+
+  /* Exact small result sets expand cleanly instead of leaving a dead third
+     column on a 1440px+ screen. */
+  .feed-v3-list:has(>.feed-v3-card:only-child),
+  .my-pings-v3-list:has(>.my-pings-v3-card:only-child),
+  .activity-list:has(>.activity-card:only-child){
+    grid-template-columns:minmax(0,1fr);
+  }
+
+  .feed-v3-list:has(>.feed-v3-card:nth-last-child(2):first-child),
+  .my-pings-v3-list:has(>.my-pings-v3-card:nth-last-child(2):first-child),
+  .activity-list:has(>.activity-card:nth-last-child(2):first-child){
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .map-v3-topbar,
+  .map-v3-controls,
+  .map-v3-quiet{
+    width:400px!important;
+    max-width:400px!important;
+  }
+}
+
+@media (min-width:1600px){
+  :root{--pd-wide-content:1440px}
+}

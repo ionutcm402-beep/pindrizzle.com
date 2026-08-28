@@ -2,221 +2,150 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import LivePingMap, { type MapPing } from "@/components/LivePingMap";
+import PingIcon from "@/components/PingIcon";
+import {
+  CATEGORY_DEFINITIONS,
+  CATEGORY_ORDER,
+  DEAL_KIND_LABEL,
+  DEAL_SOURCE_LABEL,
+  MARKETPLACE_INTENT_LABEL,
+  MARKETPLACE_INTENTS,
+  MARKETPLACE_TYPE_LABEL,
+  MARKETPLACE_TYPES,
+  formatMarketplacePrice,
+  marketplaceSubtypeLabel,
+  type DealKind,
+  type DealSource,
+  type MarketplaceIntent,
+  type MarketplacePricePeriod,
+  type MarketplaceSubtype,
+  type MarketplaceType,
+  type PingCategoryKey,
+  type Radius,
+} from "@/lib/ping-categories";
+import {
+  readMarketplaceIntent,
+  readMarketplaceMaxPrice,
+  readMarketplaceType,
+  readPingCategory,
+  readPingRadius,
+  subscribePingLocalPreferences,
+  writeMarketplaceIntent,
+  writeMarketplaceMaxPrice,
+  writeMarketplaceType,
+  writePingCategory,
+  writePingRadius,
+  type MarketplaceIntentFilter,
+  type MarketplaceTypeFilter,
+  type PingLocalFilter,
+} from "@/lib/ping-local-preferences";
 import { createClient } from "@/lib/supabase/client";
+import { getPingLocationSilently, requestPingLocation, type PingCoordinates, type PingLocationState } from "@/lib/ping-location";
 
-type Radius = 0.5 | 1 | 3 | 5;
-type MapRow = {
-  id: string;
-  category: "alert" | "traffic" | "lost_found" | "free" | "help" | "local";
-  title: string;
-  confirmation_count: number;
-  distance_meters: number;
-  map_lat: number;
-  map_lng: number;
+type MapRow = { id:string; category:PingCategoryKey; title:string; confirmation_count:number; distance_meters:number; map_lat:number; map_lng:number; };
+type MetaRow = {
+  id:string;
+  last_confirmed_at:string|null;
+  deal_source:DealSource|null;
+  deal_kind:DealKind|null;
+  merchant_name:string|null;
+  marketplace_type:MarketplaceType|null;
+  marketplace_intent:MarketplaceIntent|null;
+  marketplace_subtype:MarketplaceSubtype|null;
+  marketplace_price:number|string|null;
+  marketplace_price_period:MarketplacePricePeriod|null;
+  marketplace_currency:string|null;
+  marketplace_url:string|null;
+};
+type EnrichedMapPing = MapPing & {
+  lastConfirmedAt?:string|null;
+  dealSource?:DealSource|null;
+  dealKind?:DealKind|null;
+  merchantName?:string|null;
+  marketplaceType?:MarketplaceType|null;
+  marketplaceIntent?:MarketplaceIntent|null;
+  marketplaceSubtype?:MarketplaceSubtype|null;
+  marketplacePrice?:number|null;
+  marketplacePricePeriod?:MarketplacePricePeriod|null;
+  marketplaceCurrency?:string|null;
+  marketplaceUrl?:string|null;
 };
 
-const RADII: Radius[] = [0.5, 1, 3, 5];
-const meta: Record<MapRow["category"], { label: string; emoji: string }> = {
-  alert: { label: "Alert", emoji: "🚨" },
-  traffic: { label: "Traffic", emoji: "🚧" },
-  lost_found: { label: "Lost & Found", emoji: "🐕" },
-  free: { label: "Free", emoji: "🎁" },
-  help: { label: "Help", emoji: "🙋" },
-  local: { label: "Local", emoji: "📍" },
-};
+const RADII: Radius[] = [0.5,1,3,5];
+const MARKETPLACE_PRICE_FILTERS = [500,1000,2000,5000,10000,25000,50000,100000,250000,500000,1000000];
 
-function readRadius(): Radius {
-  try {
-    const value = Number(localStorage.getItem("ping-radius") || 1);
-    if (RADII.includes(value as Radius)) return value as Radius;
-  } catch {}
-  return 1;
-}
+function freshness(value?:string|null){if(!value)return"";const minutes=Math.max(0,Math.floor((Date.now()-new Date(value).getTime())/60000));if(minutes<1)return"confirmed just now";if(minutes<60)return`last confirmed ${minutes} min ago`;const hours=Math.floor(minutes/60);return hours<24?`last confirmed ${hours}h ago`:`last confirmed ${Math.floor(hours/24)}d ago`;}
 
-export default function MapPage() {
-  const [center, setCenter] = useState<{ lat: number; lng: number } | null>(null);
-  const [radius, setRadius] = useState<Radius>(1);
-  const [pings, setPings] = useState<MapPing[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [status, setStatus] = useState("Enable location to see real nearby Pings.");
-  const [locationBusy, setLocationBusy] = useState(false);
-  const [locationBlocked, setLocationBlocked] = useState(false);
-  const [dataBusy, setDataBusy] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
+export default function MapPage(){
+  const[center,setCenter]=useState<PingCoordinates|null>(null);
+  const[locationState,setLocationState]=useState<PingLocationState>("checking");
+  const[radius,setRadius]=useState<Radius>(1);
+  const[filter,setFilter]=useState<PingLocalFilter>("all");
+  const[marketplaceTypeFilter,setMarketplaceTypeFilter]=useState<MarketplaceTypeFilter>("all");
+  const[marketplaceIntentFilter,setMarketplaceIntentFilter]=useState<MarketplaceIntentFilter>("all");
+  const[marketplaceMaxPrice,setMarketplaceMaxPrice]=useState<number|null>(null);
+  const[filterOpen,setFilterOpen]=useState(false);
+  const[allPings,setAllPings]=useState<EnrichedMapPing[]>([]);
+  const[selectedId,setSelectedId]=useState<string|null>(null);
+  const[status,setStatus]=useState("Checking location…");
+  const[dataBusy,setDataBusy]=useState(false);
+  const[refreshKey,setRefreshKey]=useState(0);
 
-  useEffect(() => setRadius(readRadius()), []);
+  useEffect(()=>{
+    setRadius(readPingRadius());setFilter(readPingCategory());setMarketplaceTypeFilter(readMarketplaceType());setMarketplaceIntentFilter(readMarketplaceIntent());setMarketplaceMaxPrice(readMarketplaceMaxPrice());
+    const unsubscribe=subscribePingLocalPreferences((next)=>{setRadius(next.radius);setFilter(next.category);setMarketplaceTypeFilter(next.marketplaceType);setMarketplaceIntentFilter(next.marketplaceIntent);setMarketplaceMaxPrice(next.marketplaceMaxPrice);});
+    let cancelled=false;
+    void getPingLocationSilently().then((result)=>{if(cancelled)return;setLocationState(result.state);if(result.coordinates)setCenter(result.coordinates);else setStatus(result.state==="denied"?"Location is blocked for Ping.":"Turn on location once to use Feed and Map.");});
+    const handleLocation=(event:Event)=>{const detail=(event as CustomEvent<PingCoordinates>).detail;if(!detail)return;setCenter(detail);setLocationState("granted");setRefreshKey((value)=>value+1);};
+    window.addEventListener("ping:location-changed",handleLocation);return()=>{cancelled=true;unsubscribe();window.removeEventListener("ping:location-changed",handleLocation);};
+  },[]);
 
-  const requestLocation = useCallback(() => {
-    if (!navigator.geolocation) {
-      setLocationBlocked(true);
-      setStatus("Location is unavailable on this device.");
-      return;
-    }
+  const requestLocation=useCallback(async()=>{setLocationState("requesting");setStatus("Finding your location…");const result=await requestPingLocation();setLocationState(result.state);if(result.coordinates){setCenter(result.coordinates);setRefreshKey((value)=>value+1);}else if(result.state==="denied")setStatus("Location is blocked. Allow it for Ping in your browser settings, then try again.");else setStatus("We could not get your location right now.");},[]);
 
-    setLocationBusy(true);
-    setLocationBlocked(false);
-    setStatus("Finding your location…");
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setCenter({ lat: position.coords.latitude, lng: position.coords.longitude });
-        setLocationBusy(false);
-        setRefreshKey((value) => value + 1);
-      },
-      (error) => {
-        setLocationBusy(false);
-        if (error.code === 1) {
-          setLocationBlocked(true);
-          setStatus("Location is blocked for Ping in this browser.");
-        } else if (error.code === 3) {
-          setStatus("Location request timed out. Please try again.");
-        } else {
-          setStatus("We could not get your location. Please try again.");
-        }
-      },
-      { enableHighAccuracy: false, timeout: 12000, maximumAge: 60000 },
-    );
-  }, []);
+  useEffect(()=>{
+    if(!center)return;let cancelled=false;
+    const load=async()=>{setDataBusy(true);setStatus("Checking nearby Pings…");try{
+      const supabase=createClient();const{data,error}=await supabase.rpc("nearby_map_pings",{viewer_lat:center.lat,viewer_lng:center.lng,radius_meters:Math.round(radius*1609.344),result_limit:100});if(error)throw error;
+      const rows=(data||[])as MapRow[];
+      const metaResult=rows.length?await supabase.from("pings").select("id,last_confirmed_at,deal_source,deal_kind,merchant_name,marketplace_type,marketplace_intent,marketplace_subtype,marketplace_price,marketplace_price_period,marketplace_currency,marketplace_url").in("id",rows.map((row)=>row.id)):{data:[],error:null};
+      const metaMap=new Map<string,MetaRow>();(metaResult.data||[]).forEach((row)=>metaMap.set(String(row.id),row as MetaRow));if(cancelled)return;
+      const mapped:EnrichedMapPing[]=rows.map((row)=>{const extra=metaMap.get(row.id);const numericPrice=extra?.marketplace_price==null?null:Number(extra.marketplace_price);return{id:row.id,lat:row.map_lat,lng:row.map_lng,title:row.title,categoryKey:row.category,category:CATEGORY_DEFINITIONS[row.category].label,distanceMiles:row.distance_meters/1609.344,confirmations:row.confirmation_count,lastConfirmedAt:extra?.last_confirmed_at,dealSource:extra?.deal_source,dealKind:extra?.deal_kind,merchantName:extra?.merchant_name,marketplaceType:extra?.marketplace_type,marketplaceIntent:extra?.marketplace_intent,marketplaceSubtype:extra?.marketplace_subtype,marketplacePrice:numericPrice!=null&&Number.isFinite(numericPrice)?numericPrice:null,marketplacePricePeriod:extra?.marketplace_price_period,marketplaceCurrency:extra?.marketplace_currency,marketplaceUrl:extra?.marketplace_url,priceLabel:row.category==="marketplace"&&numericPrice!=null&&Number.isFinite(numericPrice)?formatMarketplacePrice(numericPrice,extra?.marketplace_price_period,extra?.marketplace_currency||"GBP",true):null};});
+      setAllPings(mapped);setStatus(mapped.length?`${mapped.length} live nearby`:`Quiet within ${radius} mi`);
+    }catch(error){console.error("Ping map query failed",error);if(!cancelled){setAllPings([]);setSelectedId(null);setStatus("Live Ping data could not load right now.");}}finally{if(!cancelled)setDataBusy(false);}};
+    void load();return()=>{cancelled=true;};
+  },[center,radius,refreshKey]);
 
-  const chooseRadius = (next: Radius) => {
-    setRadius(next);
-    setSelectedId(null);
-    try { localStorage.setItem("ping-radius", String(next)); } catch {}
-  };
+  useEffect(()=>{if(!center)return;const supabase=createClient();let timer:ReturnType<typeof setTimeout>|null=null;const refresh=()=>{if(timer)clearTimeout(timer);timer=setTimeout(()=>setRefreshKey((value)=>value+1),300);};const pingsChannel=supabase.channel("ping-map-live-v4").on("postgres_changes",{event:"*",schema:"public",table:"pings"},refresh).subscribe();const confirmsChannel=supabase.channel("ping-map-confirms-v4").on("postgres_changes",{event:"*",schema:"public",table:"confirmations"},refresh).subscribe();return()=>{if(timer)clearTimeout(timer);void supabase.removeChannel(pingsChannel);void supabase.removeChannel(confirmsChannel);};},[center]);
 
-  useEffect(() => {
-    if (!center) return;
-    let cancelled = false;
+  const pings=useMemo(()=>{const base=filter==="all"?allPings:allPings.filter((ping)=>ping.categoryKey===filter);if(filter!=="marketplace")return base;return base.filter((ping)=>(marketplaceTypeFilter==="all"||ping.marketplaceType===marketplaceTypeFilter)&&(marketplaceIntentFilter==="all"||ping.marketplaceIntent===marketplaceIntentFilter)&&(marketplaceMaxPrice==null||(ping.marketplacePrice!=null&&ping.marketplacePrice<=marketplaceMaxPrice)));},[allPings,filter,marketplaceTypeFilter,marketplaceIntentFilter,marketplaceMaxPrice]);
 
-    const load = async () => {
-      setDataBusy(true);
-      setStatus("Checking what is happening nearby…");
-      try {
-        const { data, error } = await createClient().rpc("nearby_map_pings", {
-          viewer_lat: center.lat,
-          viewer_lng: center.lng,
-          radius_meters: Math.round(radius * 1609.344),
-          result_limit: 100,
-        });
-        if (error) throw error;
-        if (cancelled) return;
+  useEffect(()=>{setSelectedId((current)=>current&&pings.some((ping)=>ping.id===current)?current:pings[0]?.id||null);},[pings]);
+  const selectedIndex=useMemo(()=>Math.max(0,pings.findIndex((ping)=>ping.id===selectedId)),[pings,selectedId]);
+  const selected=pings[selectedIndex]||null;const selectedDefinition=selected?CATEGORY_DEFINITIONS[selected.categoryKey]:null;
+  const stepSelected=(direction:-1|1)=>{if(!pings.length)return;const next=(selectedIndex+direction+pings.length)%pings.length;setSelectedId(pings[next].id);};
+  const openSelected=()=>{if(!selected)return;window.dispatchEvent(new CustomEvent("ping:open-detail",{detail:{...selected,live:true}}));};
+  const needsLocation=!center&&locationState!=="checking"&&locationState!=="requesting";
+  const activeFilterLabel=filter==="all"?"All categories":filter==="marketplace"&&marketplaceTypeFilter!=="all"?`${MARKETPLACE_TYPE_LABEL[marketplaceTypeFilter]}`:CATEGORY_DEFINITIONS[filter].label;
+  const displayStatus=!dataBusy&&center?(pings.length?`${pings.length} matching nearby`:`Quiet within ${radius} mi`):status;
 
-        const mapped = ((data || []) as MapRow[]).map((row) => ({
-          id: row.id,
-          lat: row.map_lat,
-          lng: row.map_lng,
-          emoji: meta[row.category].emoji,
-          title: row.title,
-          category: meta[row.category].label,
-          distanceMiles: row.distance_meters / 1609.344,
-          confirmations: row.confirmation_count,
-        }));
+  return <div className="page-shell"><div className="app-shell"><main className="map-v3-screen launch-map-screen">
+    {center?<LivePingMap center={center} radiusMiles={radius} pings={pings} selectedId={selectedId} onSelect={setSelectedId}/>:<section className="map-v3-location"><span><PingIcon name="location" size={27}/></span><h1>Your local map</h1><p>{status}</p><small>One location permission powers Feed and Map. Ping never publishes your exact browser coordinates.</small>{needsLocation&&<button type="button" onClick={()=>void requestLocation()}>Enable location</button>}{(locationState==="checking"||locationState==="requesting")&&<div className="map-v3-checking">Checking location…</div>}</section>}
+    <header className="map-v3-topbar"><div className="map-v3-brand"><div className="brand small">ping<span>.</span></div><strong>Map</strong></div><div className="map-v3-top-actions">{center&&<button type="button" onClick={()=>void requestLocation()} aria-label="Recenter on my location"><PingIcon name="location" size={17}/></button>}{center&&<button type="button" onClick={()=>setRefreshKey((value)=>value+1)} disabled={dataBusy} aria-label="Refresh nearby Pings">↻</button>}</div></header>
+    {center&&<section className="map-v3-controls"><div className="map-v3-status"><span className={dataBusy?"busy":""}/><strong>{displayStatus}</strong></div><div className="map-v3-control-row"><div className="map-v3-radii" aria-label="Nearby radius">{RADII.map((option)=><button type="button" key={option} className={radius===option?"active":""} onClick={()=>{writePingRadius(option);setSelectedId(null);}}>{option}</button>)}</div><button type="button" className="map-v3-filter-button" onClick={()=>setFilterOpen(true)}><span>{activeFilterLabel}</span><PingIcon name="more" size={17}/></button></div></section>}
+    {center&&!dataBusy&&pings.length===0&&<section className="map-v3-quiet"><strong>Nothing active here.</strong><span>{filter==="marketplace"?"No Marketplace listings match these shared filters":`No ${filter==="all"?"live Pings":CATEGORY_DEFINITIONS[filter].label+" Pings"}`} inside {radius} mi right now.</span><button type="button" onClick={()=>writePingCategory("all")}>Show all categories</button></section>}
+    {selected&&selectedDefinition&&<section className="map-v3-card" aria-label="Selected Ping"><button type="button" className="map-v3-card-main" onClick={openSelected}><div className="map-v3-card-top"><span><i><PingIcon name={selectedDefinition.icon} size={15}/></i>{selectedDefinition.label}</span><b>{selected.distanceMiles.toFixed(1)} mi away</b></div>{selected.categoryKey==="deals"&&selected.merchantName&&<div className="map-v3-merchant"><PingIcon name={selected.dealSource==="business"?"business":"deals"} size={13}/><strong>{selected.merchantName}</strong>{selected.dealSource&&<span>{DEAL_SOURCE_LABEL[selected.dealSource]}</span>}{selected.dealKind&&<span>· {DEAL_KIND_LABEL[selected.dealKind]}</span>}</div>}{selected.categoryKey==="marketplace"&&selected.marketplaceType&&selected.marketplaceIntent&&<div className="map-v3-market"><div><PingIcon name={selected.marketplaceType==="property"?"property":selected.marketplaceType==="vehicle"?"vehicle":"parking"} size={13}/><strong>{marketplaceSubtypeLabel(selected.marketplaceType,selected.marketplaceSubtype)}</strong><span>{MARKETPLACE_INTENT_LABEL[selected.marketplaceIntent]}</span></div><b>{formatMarketplacePrice(selected.marketplacePrice,selected.marketplacePricePeriod,selected.marketplaceCurrency||"GBP")}</b></div>}<h2>{selected.title}</h2><footer><span><PingIcon name="confirmations" size={14}/>{selected.confirmations} confirmed{selected.lastConfirmedAt?` · ${freshness(selected.lastConfirmedAt)}`:""}</span><strong>Open →</strong></footer></button>{pings.length>1&&<div className="map-v3-card-pager"><button type="button" onClick={()=>stepSelected(-1)} aria-label="Previous nearby Ping">‹</button><span>{selectedIndex+1} of {pings.length}</span><button type="button" onClick={()=>stepSelected(1)} aria-label="Next nearby Ping">›</button></div>}</section>}
+  </main></div>
 
-        setPings(mapped);
-        setSelectedId((current) => current && mapped.some((ping) => ping.id === current) ? current : mapped[0]?.id || null);
-        setStatus(mapped.length
-          ? `${mapped.length} live Ping${mapped.length === 1 ? "" : "s"} within ${radius} mi`
-          : `Quiet within ${radius} mi right now`);
-      } catch (error) {
-        console.error("Ping map query failed", error);
-        if (!cancelled) {
-          setPings([]);
-          setSelectedId(null);
-          setStatus("Live Ping data could not load right now.");
-        }
-      } finally {
-        if (!cancelled) setDataBusy(false);
-      }
-    };
+  {filterOpen&&<div className="map-v3-filter-backdrop" role="dialog" aria-modal="true" aria-label="Map filters" onClick={()=>setFilterOpen(false)}><section className="map-v3-filter-sheet" onClick={(event)=>event.stopPropagation()}><div className="sheet-handle"/><div className="map-v3-filter-head"><div><span>FEED + MAP FILTER</span><h2>What do you want to see?</h2></div><button type="button" onClick={()=>setFilterOpen(false)}>Done</button></div><div className="map-v3-filter-grid"><button type="button" className={filter==="all"?"active":""} onClick={()=>{writePingCategory("all");setFilterOpen(false);}}>All categories</button>{CATEGORY_ORDER.map((key)=>{const item=CATEGORY_DEFINITIONS[key];return<button type="button" key={key} className={filter===key?"active":""} onClick={()=>{writePingCategory(key);if(key!=="marketplace")setFilterOpen(false);}}><PingIcon name={item.icon} size={16}/>{item.label}</button>;})}</div>{filter==="marketplace"&&<section className="map-v3-market-filters"><div><strong>Marketplace</strong><span>These filters also update Feed.</span></div><label>Type<select value={marketplaceTypeFilter} onChange={(event)=>writeMarketplaceType(event.target.value as MarketplaceTypeFilter)}><option value="all">Everything</option>{MARKETPLACE_TYPES.map((value)=><option key={value} value={value}>{MARKETPLACE_TYPE_LABEL[value]}</option>)}</select></label><label>Looking for<select value={marketplaceIntentFilter} onChange={(event)=>writeMarketplaceIntent(event.target.value as MarketplaceIntentFilter)}><option value="all">Sale, rent or wanted</option>{MARKETPLACE_INTENTS.map((value)=><option key={value} value={value}>{MARKETPLACE_INTENT_LABEL[value]}</option>)}</select></label><label>Maximum price<select value={marketplaceMaxPrice??""} onChange={(event)=>writeMarketplaceMaxPrice(event.target.value?Number(event.target.value):null)}><option value="">Any price</option>{MARKETPLACE_PRICE_FILTERS.map((price)=><option key={price} value={price}>Up to {formatMarketplacePrice(price,"total")}</option>)}</select></label></section>}</section></div>}
 
-    void load();
-    return () => { cancelled = true; };
-  }, [center, radius, refreshKey]);
-
-  useEffect(() => {
-    if (!center) return;
-    const supabase = createClient();
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    const channel = supabase
-      .channel("ping-map-live")
-      .on("postgres_changes", { event: "*", schema: "public", table: "pings" }, () => {
-        if (timer) clearTimeout(timer);
-        timer = setTimeout(() => setRefreshKey((value) => value + 1), 300);
-      })
-      .subscribe();
-
-    return () => {
-      if (timer) clearTimeout(timer);
-      void supabase.removeChannel(channel);
-    };
-  }, [center]);
-
-  const selected = useMemo(() => pings.find((ping) => ping.id === selectedId) || pings[0], [pings, selectedId]);
-
-  return (
-    <div className="page-shell">
-      <div className="app-shell">
-        <main className="launch-map-screen">
-          {center ? (
-            <LivePingMap center={center} radiusMiles={radius} pings={pings} selectedId={selectedId} onSelect={setSelectedId} />
-          ) : (
-            <section className="launch-map-location">
-              <div className="launch-map-location-icon">📍</div>
-              <h1>See what’s happening around you.</h1>
-              <p>{status}</p>
-              <small>Your location is used to find nearby Pings. It is not shown as your exact public position.</small>
-              <button type="button" onClick={requestLocation} disabled={locationBusy}>
-                {locationBusy ? "Finding location…" : locationBlocked ? "Try again" : "Enable location"}
-              </button>
-            </section>
-          )}
-
-          <header className="launch-map-topbar">
-            <a href="/" className="launch-map-back" aria-label="Back to Feed">‹</a>
-            <div className="launch-map-brand">ping<span>.</span></div>
-            <div className="launch-map-actions">
-              {center && <button type="button" onClick={requestLocation} disabled={locationBusy} aria-label="Recenter on my location">◎</button>}
-              {center && <button type="button" onClick={() => setRefreshKey((value) => value + 1)} disabled={dataBusy} aria-label="Refresh nearby Pings">↻</button>}
-            </div>
-          </header>
-
-          {center && (
-            <section className="launch-map-panel">
-              <div><span className={dataBusy ? "busy" : ""} /> <strong>{status}</strong></div>
-              <div className="launch-map-radius" aria-label="Nearby radius">
-                {RADII.map((option) => <button type="button" key={option} className={radius === option ? "active" : ""} onClick={() => chooseRadius(option)}>{option} mi</button>)}
-              </div>
-            </section>
-          )}
-
-          {center && !dataBusy && pings.length === 0 && (
-            <section className="launch-map-quiet">
-              <strong>Nothing active nearby.</strong>
-              <span>No live Pings inside {radius} mi right now.</span>
-              <button type="button" onClick={() => setRefreshKey((value) => value + 1)}>Check again</button>
-            </section>
-          )}
-
-          {selected && (
-            <button type="button" className="launch-map-card" onClick={() => window.dispatchEvent(new CustomEvent("ping:open-detail", { detail: { ...selected, live: true } }))}>
-              <div><span>{selected.emoji} {selected.category}</span><b>{selected.distanceMiles.toFixed(1)} mi away</b></div>
-              <h2>{selected.title}</h2>
-              <footer><span>✓ {selected.confirmations} confirmed</span><b>View Ping →</b></footer>
-            </button>
-          )}
-        </main>
-
-        <nav className="bottom-nav" aria-label="Primary navigation">
-          <a href="/"><span>⌂</span>Feed</a>
-          <a href="/map" className="active"><span>⌖</span>Map</a>
-          <a href="/#ping" className="compose-nav"><span>+</span>Ping</a>
-          <a href="/alerts"><span>♢</span>Alerts</a>
-          <a href="/you"><span>○</span>You</a>
-        </nav>
-      </div>
-
-      <style jsx global>{`
-        .launch-map-screen{position:absolute;inset:0 0 82px;overflow:hidden;background:#e9efe8}.launch-map-screen .live-ping-map{position:absolute;inset:0}.launch-map-location{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;text-align:center;padding:30px;color:#183924}.launch-map-location-icon{font-size:40px}.launch-map-location h1{font-size:25px;letter-spacing:-.7px;margin:12px 0 8px}.launch-map-location p{margin:0;color:#53645a}.launch-map-location small{max-width:310px;margin-top:8px;color:#748079;line-height:1.45}.launch-map-location button{margin-top:18px;border:0;border-radius:15px;background:#55d84d;color:#102817;padding:13px 20px;font-weight:900}.launch-map-topbar{position:absolute;z-index:6;top:16px;left:16px;right:16px;display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;pointer-events:none}.launch-map-back,.launch-map-brand,.launch-map-actions{pointer-events:auto}.launch-map-back{width:42px;height:42px;border-radius:15px;background:rgba(255,255,255,.96);display:grid;place-items:center;text-decoration:none;color:#183924;font-size:28px;box-shadow:0 8px 24px rgba(16,48,26,.14)}.launch-map-brand{justify-self:start;padding:9px 12px;border-radius:15px;background:rgba(255,255,255,.96);font-size:26px;font-weight:950;letter-spacing:-1.2px;box-shadow:0 8px 24px rgba(16,48,26,.14)}.launch-map-brand span{color:#55d84d}.launch-map-actions{display:flex;gap:8px}.launch-map-actions button{width:42px;height:42px;border:0;border-radius:15px;background:rgba(255,255,255,.96);color:#183924;font-size:20px;font-weight:900;box-shadow:0 8px 24px rgba(16,48,26,.14)}.launch-map-panel{position:absolute;z-index:5;top:74px;left:16px;right:16px;background:rgba(255,255,255,.96);border-radius:18px;padding:12px;box-shadow:0 10px 28px rgba(16,48,26,.12)}.launch-map-panel>div:first-child{display:flex;align-items:center;gap:7px;font-size:10px;color:#46614d}.launch-map-panel>div:first-child>span{width:8px;height:8px;border-radius:50%;background:#55d84d}.launch-map-panel>div:first-child>span.busy{animation:pulse 1s infinite}.launch-map-radius{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}.launch-map-radius button{border:0;border-radius:11px;background:#eef3ec;padding:9px 4px;font-size:10px;font-weight:850;color:#617066}.launch-map-radius button.active{background:#dff6da;color:#245229}.launch-map-quiet{position:absolute;z-index:5;left:16px;right:16px;bottom:18px;background:rgba(255,255,255,.96);border-radius:18px;padding:14px;display:grid;gap:4px;box-shadow:0 10px 28px rgba(16,48,26,.12)}.launch-map-quiet strong{font-size:13px}.launch-map-quiet span{font-size:10px;color:#6d796f}.launch-map-quiet button{justify-self:start;margin-top:6px;border:0;background:#eaf4e7;color:#315c36;border-radius:10px;padding:8px 10px;font-weight:850}.launch-map-card{position:absolute;z-index:5;left:16px;right:16px;bottom:18px;border:0;border-radius:20px;background:rgba(255,255,255,.97);padding:15px;text-align:left;color:#172019;box-shadow:0 14px 36px rgba(16,48,26,.18)}.launch-map-card>div,.launch-map-card footer{display:flex;justify-content:space-between;gap:10px;font-size:10px;color:#607066}.launch-map-card h2{font-size:17px;letter-spacing:-.4px;margin:10px 0}.launch-map-card footer b{color:#315c36}.bottom-nav a{height:100%;border:0;background:transparent;color:#8a928b;font-size:10px;font-weight:800;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:3px;position:relative;text-decoration:none}.bottom-nav a>span{font-size:22px;line-height:1}.bottom-nav a.active{color:#1f5420}.bottom-nav a.compose-nav{color:#1f5420}@keyframes pulse{50%{opacity:.35}}
-      `}</style>
-    </div>
-  );
+  <style jsx global>{`
+    .map-v3-screen{position:absolute;inset:0 0 82px;overflow:hidden;background:#e8ece6}.map-v3-screen .live-ping-map{position:absolute;inset:0}.map-v3-location{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;padding:34px;text-align:center;color:var(--ping-ink)}.map-v3-location>span{width:58px;height:58px;display:grid;place-items:center;border-radius:17px;background:#fff;color:var(--ping-blue);border:1px solid var(--ping-line)}.map-v3-location h1{margin:15px 0 6px;font-size:25px;letter-spacing:-.8px}.map-v3-location p{margin:0;color:var(--ping-ink-2);font-size:12px}.map-v3-location small{max-width:320px;margin-top:8px;color:var(--ping-muted);font-size:10px;line-height:1.5}.map-v3-location button{margin-top:17px;min-height:40px;border:0;border-radius:12px;background:var(--ping-ink);color:#fff;padding:0 16px;font-size:10px;font-weight:780}.map-v3-checking{margin-top:15px;color:var(--ping-muted);font-size:10px;font-weight:700}
+    .map-v3-topbar{position:absolute;z-index:8;top:14px;left:14px;right:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;pointer-events:none}.map-v3-topbar>div{pointer-events:auto}.map-v3-brand{display:flex;align-items:baseline;gap:8px;padding:7px 11px;border:1px solid var(--ping-line);border-radius:13px;background:rgba(255,255,255,.95);box-shadow:0 8px 22px rgba(16,25,18,.08)}.map-v3-brand>strong{font-size:10px;color:var(--ping-muted)}.map-v3-top-actions{display:flex;gap:7px}.map-v3-top-actions button{width:40px;height:40px;display:grid;place-items:center;border:1px solid var(--ping-line);border-radius:13px;background:rgba(255,255,255,.95);color:var(--ping-ink-2);font-size:17px;box-shadow:0 8px 22px rgba(16,25,18,.08)}
+    .map-v3-controls{position:absolute;z-index:7;top:70px;left:14px;right:14px;padding:10px;border:1px solid rgba(16,19,17,.08);border-radius:15px;background:rgba(255,255,255,.94);box-shadow:0 9px 26px rgba(16,25,18,.08);backdrop-filter:blur(14px)}.map-v3-status{display:flex;align-items:center;gap:7px;color:var(--ping-ink-2);font-size:9px}.map-v3-status>span{width:7px;height:7px;border-radius:50%;background:var(--ping-accent)}.map-v3-status>span.busy{animation:mapV3Pulse 1s infinite}.map-v3-status strong{flex:1}.map-v3-control-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:8px}.map-v3-radii{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}.map-v3-radii button{height:31px;border:0;border-radius:9px;background:var(--ping-surface-soft);color:var(--ping-muted);font-size:9px;font-weight:750}.map-v3-radii button.active{background:var(--ping-ink);color:#fff}.map-v3-filter-button{height:31px;max-width:130px;display:flex;align-items:center;gap:5px;border:1px solid var(--ping-line);border-radius:9px;background:#fff;color:var(--ping-ink-2);padding:0 9px;font-size:8.5px;font-weight:720}.map-v3-filter-button span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .map-v3-quiet{position:absolute;z-index:6;left:14px;right:14px;bottom:88px;padding:13px 14px;border:1px solid var(--ping-line);border-radius:15px;background:rgba(255,255,255,.96);box-shadow:0 10px 26px rgba(16,25,18,.09);display:grid;gap:4px}.map-v3-quiet strong{font-size:12px}.map-v3-quiet span{color:var(--ping-muted);font-size:9px}.map-v3-quiet button{justify-self:start;margin-top:5px;border:0;background:transparent;color:var(--ping-accent-ink);padding:0;font-size:9px;font-weight:760}
+    .map-v3-card{position:absolute;z-index:7;left:14px;right:14px;bottom:88px;border:1px solid var(--ping-line);border-radius:16px;background:rgba(255,255,255,.97);box-shadow:0 13px 34px rgba(16,25,18,.12);overflow:hidden}.map-v3-card-main{width:100%;padding:12px 13px;border:0;background:transparent;color:var(--ping-ink);text-align:left}.map-v3-card-top,.map-v3-card-main footer{display:flex;align-items:center;justify-content:space-between;gap:10px}.map-v3-card-top>span{display:inline-flex;align-items:center;gap:7px;color:var(--ping-ink-2);font-size:9px;font-weight:750}.map-v3-card-top i{width:26px;height:26px;display:grid;place-items:center;border-radius:8px;background:var(--ping-surface-soft);font-style:normal}.map-v3-card-top>b{color:var(--ping-muted);font-size:8.5px}.map-v3-merchant{display:flex;align-items:center;gap:5px;margin-top:8px;color:#79621e;font-size:8px}.map-v3-merchant strong{color:#40350f}.map-v3-market{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;padding:8px 9px;border-radius:10px;background:var(--ping-surface-soft)}.map-v3-market>div{display:flex;align-items:center;gap:5px;flex-wrap:wrap;color:var(--ping-muted);font-size:8px}.map-v3-market strong{color:var(--ping-ink-2)}.map-v3-market>b{font-size:13px;color:var(--ping-ink);white-space:nowrap}.map-v3-card h2{margin:8px 0 9px;font-size:15px;line-height:1.2;letter-spacing:-.3px}.map-v3-card-main footer{color:var(--ping-muted);font-size:8px}.map-v3-card-main footer>span{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.map-v3-card-main footer strong{color:var(--ping-accent-ink);font-size:9px}.map-v3-card-pager{height:32px;display:grid;grid-template-columns:32px 1fr 32px;align-items:center;border-top:1px solid var(--ping-line);background:var(--ping-surface-soft)}.map-v3-card-pager button{height:32px;border:0;background:transparent;color:var(--ping-ink-2);font-size:19px}.map-v3-card-pager span{text-align:center;color:var(--ping-muted);font-size:8px;font-weight:720}
+    .map-v3-filter-backdrop{position:fixed;inset:0;z-index:180;background:rgba(11,15,12,.28);display:flex;align-items:flex-end;justify-content:center}.map-v3-filter-sheet{width:min(100%,480px);max-height:82dvh;overflow:auto;border-radius:24px 24px 0 0;background:var(--ping-canvas);padding:10px 18px max(24px,env(safe-area-inset-bottom));box-shadow:0 -18px 50px rgba(16,19,17,.18)}.map-v3-filter-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:8px 0 14px}.map-v3-filter-head span{font-size:8px;font-weight:800;letter-spacing:.1em;color:var(--ping-muted-2)}.map-v3-filter-head h2{margin:4px 0 0;font-size:20px;letter-spacing:-.5px}.map-v3-filter-head button{border:0;background:transparent;color:var(--ping-accent-ink);font-size:10px;font-weight:800}.map-v3-filter-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.map-v3-filter-grid button{min-height:44px;display:flex;align-items:center;justify-content:flex-start;gap:8px;border:1px solid var(--ping-line);border-radius:12px;background:#fff;color:var(--ping-ink-2);padding:0 11px;font-size:9px;font-weight:720}.map-v3-filter-grid button.active{border-color:var(--ping-ink);background:var(--ping-ink);color:#fff}.map-v3-market-filters{margin-top:14px;padding:12px;border:1px solid var(--ping-line);border-radius:14px;background:#fff;display:grid;grid-template-columns:1fr 1fr;gap:8px}.map-v3-market-filters>div{grid-column:1/-1}.map-v3-market-filters>div strong,.map-v3-market-filters>div span{display:block}.map-v3-market-filters>div strong{font-size:11px}.map-v3-market-filters>div span{margin-top:2px;color:var(--ping-muted);font-size:8px}.map-v3-market-filters label{display:grid;gap:5px;color:var(--ping-muted);font-size:8px;font-weight:750}.map-v3-market-filters label:last-child{grid-column:1/-1}.map-v3-market-filters select{height:38px;min-width:0;border:1px solid var(--ping-line);border-radius:10px;background:var(--ping-surface-soft);padding:0 8px;color:var(--ping-ink-2);font-size:9px}@keyframes mapV3Pulse{50%{opacity:.3}}
+    @media(max-width:350px){.map-v3-controls,.map-v3-card,.map-v3-quiet{left:10px;right:10px}.map-v3-market-filters{grid-template-columns:1fr}.map-v3-market-filters label:last-child{grid-column:auto}}
+  `}</style>
+  </div>;
 }

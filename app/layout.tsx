@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import FirstRunOnboarding from "@/components/FirstRunOnboarding";
 import PasswordAuthOverlay from "@/components/PasswordAuthOverlay";
+import NativeRuntimeBridge from "@/components/NativeRuntimeBridge";
 import Phase5PingDetail from "@/components/Phase5PingDetail";
 import PrivacySafetyCenter from "@/components/PrivacySafetyCenter";
 import Phase6NotificationBadge from "@/components/Phase6NotificationBadge";
@@ -20,37 +21,87 @@ import Phase22LegalSettingsEntry from "@/components/Phase22LegalSettingsEntry";
 import Phase23PwaBridge from "@/components/Phase23PwaBridge";
 import Phase23InstallEntry from "@/components/Phase23InstallEntry";
 import Phase24BetaBridge from "@/components/Phase24BetaBridge";
+import Phase25LocationChoiceBridge from "@/components/Phase25LocationChoiceBridge";
+import Phase25PrimaryNavigationBridge from "@/components/Phase25PrimaryNavigationBridge";
+import PindrizzleCopyBridge from "@/components/PindrizzleCopyBridge";
+import { PindrizzleSignatureBridge, PindrizzleSplash } from "@/components/PindrizzleSignatureMoments";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 import "./accessibility.css";
 import "./legal.css";
+import "./ping-design-system.css";
+import "./ping-detail-system.css";
+import "./ping-map-system.css";
+import "./ping-search-system.css";
+import "./ping-alerts-system.css";
+import "./ping-you-system.css";
+import "./ping-business-system.css";
+import "./ping-onboarding-system.css";
+import "./ping-utility-system.css";
+import "./ping-internal-system.css";
+import "./ping-polish-system.css";
+import "./pindrizzle-brand.css";
+import "./pindrizzle-premium.css";
+import "./pindrizzle-premium-my-pins.css";
+import "./pindrizzle-premium-layout-fixes.css";
+import "./pindrizzle-premium-auth.css";
+import "./pindrizzle-premium-business.css";
+import "./pindrizzle-design-system.css";
+import "./pindrizzle-design-system-routes.css";
+import "./pindrizzle-native-shell.css";
+import "./pindrizzle-design-system-final.css";
+import "./pindrizzle-signature-moments.css";
+import "./pindrizzle-regression-fixes.css";
+import "./pindrizzle-design-system-audit.css";
+import "./pindrizzle-signature-moments-final.css";
+import "./pindrizzle-wide-layout.css";
+import "./pindrizzle-functional-fixes.css";
 
 export const metadata: Metadata = {
-  title: "Ping — Know what's happening in your mile",
-  description: "Real-time, useful local updates from people near you.",
-  applicationName: "Ping",
+  metadataBase: new URL("https://pindrizzle.com"),
+  title: "Pindrizzle — Drop in daily",
+  description: "Drop in daily for useful local pins, deals, Marketplace listings and real-time updates around you.",
+  applicationName: "Pindrizzle",
   manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "Pindrizzle",
+    statusBarStyle: "default",
+  },
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "Pindrizzle — Drop in daily",
+    description: "Useful local pins and real-time updates around you.",
+    url: "https://pindrizzle.com",
+    siteName: "Pindrizzle",
+    type: "website",
+  },
   icons: {
     icon: [
-      { url: "/pwa-icon-192", type: "image/png", sizes: "192x192" },
-      { url: "/pwa-icon-512", type: "image/png", sizes: "512x512" },
+      { url: "/pindrizzle-icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/pindrizzle-icon-512.png", type: "image/png", sizes: "512x512" },
     ],
-    apple: [{ url: "/pwa-icon-192", type: "image/png", sizes: "192x192" }],
+    apple: [{ url: "/pindrizzle-icon-192.png", type: "image/png", sizes: "192x192" }],
   },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: "cover",
-  themeColor: "#f7f7f2",
+  themeColor: "#082f4a",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
       <body>
+        <NativeRuntimeBridge />
+        <PindrizzleSplash />
         {children}
+        <PindrizzleSignatureBridge />
         <FirstRunOnboarding />
         <Phase5PingDetail />
         <PrivacySafetyCenter />
@@ -71,7 +122,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Phase23PwaBridge />
         <Phase23InstallEntry />
         <Phase24BetaBridge />
+        <Phase25LocationChoiceBridge />
+        <Phase25PrimaryNavigationBridge />
         <Phase21AccessibilityBridge />
+        <PindrizzleCopyBridge />
       </body>
     </html>
   );
