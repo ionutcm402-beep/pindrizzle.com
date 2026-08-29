@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { PingComposer, type PingDraft } from "@/components/FeedPage";
+import { Composer as PingComposer, type PingDraft } from "@/components/PingComposer";
 import { MARKETPLACE_LISTING_DEFINITIONS } from "@/lib/ping-categories";
 import type { PingCoordinates, PingLocationState } from "@/lib/ping-location";
 import { createClient } from "@/lib/supabase/client";
