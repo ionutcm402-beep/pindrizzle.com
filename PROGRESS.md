@@ -9,6 +9,15 @@ Scope: pre-map-first cleanup audit. No component, CSS, route, migration, or data
 - **Local Chat is kept.** It is an intentional product feature, not cleanup or removal work. The existing implementation already includes moderation integration, legal disclosures, radius-based visibility, reporting/blocking, rate limits and retention/anonymisation safeguards. Do not remove its route, components, database objects or legal copy unless this decision is explicitly revisited.
 - **The Feed at `/feed` is kept as a secondary page.** The Map remains the home screen, while Feed continues to provide a list-based view of nearby pins. Do not remove it during map-first cleanup. Revisit only if it becomes clearly redundant after the Map experience is more complete.
 
+## Map posting and pin-detail UX fixes — 29 August 2026
+
+- “Drop a pin” now requests the existing composer directly on the Map home screen. It no longer sends the normal posting journey through the blank `/compose-start` screen or through `/feed`.
+- The Map reuses the established Feed composer, publishing RPC, photo upload behavior, authentication prompt, location requirement and Private/Exact location bridge. No database, auth, RLS or moderation behavior changed.
+- `/compose-start` remains as a compatibility preflight for old links, but its successful handoff now targets `/#ping`. Legacy `/feed#ping` links are redirected to the Map composer.
+- A community marker click now only selects that marker and opens the lightweight `.map-v3-card`. It no longer dispatches `ping:open-detail` at the same time.
+- The lightweight card’s explicit **Open →** button is the sole Map action that opens `Phase5PingDetail` for full details, replies, reporting and blocking.
+- Nearby Places behavior is unchanged: its markers still open one lightweight public-place card and never invoke the community-pin detail sheet.
+
 ## Marketplace listing types — Step 3, 29 August 2026
 
 - Marketplace creation now uses one flexible form with four clear listing types: **For Sale**, **To Rent**, **Car**, and **Parking Space**.
@@ -27,10 +36,10 @@ Scope: pre-map-first cleanup audit. No component, CSS, route, migration, or data
 - The previous Feed implementation was preserved at `/feed`; no Feed query, posting, promotion, retention or detail logic was deleted.
 - Existing `nearby_map_pings` data and `LivePingMap` marker rendering are reused unchanged. No new data source or category was introduced.
 - Radius choices (0.5, 1, 3 and 5 miles) and horizontally scrollable category chips now sit together in the floating map overlay. The detailed filter sheet remains available, including existing Marketplace filters.
-- Selecting a marker continues to dispatch `ping:open-detail`, which is handled by the existing global `Phase5PingDetail` sheet.
+- Selecting a marker opens the lightweight Map card. Its explicit **Open →** action dispatches `ping:open-detail` to the existing global `Phase5PingDetail` sheet.
 - Primary navigation now treats Map as home and keeps Feed as a secondary destination alongside Chat, My Pins, Activity and You.
 - Feed-only phase bridges now recognise `/feed` instead of `/`, and product analytics/accessibility route labels distinguish Map home from the secondary Feed.
-- The authenticated posting preflight now hands off to `/feed#ping`, preserving the existing composer after the route move.
+- The authenticated posting preflight now hands off to `/#ping`, where the existing composer opens over the Map.
 - This step changed frontend routing/components only. Database schema, migrations, authentication, RLS and moderation code were not changed.
 
 ## Nearby Places map layer — 28 August 2026
@@ -80,7 +89,7 @@ This was straightforward: the creation picker now has its own order (`CREATE_CAT
 | `Phase23PwaBridge` | Used in root layout | Registers the service worker, handles install/update state and PWA lifecycle events. | Shared install/runtime infrastructure. |
 | `Phase24BetaBridge` | Used globally | Enforces/synchronises closed-beta state and beta access behavior. | Still active while the product remains closed beta. |
 | `Phase25BetaRoute` | Used by `/beta` | Supplies the closed-beta page UI and access/invite flow. | Still active closed-beta infrastructure. |
-| `Phase25LocationChoiceBridge` | Used on Feed only | Adds the approximate/exact location choice into the composer and passes the choice to publishing. | Useful posting/privacy behavior but coupled to the old Feed composer DOM; preserve logic in any replacement composer. |
+| `Phase25LocationChoiceBridge` | Used on Map and Feed | Adds the approximate/exact location choice into the shared composer and passes the choice to publishing. | Retained posting/privacy behavior shared by both composer hosts. |
 
 ### Phase audit conclusion
 

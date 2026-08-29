@@ -90,7 +90,7 @@ export default function ProductClientRuntime() {
       <Phase22StorageChoice />
       {isYou && <Phase22LegalSettingsEntry />}
       <Phase24BetaBridge />
-      {isFeed && <Phase25LocationChoiceBridge />}
+      {(isHome || isFeed) && <Phase25LocationChoiceBridge />}
       {needsCommercialPolish && <CommercialSafetyBridge />}
       {needsCopyBridge && <PindrizzleCopyBridge />}
       {needsInternalBranding && <InternalWebsiteBrandBridge />}

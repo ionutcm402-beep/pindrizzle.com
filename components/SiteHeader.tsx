@@ -82,6 +82,17 @@ export default function SiteHeader() {
     router.push(href);
   };
 
+  const openComposer = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (shouldUseBrowserNavigation(event)) return;
+    event.preventDefault();
+    setMenuOpen(false);
+    if (pathname === "/") {
+      window.dispatchEvent(new Event("ping:compose-request"));
+      return;
+    }
+    router.push("/#ping");
+  };
+
   const renderNavLink = (link: (typeof NAV_LINKS)[number]) => (
     <a
       key={link.href}
@@ -121,8 +132,8 @@ export default function SiteHeader() {
 
         <div className="site-header-actions">
           <a
-            href="/compose-start"
-            onClick={(event) => navigate(event, "/compose-start")}
+            href="/#ping"
+            onClick={openComposer}
             className="site-cta"
             aria-label="Drop a pin"
           >
