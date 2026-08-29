@@ -17,6 +17,16 @@ Scope: pre-map-first cleanup audit. No component, CSS, route, migration, or data
 - The authenticated posting preflight now hands off to `/feed#ping`, preserving the existing composer after the route move.
 - This step changed frontend routing/components only. Database schema, migrations, authentication, RLS and moderation code were not changed.
 
+## Nearby Places map layer — 28 August 2026
+
+- Added an independent OpenStreetMap/Overpass public-place layer for `amenity=toilets`, `amenity=restaurant`, `leisure=park` and `leisure=playground`.
+- Added `GET /api/places/nearby`, which validates and rounds the requested location, limits the radius to the product’s existing 5-mile maximum, queries Overpass once for all four categories, excludes explicitly private/no-access elements, normalises nodes/ways/relations and returns the nearest 500 results at most.
+- Overpass responses use a 10-minute in-memory server cache plus `s-maxage=600`/stale revalidation headers. The map also keeps a 10-minute `sessionStorage` cache per rounded location and radius, so filter changes and ordinary rerenders do not query Overpass again.
+- Nearby-place markers are rendered separately from Pindrizzle markers with category-specific colours and utility icons. They do not use or modify the Pings/Marketplace data path.
+- Added independent Toilets, Food, Parks and Playgrounds toggles to the map chips and detailed filter sheet.
+- Tapping an OpenStreetMap place opens a lightweight card with its name, category, distance, attribution and a link to the source OSM element. It does not open seller, price, reply or community-action controls.
+- No database schema, Pindrizzle category, auth, RLS or moderation changes were made.
+
 ## What changed in this pass
 
 - New-pin category choices are now limited to **Free**, **Deals**, **Marketplace**, and **Other local**.

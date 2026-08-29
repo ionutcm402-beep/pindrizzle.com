@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { PingCategoryKey } from "@/lib/ping-categories";
 import { loadPindrizzleMapStyle } from "@/lib/pindrizzle-map-style";
+import type { NearbyPlace, NearbyPlaceCategory } from "@/lib/nearby-places";
 
 export type MapPingCategory = PingCategoryKey;
 export type MapPing = {
@@ -23,6 +24,9 @@ type Props = {
   pings: MapPing[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  places: NearbyPlace[];
+  selectedPlaceId: string | null;
+  onSelectPlace: (id: string) => void;
 };
 
 function zoomForRadius(radiusMiles: number) {
@@ -46,6 +50,16 @@ function markerSvg(category: MapPingCategory) {
   return `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${paths[category]}</svg>`;
 }
 
+function placeMarkerSvg(category: NearbyPlaceCategory) {
+  const paths: Record<NearbyPlaceCategory, string> = {
+    toilets: '<path d="M8 5.2a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM16 5.2a2 2 0 1 0 0-4 2 2 0 0 0 0 0 4ZM5 8h6l-1 5H9v8H7v-8H6L5 8ZM14 8h4l2 6h-2v7h-2v-7h-2l2-6Z"/>',
+    restaurant: '<path d="M6 2v8M3.5 2v5A2.5 2.5 0 0 0 6 9.5 2.5 2.5 0 0 0 8.5 7V2M6 10v12M15 2v20M15 2c3 1.3 4.8 4.5 4 8h-4"/>',
+    park: '<path d="M12 2 7.5 8h2.7L6 14h4.5v8h3v-8H18l-4.2-6h2.7L12 2Z"/>',
+    playground: '<path d="M5 21V5M19 21V5M5 7h14M8 7v4a4 4 0 0 0 8 0V7M9 17h6M12 15v6"/>',
+  };
+  return `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${paths[category]}</svg>`;
+}
+
 function groupPings(pings: MapPing[]) {
   const groups = new Map<string, MapPing[]>();
   pings.forEach((ping) => {
@@ -57,11 +71,12 @@ function groupPings(pings: MapPing[]) {
   return Array.from(groups.values());
 }
 
-export default function LivePingMap({ center, radiusMiles, pings, selectedId, onSelect }: Props) {
+export default function LivePingMap({ center, radiusMiles, pings, selectedId, onSelect, places, selectedPlaceId, onSelectPlace }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const maplibreRef = useRef<any>(null);
   const mapRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
+  const placeMarkersRef = useRef<any[]>([]);
   const userMarkerRef = useRef<any>(null);
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
@@ -108,6 +123,8 @@ export default function LivePingMap({ center, radiusMiles, pings, selectedId, on
       resizeObserver?.disconnect();
       markersRef.current.forEach((marker) => marker.remove());
       markersRef.current = [];
+      placeMarkersRef.current.forEach((marker) => marker.remove());
+      placeMarkersRef.current = [];
       userMarkerRef.current?.remove();
       userMarkerRef.current = null;
       mapRef.current?.remove();
@@ -165,6 +182,25 @@ export default function LivePingMap({ center, radiusMiles, pings, selectedId, on
     return () => { markersRef.current.forEach((marker) => marker.remove()); markersRef.current = []; };
   }, [pings, mapReady, onSelect, selectedId]);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    const maplibre = maplibreRef.current;
+    if (!map || !maplibre || !mapReady) return;
+    placeMarkersRef.current.forEach((marker) => marker.remove());
+    placeMarkersRef.current = places.map((place) => {
+      const selected = place.id === selectedPlaceId;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `nearby-place-pin nearby-place-pin-${place.category}${selected ? " selected" : ""}`;
+      button.setAttribute("aria-label", `${place.name}, ${place.category}, ${Math.max(0.1, place.distanceMeters / 1609.344).toFixed(1)} miles away`);
+      if (selected) button.setAttribute("aria-pressed", "true");
+      button.innerHTML = placeMarkerSvg(place.category);
+      button.addEventListener("click", () => onSelectPlace(place.id));
+      return new maplibre.Marker({ element: button, anchor: "center" }).setLngLat([place.lng, place.lat]).addTo(map);
+    });
+    return () => { placeMarkersRef.current.forEach((marker) => marker.remove()); placeMarkersRef.current = []; };
+  }, [mapReady, onSelectPlace, places, selectedPlaceId]);
+
   return (
     <>
       <div ref={containerRef} className="live-ping-map" aria-label="Map of nearby pins" />
@@ -177,6 +213,7 @@ export default function LivePingMap({ center, radiusMiles, pings, selectedId, on
         .ping-map-pin{--pin:#2f83d6;position:relative;width:38px!important;height:46px!important;min-width:38px!important;min-height:46px!important;border:0!important;background:transparent!important;padding:0!important;cursor:pointer;filter:drop-shadow(0 5px 8px rgba(8,43,73,.20));transform-origin:50% 100%;transition:transform .16s ease,filter .16s ease;overflow:visible!important}.ping-map-pin-head{position:absolute;left:5px;top:5px;width:29px;height:29px;display:grid;place-items:center;border:2px solid rgba(255,255,255,.96);border-radius:50% 50% 50% 8px;background:var(--pin);color:#fff;transform:rotate(-45deg);box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}.ping-map-pin-head svg{width:14px;height:14px;transform:rotate(45deg)}.ping-map-pin-head b{font-size:10px;color:#fff;transform:rotate(45deg)}.ping-map-pin-alert{--pin:#ef6f64}.ping-map-pin-traffic{--pin:#e5a64d}.ping-map-pin-lost_found{--pin:#6f82c9}.ping-map-pin-free{--pin:#25bdc8}.ping-map-pin-help{--pin:#55cad3}.ping-map-pin-deals{--pin:#2f83d6}.ping-map-pin-marketplace{--pin:#082b49}.ping-map-pin-parking{--pin:#6078ad}.ping-map-pin-events{--pin:#507fc4}.ping-map-pin-outages{--pin:#e9855f}.ping-map-pin-local{--pin:#3698e5}.ping-map-pin.cluster{--pin:#0d3d60}.ping-map-pin:focus-visible{outline:3px solid rgba(37,189,200,.55)!important;outline-offset:4px!important}.ping-map-pin:hover,.ping-map-pin:focus-visible,.ping-map-pin.selected{transform:scale(1.14);z-index:8!important;filter:drop-shadow(0 8px 12px rgba(8,43,73,.25))}
         .ping-map-pin::after{content:attr(data-ping-title);position:absolute;z-index:12;left:50%;bottom:49px;max-width:190px;min-width:max-content;padding:8px;border:1px solid rgba(8,43,73,.08);border-radius:12px;background:rgba(250,253,254,.97);color:#0a2b46;box-shadow:var(--pd-elevation-2);font-size:9px;font-weight:760;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;pointer-events:none;transform:translate(-50%,5px) scale(.96);transition:opacity .14s ease,transform .14s ease}.ping-map-pin:hover::after,.ping-map-pin:focus-visible::after{opacity:1;transform:translate(-50%,0) scale(1)}
         .ping-map-pin.price{width:auto!important;min-width:56px!important;height:43px!important;min-height:43px!important;filter:drop-shadow(0 5px 8px rgba(8,43,73,.20))}.ping-map-price-head{position:relative;z-index:2;display:flex;align-items:center;justify-content:center;min-width:56px;height:30px;padding:0 10px;border:2px solid rgba(255,255,255,.96);border-radius:999px;background:#082b49;color:#fff;white-space:nowrap}.ping-map-price-head b{font-size:10px;font-weight:820;letter-spacing:-.02em}.ping-map-price-tail{position:absolute;z-index:1;left:50%;top:27px;width:10px;height:11px;transform:translateX(-50%);background:#25bdc8;clip-path:polygon(0 0,100% 0,50% 100%)}
+        .nearby-place-pin{--place:#297b69;width:28px!important;height:28px!important;min-width:28px!important;min-height:28px!important;display:grid!important;place-items:center!important;border:2px solid rgba(255,255,255,.98)!important;border-radius:9px!important;background:var(--place)!important;color:#fff!important;padding:0!important;box-shadow:0 5px 14px rgba(8,43,73,.22)!important;transition:transform .15s ease,box-shadow .15s ease!important}.nearby-place-pin svg{width:15px;height:15px}.nearby-place-pin-toilets{--place:#6b5fc7}.nearby-place-pin-restaurant{--place:#df715b}.nearby-place-pin-park{--place:#27865e}.nearby-place-pin-playground{--place:#d59a2d}.nearby-place-pin:hover,.nearby-place-pin:focus-visible,.nearby-place-pin.selected{z-index:10!important;transform:scale(1.18)!important;box-shadow:0 8px 18px rgba(8,43,73,.28)!important}.nearby-place-pin:focus-visible{outline:3px solid rgba(37,189,200,.5)!important;outline-offset:3px!important}
         .live-ping-map .maplibregl-ctrl-attrib{margin:0 7px 7px 0!important;border:1px solid rgba(8,43,73,.08)!important;border-radius:10px!important;background:rgba(242,248,249,.74)!important;color:#617985!important;box-shadow:none!important;font-size:8px!important;backdrop-filter:blur(10px)}.live-ping-map .maplibregl-ctrl-attrib a{color:#496777!important;text-decoration:none!important}.live-ping-map .maplibregl-ctrl-attrib-button{width:28px!important;height:28px!important;background-color:rgba(242,248,249,.88)!important;border-radius:9px!important}
         .map-v3-topbar{top:7px!important;left:12px!important;right:12px!important;min-height:36px!important;padding:3px 6px!important;border:1px solid rgba(255,255,255,.64)!important;border-bottom:0!important;border-radius:14px 14px 0 0!important;background:rgba(246,251,252,.91)!important;box-shadow:var(--pd-elevation-2)!important;backdrop-filter:blur(18px) saturate(135%)!important;-webkit-backdrop-filter:blur(18px) saturate(135%)!important;justify-content:flex-end!important}
         .map-v3-brand{position:absolute!important;left:50%!important;top:50%!important;transform:translate(-50%,-50%)!important;display:flex!important;align-items:baseline!important;gap:5px!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;white-space:nowrap!important}.map-v3-brand .brand{font-size:0!important;line-height:1!important;text-transform:none!important}.map-v3-brand .brand span{display:none!important}.map-v3-brand .brand::before{content:"pindrizzle"!important;font-size:14px!important;line-height:1!important;font-weight:790!important;letter-spacing:-.052em!important;text-transform:lowercase!important;background:var(--pd-wordmark-gradient)!important;-webkit-background-clip:text!important;background-clip:text!important;color:transparent!important}.map-v3-brand>strong{font-size:7px!important;line-height:1!important;font-weight:740!important;color:var(--pd-muted)!important;text-transform:lowercase!important}
