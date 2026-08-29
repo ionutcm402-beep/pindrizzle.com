@@ -1,14 +1,16 @@
-import type { MarketplaceIntent, MarketplaceType, PingCategoryKey, Radius } from "@/lib/ping-categories";
-import { isPingCategory, MARKETPLACE_INTENTS, MARKETPLACE_TYPES } from "@/lib/ping-categories";
+import type { MarketplaceIntent, MarketplaceListingType, MarketplaceType, PingCategoryKey, Radius } from "@/lib/ping-categories";
+import { isPingCategory, MARKETPLACE_INTENTS, MARKETPLACE_LISTING_TYPE_ORDER, MARKETPLACE_TYPES } from "@/lib/ping-categories";
 
 export type PingLocalFilter = "all" | PingCategoryKey;
 export type MarketplaceTypeFilter = "all" | MarketplaceType;
 export type MarketplaceIntentFilter = "all" | MarketplaceIntent;
+export type MarketplaceListingTypeFilter = "all" | MarketplaceListingType;
 export type PingLocalPreferences = {
   radius: Radius;
   category: PingLocalFilter;
   marketplaceType: MarketplaceTypeFilter;
   marketplaceIntent: MarketplaceIntentFilter;
+  marketplaceListingType: MarketplaceListingTypeFilter;
   marketplaceMaxPrice: number | null;
 };
 
@@ -16,9 +18,10 @@ const RADIUS_KEY = "ping-radius";
 const CATEGORY_KEY = "ping-category-filter";
 const MARKETPLACE_TYPE_KEY = "ping-marketplace-type-filter";
 const MARKETPLACE_INTENT_KEY = "ping-marketplace-intent-filter";
+const MARKETPLACE_LISTING_TYPE_KEY = "ping-marketplace-listing-type-filter";
 const MARKETPLACE_MAX_PRICE_KEY = "ping-marketplace-max-price-filter";
 const MARKETPLACE_FILTER_VERSION_KEY = "ping-marketplace-filter-version";
-const MARKETPLACE_FILTER_VERSION = "2";
+const MARKETPLACE_FILTER_VERSION = "3";
 const EVENT_NAME = "ping:local-preferences-changed";
 const RADII: Radius[] = [0.5, 1, 3, 5];
 
@@ -30,6 +33,7 @@ function ensureMarketplaceFilterVersion() {
     // This prevents stale filters from earlier preview builds silently hiding listings.
     localStorage.removeItem(MARKETPLACE_TYPE_KEY);
     localStorage.removeItem(MARKETPLACE_INTENT_KEY);
+    localStorage.removeItem(MARKETPLACE_LISTING_TYPE_KEY);
     localStorage.removeItem(MARKETPLACE_MAX_PRICE_KEY);
     localStorage.setItem(MARKETPLACE_FILTER_VERSION_KEY, MARKETPLACE_FILTER_VERSION);
   } catch {}
@@ -78,6 +82,19 @@ export function readMarketplaceIntent(): MarketplaceIntentFilter {
   }
 }
 
+export function readMarketplaceListingType(): MarketplaceListingTypeFilter {
+  if (typeof window === "undefined") return "all";
+  ensureMarketplaceFilterVersion();
+  try {
+    const value = localStorage.getItem(MARKETPLACE_LISTING_TYPE_KEY) || "all";
+    return value === "all" || MARKETPLACE_LISTING_TYPE_ORDER.includes(value as MarketplaceListingType)
+      ? value as MarketplaceListingTypeFilter
+      : "all";
+  } catch {
+    return "all";
+  }
+}
+
 export function readMarketplaceMaxPrice(): number | null {
   if (typeof window === "undefined") return null;
   ensureMarketplaceFilterVersion();
@@ -97,6 +114,7 @@ export function readPingLocalPreferences(): PingLocalPreferences {
     category: readPingCategory(),
     marketplaceType: readMarketplaceType(),
     marketplaceIntent: readMarketplaceIntent(),
+    marketplaceListingType: readMarketplaceListingType(),
     marketplaceMaxPrice: readMarketplaceMaxPrice(),
   };
 }
@@ -128,6 +146,12 @@ export function writeMarketplaceIntent(value: MarketplaceIntentFilter) {
   announce();
 }
 
+export function writeMarketplaceListingType(value: MarketplaceListingTypeFilter) {
+  ensureMarketplaceFilterVersion();
+  try { localStorage.setItem(MARKETPLACE_LISTING_TYPE_KEY, value); } catch {}
+  announce();
+}
+
 export function writeMarketplaceMaxPrice(value: number | null) {
   ensureMarketplaceFilterVersion();
   try {
@@ -141,6 +165,7 @@ export function resetMarketplaceFilters() {
   try {
     localStorage.removeItem(MARKETPLACE_TYPE_KEY);
     localStorage.removeItem(MARKETPLACE_INTENT_KEY);
+    localStorage.removeItem(MARKETPLACE_LISTING_TYPE_KEY);
     localStorage.removeItem(MARKETPLACE_MAX_PRICE_KEY);
     localStorage.setItem(MARKETPLACE_FILTER_VERSION_KEY, MARKETPLACE_FILTER_VERSION);
   } catch {}

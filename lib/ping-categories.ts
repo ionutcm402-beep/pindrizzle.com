@@ -47,6 +47,7 @@ export type PropertySubtype =
 export type VehicleSubtype = "car" | "van" | "motorbike" | "bicycle" | "other";
 export type MarketplaceSubtype = PropertySubtype | VehicleSubtype;
 export type MarketplacePricePeriod = "total" | "month" | "week" | "day" | "hour";
+export type MarketplaceListingType = "for_sale" | "to_rent" | "car" | "parking_space";
 export type Radius = 0.5 | 1 | 3 | 5;
 
 export type CategoryDefinition = {
@@ -154,6 +155,51 @@ export const MARKETPLACE_PRICE_PERIOD_LABEL: Record<MarketplacePricePeriod, stri
   day: "Per day",
   hour: "Per hour",
 };
+
+export type MarketplaceListingDefinition = {
+  key: MarketplaceListingType;
+  label: string;
+  shortLabel: string;
+  icon: PingIconName;
+  priceFieldLabel: "Price" | "£/month";
+  marketplaceType: MarketplaceType;
+  marketplaceIntent: MarketplaceIntent;
+  marketplaceSubtype: MarketplaceSubtype;
+  pricePeriod: MarketplacePricePeriod;
+};
+
+// These are the four deliberately simple listing choices shown by the shared
+// Marketplace form. They map onto the existing Marketplace metadata columns,
+// so expanding the product does not require a database or RPC change.
+export const MARKETPLACE_LISTING_DEFINITIONS: Record<MarketplaceListingType, MarketplaceListingDefinition> = {
+  for_sale: { key: "for_sale", label: "For Sale", shortLabel: "For Sale", icon: "marketplace", priceFieldLabel: "Price", marketplaceType: "property", marketplaceIntent: "sale", marketplaceSubtype: "other", pricePeriod: "total" },
+  to_rent: { key: "to_rent", label: "To Rent", shortLabel: "To Rent", icon: "property", priceFieldLabel: "£/month", marketplaceType: "property", marketplaceIntent: "rent", marketplaceSubtype: "other", pricePeriod: "month" },
+  car: { key: "car", label: "Car", shortLabel: "Cars", icon: "vehicle", priceFieldLabel: "Price", marketplaceType: "vehicle", marketplaceIntent: "sale", marketplaceSubtype: "car", pricePeriod: "total" },
+  parking_space: { key: "parking_space", label: "Parking Space", shortLabel: "Parking", icon: "parking", priceFieldLabel: "£/month", marketplaceType: "property", marketplaceIntent: "rent", marketplaceSubtype: "parking_space", pricePeriod: "month" },
+};
+
+export const MARKETPLACE_LISTING_TYPE_ORDER: MarketplaceListingType[] = ["for_sale", "to_rent", "car", "parking_space"];
+
+export function marketplaceListingTypeFromMetadata(
+  type?: MarketplaceType | null,
+  intent?: MarketplaceIntent | null,
+  subtype?: string | null,
+): MarketplaceListingType | null {
+  if (type === "parking_space" || subtype === "parking_space") return "parking_space";
+  if (type === "vehicle" && subtype === "car") return "car";
+  if (type === "property" && intent === "rent") return "to_rent";
+  if (intent === "sale") return "for_sale";
+  return null;
+}
+
+export function marketplaceListingMatches(
+  filter: "all" | MarketplaceListingType,
+  type?: MarketplaceType | null,
+  intent?: MarketplaceIntent | null,
+  subtype?: string | null,
+) {
+  return filter === "all" || marketplaceListingTypeFromMetadata(type, intent, subtype) === filter;
+}
 
 // Only these two groups are offered for new Marketplace posts. Parking space is
 // now one of the Property listing types rather than a third Marketplace group.

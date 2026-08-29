@@ -4,6 +4,22 @@ Audit date: 28 August 2026
 Baseline audited: `main` at `0a6df90`  
 Scope: pre-map-first cleanup audit. No component, CSS, route, migration, or database data was deleted.
 
+## Locked product decisions — 29 August 2026
+
+- **Local Chat is kept.** It is an intentional product feature, not cleanup or removal work. The existing implementation already includes moderation integration, legal disclosures, radius-based visibility, reporting/blocking, rate limits and retention/anonymisation safeguards. Do not remove its route, components, database objects or legal copy unless this decision is explicitly revisited.
+- **The Feed at `/feed` is kept as a secondary page.** The Map remains the home screen, while Feed continues to provide a list-based view of nearby pins. Do not remove it during map-first cleanup. Revisit only if it becomes clearly redundant after the Map experience is more complete.
+
+## Marketplace listing types — Step 3, 29 August 2026
+
+- Marketplace creation now uses one flexible form with four clear listing types: **For Sale**, **To Rent**, **Car**, and **Parking Space**.
+- The new choices reuse the existing Marketplace metadata fields and posting RPC. No table, enum, migration, RLS, auth or moderation change was needed.
+- Price entry adapts to the selected type: **Price** for For Sale and Car; **£/month** for To Rent and Parking Space. Free remains a separate category and still has no price field.
+- The form deliberately has no bedrooms, mileage, make/model, parking restrictions or other specialist fields. Add a specialist field only after real usage shows that it is necessary.
+- Editing a Marketplace post uses the same four-type presentation. Older unsupported Marketplace combinations remain readable and are not converted unless the owner deliberately selects one of the new types.
+- Map and Feed filters now share a listing-type preference for the four new choices. The Map exposes them both as quick chips and in the detailed filter sheet.
+- Marketplace map pins use listing-specific icons and colours. For Sale, To Rent, Car and Parking Space are distinguishable from one another and from the square utility markers used by the OpenStreetMap Nearby Places layer.
+- Existing Marketplace rows remain compatible. The four frontend choices map to the established `marketplace_type`, `marketplace_intent`, `marketplace_subtype` and `marketplace_price_period` values.
+
 ## Map-first home restructure — 28 August 2026
 
 - The existing MapLibre experience is now the home screen at `/`.

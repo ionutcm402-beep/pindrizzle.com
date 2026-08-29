@@ -11,19 +11,18 @@ import {
   DEAL_KINDS,
   DEAL_SOURCE_LABEL,
   MARKETPLACE_INTENT_LABEL,
-  MARKETPLACE_INTENTS,
-  MARKETPLACE_PRICE_PERIOD_LABEL,
-  MARKETPLACE_PRICE_PERIODS,
-  MARKETPLACE_TYPE_LABEL,
-  MARKETPLACE_TYPES,
+  MARKETPLACE_LISTING_DEFINITIONS,
+  MARKETPLACE_LISTING_TYPE_ORDER,
   expiryOptionsForCategory,
   formatMarketplacePrice,
+  marketplaceListingMatches,
+  marketplaceListingTypeFromMetadata,
   marketplaceSubtypeLabel,
-  marketplaceSubtypeOptions,
   usefulnessScore,
   type DealKind,
   type DealSource,
   type MarketplaceIntent,
+  type MarketplaceListingType,
   type MarketplacePricePeriod,
   type MarketplaceSubtype,
   type MarketplaceType,
@@ -31,19 +30,16 @@ import {
   type Radius,
 } from "@/lib/ping-categories";
 import {
-  readMarketplaceIntent,
+  readMarketplaceListingType,
   readMarketplaceMaxPrice,
-  readMarketplaceType,
   readPingCategory,
   readPingRadius,
   subscribePingLocalPreferences,
-  writeMarketplaceIntent,
+  writeMarketplaceListingType,
   writeMarketplaceMaxPrice,
-  writeMarketplaceType,
   writePingCategory,
   writePingRadius,
-  type MarketplaceIntentFilter,
-  type MarketplaceTypeFilter,
+  type MarketplaceListingTypeFilter,
   type PingLocalFilter,
 } from "@/lib/ping-local-preferences";
 import { getPingLocationSilently, requestPingLocation, type PingCoordinates, type PingLocationState } from "@/lib/ping-location";
@@ -58,11 +54,8 @@ type PingDraft = {
   dealSource: DealSource;
   dealKind: DealKind;
   merchantName: string;
-  marketplaceType: MarketplaceType;
-  marketplaceIntent: MarketplaceIntent;
-  marketplaceSubtype: MarketplaceSubtype;
+  marketplaceListingType: MarketplaceListingType;
   marketplacePrice: number | null;
-  marketplacePricePeriod: MarketplacePricePeriod;
   marketplaceUrl: string;
 };
 
@@ -210,6 +203,8 @@ function FeedCard({ ping, onConfirm, onOpen }: { ping: PingItem; onConfirm: (id:
   const definition = CATEGORY_DEFINITIONS[ping.category];
   const freshness = confirmationFreshness(ping.lastConfirmedAt);
   const marketplacePrice = ping.category === "marketplace" ? formatMarketplacePrice(ping.marketplacePrice, ping.marketplacePricePeriod, ping.marketplaceCurrency || "GBP") : "";
+  const marketplaceListingType = marketplaceListingTypeFromMetadata(ping.marketplaceType, ping.marketplaceIntent, ping.marketplaceSubtype);
+  const marketplaceListing = marketplaceListingType ? MARKETPLACE_LISTING_DEFINITIONS[marketplaceListingType] : null;
   const sharePing = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     const url = `${window.location.origin}/#ping=${encodeURIComponent(ping.id)}`;
@@ -233,7 +228,7 @@ function FeedCard({ ping, onConfirm, onOpen }: { ping: PingItem; onConfirm: (id:
 
       {ping.category === "marketplace" && ping.marketplaceType && ping.marketplaceIntent && (
         <div className="feed-v3-market-context">
-          <div><PingIcon name={ping.marketplaceType === "property" ? "property" : ping.marketplaceType === "vehicle" ? "vehicle" : "parking"} size={14} /><strong>{marketplaceSubtypeLabel(ping.marketplaceType, ping.marketplaceSubtype)}</strong><span>{MARKETPLACE_INTENT_LABEL[ping.marketplaceIntent]}</span></div>
+          <div><PingIcon name={marketplaceListing?.icon || (ping.marketplaceType === "property" ? "property" : ping.marketplaceType === "vehicle" ? "vehicle" : "parking")} size={14} /><strong>{marketplaceListing?.label || marketplaceSubtypeLabel(ping.marketplaceType, ping.marketplaceSubtype)}</strong>{!marketplaceListing && <span>{MARKETPLACE_INTENT_LABEL[ping.marketplaceIntent]}</span>}</div>
           <b>{marketplacePrice}</b>
         </div>
       )}
@@ -269,34 +264,20 @@ function Composer({ onClose, onPublish }: { onClose: () => void; onPublish: (dra
   const [dealSource, setDealSource] = useState<DealSource>("spotted");
   const [dealKind, setDealKind] = useState<DealKind>("offer");
   const [merchantName, setMerchantName] = useState("");
-  const [marketplaceType, setMarketplaceType] = useState<MarketplaceType>("property");
-  const [marketplaceIntent, setMarketplaceIntent] = useState<MarketplaceIntent>("rent");
-  const [marketplaceSubtype, setMarketplaceSubtype] = useState<MarketplaceSubtype>("flat");
+  const [marketplaceListingType, setMarketplaceListingType] = useState<MarketplaceListingType>("for_sale");
   const [marketplacePrice, setMarketplacePrice] = useState("");
-  const [marketplacePricePeriod, setMarketplacePricePeriod] = useState<MarketplacePricePeriod>("month");
   const [marketplaceUrl, setMarketplaceUrl] = useState("");
   const photoPreview = useMemo(() => photo ? URL.createObjectURL(photo) : "", [photo]);
   const parsedMarketplacePrice = marketplacePrice.trim() === "" ? null : Number(marketplacePrice);
   const dealReady = category !== "deals" || merchantName.trim().length >= 2;
   const marketplaceUrlReady = marketplaceUrl.trim() === "" || /^https?:\/\/\S+/i.test(marketplaceUrl.trim());
   const marketplacePriceReady = parsedMarketplacePrice == null || (Number.isFinite(parsedMarketplacePrice) && parsedMarketplacePrice >= 0);
-  const marketplaceReady = category !== "marketplace" || (Boolean(marketplaceSubtype) && marketplaceUrlReady && marketplacePriceReady);
+  const marketplaceReady = category !== "marketplace" || (Boolean(marketplaceListingType) && marketplaceUrlReady && marketplacePriceReady);
   const canPublish = title.trim().length >= 4 && body.trim().length >= 6 && dealReady && marketplaceReady && !publishing;
 
   useEffect(() => () => { if (photoPreview) URL.revokeObjectURL(photoPreview); }, [photoPreview]);
 
   const chooseCategory = (next: PingCategoryKey) => { setCategory(next); setExpiryHours(CATEGORY_DEFINITIONS[next].recommendedExpiryHours); };
-  const chooseMarketplaceType = (next: MarketplaceType) => {
-    setMarketplaceType(next);
-    const first = marketplaceSubtypeOptions(next)[0]?.value || "parking_space";
-    setMarketplaceSubtype(first);
-  };
-  const chooseMarketplaceIntent = (next: MarketplaceIntent) => {
-    setMarketplaceIntent(next);
-    if (next === "rent" && marketplacePricePeriod === "total") setMarketplacePricePeriod("month");
-    if (next === "sale") setMarketplacePricePeriod("total");
-  };
-
   const choosePhoto = (file: File | null) => {
     setPhotoError("");
     if (!file) { setPhoto(null); return; }
@@ -309,11 +290,12 @@ function Composer({ onClose, onPublish }: { onClose: () => void; onPublish: (dra
     if (!canPublish) return;
     setPublishing(true);
     try {
-      await onPublish({ category, title: title.trim(), body: body.trim(), photo, expiryHours, dealSource, dealKind, merchantName: merchantName.trim(), marketplaceType, marketplaceIntent, marketplaceSubtype, marketplacePrice: parsedMarketplacePrice, marketplacePricePeriod, marketplaceUrl: marketplaceUrl.trim() });
+      await onPublish({ category, title: title.trim(), body: body.trim(), photo, expiryHours, dealSource, dealKind, merchantName: merchantName.trim(), marketplaceListingType, marketplacePrice: parsedMarketplacePrice, marketplaceUrl: marketplaceUrl.trim() });
     } finally { setPublishing(false); }
   };
 
-  const marketplacePlaceholder = marketplaceType === "property" ? "e.g. 2-bed flat to rent near town centre" : marketplaceType === "vehicle" ? "e.g. 2018 Ford Focus for sale" : "e.g. Secure parking space to rent";
+  const marketplaceDefinition = MARKETPLACE_LISTING_DEFINITIONS[marketplaceListingType];
+  const marketplacePlaceholder = marketplaceListingType === "for_sale" ? "e.g. Dining table for sale" : marketplaceListingType === "to_rent" ? "e.g. Flat to rent near town centre" : marketplaceListingType === "car" ? "e.g. 2018 Ford Focus for sale" : "e.g. Secure parking space to rent";
 
   return <div className="composer-backdrop" role="dialog" aria-modal="true" aria-label="Drop a pin"><div className="composer-sheet composer-v3-sheet">
     <div className="sheet-handle" /><div className="composer-header"><button onClick={onClose} disabled={publishing}>Cancel</button><strong>New pin</strong><span /></div><h2>Share something useful nearby</h2>
@@ -322,10 +304,9 @@ function Composer({ onClose, onPublish }: { onClose: () => void; onPublish: (dra
     {category === "deals" && <section className="composer-v3-deal-panel"><div className="composer-v3-source-toggle"><button type="button" className={dealSource === "spotted" ? "selected" : ""} onClick={() => setDealSource("spotted")}><PingIcon name="deals" size={15} />I found this deal</button><button type="button" className={dealSource === "business" ? "selected" : ""} onClick={() => setDealSource("business")}><PingIcon name="business" size={15} />Business post</button></div><label>Shop or business name<input value={merchantName} onChange={(event) => setMerchantName(event.target.value)} maxLength={120} placeholder="e.g. Tesco, local café, Currys" /></label><label>Deal type<select value={dealKind} onChange={(event) => setDealKind(event.target.value as DealKind)}>{DEAL_KINDS.map((kind) => <option key={kind} value={kind}>{DEAL_KIND_LABEL[kind]}</option>)}</select></label>{dealSource === "business" && <small>Business posts are self-identified and are not shown as verified.</small>}</section>}
 
     {category === "marketplace" && <section className="composer-v3-market-panel">
-      <div className="composer-v3-market-type">{MARKETPLACE_TYPES.map((value) => <button type="button" key={value} className={marketplaceType === value ? "selected" : ""} onClick={() => chooseMarketplaceType(value)}><PingIcon name={value === "property" ? "property" : value === "vehicle" ? "vehicle" : "parking"} size={15}/>{MARKETPLACE_TYPE_LABEL[value]}</button>)}</div>
-      <label>Listing type<select value={marketplaceSubtype} onChange={(event) => setMarketplaceSubtype(event.target.value as MarketplaceSubtype)}>{marketplaceSubtypeOptions(marketplaceType).map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
-      <label>What do you want to do?<select value={marketplaceIntent} onChange={(event) => chooseMarketplaceIntent(event.target.value as MarketplaceIntent)}>{MARKETPLACE_INTENTS.map((value) => <option key={value} value={value}>{MARKETPLACE_INTENT_LABEL[value]}</option>)}</select></label>
-      <div className="composer-v3-market-price"><label>Price or budget (optional)<div className="composer-v3-price-input"><span>£</span><input inputMode="decimal" value={marketplacePrice} onChange={(event) => setMarketplacePrice(event.target.value.replace(/[^0-9.]/g, ""))} placeholder="e.g. 1200" /></div></label><label>Price period<select value={marketplacePricePeriod} onChange={(event) => setMarketplacePricePeriod(event.target.value as MarketplacePricePeriod)}>{MARKETPLACE_PRICE_PERIODS.map((value) => <option key={value} value={value}>{MARKETPLACE_PRICE_PERIOD_LABEL[value]}</option>)}</select></label></div>
+      <label className="composer-v3-listing-type-label">Listing type</label>
+      <div className="composer-v3-market-type">{MARKETPLACE_LISTING_TYPE_ORDER.map((value) => { const item = MARKETPLACE_LISTING_DEFINITIONS[value]; return <button type="button" key={value} className={marketplaceListingType === value ? "selected" : ""} onClick={() => setMarketplaceListingType(value)}><PingIcon name={item.icon} size={15}/>{item.label}</button>; })}</div>
+      <div className="composer-v3-market-price"><label>{marketplaceDefinition.priceFieldLabel} (optional)<div className="composer-v3-price-input"><span>£</span><input inputMode="decimal" value={marketplacePrice} onChange={(event) => setMarketplacePrice(event.target.value.replace(/[^0-9.]/g, ""))} placeholder={marketplaceDefinition.pricePeriod === "month" ? "e.g. 1200 per month" : "e.g. 1200"} /></div></label></div>
       <label>External listing link (optional)<div className="composer-v3-url"><PingIcon name="link" size={15}/><input type="url" value={marketplaceUrl} onChange={(event) => setMarketplaceUrl(event.target.value)} maxLength={500} placeholder="https://rightmove.co.uk/..." /></div></label>
       {!marketplaceUrlReady && <small className="composer-v3-market-error">Link must start with http:// or https://</small>}
       <small>Add a link when the full listing is hosted elsewhere.</small>
@@ -350,8 +331,7 @@ export default function FeedPage() {
   const [pings, setPings] = useState<PingItem[]>([]);
   const [radius, setRadius] = useState<Radius>(1);
   const [filter, setFilter] = useState<PingLocalFilter>("all");
-  const [marketplaceTypeFilter, setMarketplaceTypeFilter] = useState<MarketplaceTypeFilter>("all");
-  const [marketplaceIntentFilter, setMarketplaceIntentFilter] = useState<MarketplaceIntentFilter>("all");
+  const [marketplaceListingTypeFilter, setMarketplaceListingTypeFilter] = useState<MarketplaceListingTypeFilter>("all");
   const [marketplaceMaxPrice, setMarketplaceMaxPrice] = useState<number | null>(null);
   const [locationState, setLocationState] = useState<PingLocationState>("checking");
   const [coordinates, setCoordinates] = useState<PingCoordinates | null>(null);
@@ -359,8 +339,8 @@ export default function FeedPage() {
   const [refreshNonce, setRefreshNonce] = useState(0);
 
   useEffect(() => {
-    setRadius(readPingRadius()); setFilter(readPingCategory()); setMarketplaceTypeFilter(readMarketplaceType()); setMarketplaceIntentFilter(readMarketplaceIntent()); setMarketplaceMaxPrice(readMarketplaceMaxPrice());
-    const unsubscribe = subscribePingLocalPreferences((next) => { setRadius(next.radius); setFilter(next.category); setMarketplaceTypeFilter(next.marketplaceType); setMarketplaceIntentFilter(next.marketplaceIntent); setMarketplaceMaxPrice(next.marketplaceMaxPrice); });
+    setRadius(readPingRadius()); setFilter(readPingCategory()); setMarketplaceListingTypeFilter(readMarketplaceListingType()); setMarketplaceMaxPrice(readMarketplaceMaxPrice());
+    const unsubscribe = subscribePingLocalPreferences((next) => { setRadius(next.radius); setFilter(next.category); setMarketplaceListingTypeFilter(next.marketplaceListingType); setMarketplaceMaxPrice(next.marketplaceMaxPrice); });
     let cancelled = false;
     void getPingLocationSilently().then((result) => { if (cancelled) return; setLocationState(result.state); if (result.coordinates) setCoordinates(result.coordinates); });
     const handleLocation = (event: Event) => { const detail = (event as CustomEvent<PingCoordinates>).detail; if (!detail) return; setCoordinates(detail); setLocationState("granted"); };
@@ -390,10 +370,11 @@ export default function FeedPage() {
     if (!coordinates) { setComposerOpen(false); setPendingCompose(true); void requestLocation(); return; }
     try {
       const supabase = createClient();
+      const marketplaceDefinition = MARKETPLACE_LISTING_DEFINITIONS[draft.marketplaceListingType];
       const { data, error } = await supabase.rpc("create_ping_v3", {
         ping_category: draft.category, ping_title: draft.title, ping_body: draft.body, ping_lat: coordinates.lat, ping_lng: coordinates.lng, ping_place_label: "Near your current location", ping_expires_in_hours: draft.expiryHours,
         ping_deal_source: draft.category === "deals" ? draft.dealSource : null, ping_deal_kind: draft.category === "deals" ? draft.dealKind : null, ping_merchant_name: draft.category === "deals" ? draft.merchantName : null,
-        ping_marketplace_type: draft.category === "marketplace" ? draft.marketplaceType : null, ping_marketplace_intent: draft.category === "marketplace" ? draft.marketplaceIntent : null, ping_marketplace_subtype: draft.category === "marketplace" ? draft.marketplaceSubtype : null, ping_marketplace_price: draft.category === "marketplace" ? draft.marketplacePrice : null, ping_marketplace_price_period: draft.category === "marketplace" && draft.marketplacePrice != null ? draft.marketplacePricePeriod : null, ping_marketplace_currency: draft.category === "marketplace" && draft.marketplacePrice != null ? "GBP" : null, ping_marketplace_url: draft.category === "marketplace" ? draft.marketplaceUrl || null : null,
+        ping_marketplace_type: draft.category === "marketplace" ? marketplaceDefinition.marketplaceType : null, ping_marketplace_intent: draft.category === "marketplace" ? marketplaceDefinition.marketplaceIntent : null, ping_marketplace_subtype: draft.category === "marketplace" ? marketplaceDefinition.marketplaceSubtype : null, ping_marketplace_price: draft.category === "marketplace" ? draft.marketplacePrice : null, ping_marketplace_price_period: draft.category === "marketplace" && draft.marketplacePrice != null ? marketplaceDefinition.pricePeriod : null, ping_marketplace_currency: draft.category === "marketplace" && draft.marketplacePrice != null ? "GBP" : null, ping_marketplace_url: draft.category === "marketplace" ? draft.marketplaceUrl || null : null,
       });
       if (error) throw error; const createdId = String(data || "");
       if (draft.photo && createdId) { const storagePath = `${userId}/${createdId}/photo`; const upload = await supabase.storage.from("ping-media").upload(storagePath, draft.photo, { cacheControl: "3600", contentType: draft.photo.type, upsert: false }); if (upload.error) { console.error("Pin photo upload failed", upload.error); window.alert("Your pin was published, but the photo could not upload. The text pin is live."); } else { const attach = await supabase.rpc("attach_ping_media", { target_ping_id: createdId, object_path: storagePath, media_mime_type: draft.photo.type, media_byte_size: draft.photo.size }); if (attach.error) { console.error("Pin photo attach failed", attach.error); await supabase.storage.from("ping-media").remove([storagePath]); window.alert("Your pin was published, but the photo could not be attached. The text pin is live."); } } }
@@ -405,8 +386,8 @@ export default function FeedPage() {
   const matchingCategory = useMemo(() => {
     const base = filter === "all" ? ranked : ranked.filter((ping) => ping.category === filter);
     if (filter !== "marketplace") return base;
-    return base.filter((ping) => (marketplaceTypeFilter === "all" || ping.marketplaceType === marketplaceTypeFilter) && (marketplaceIntentFilter === "all" || ping.marketplaceIntent === marketplaceIntentFilter) && (marketplaceMaxPrice == null || (ping.marketplacePrice != null && ping.marketplacePrice <= marketplaceMaxPrice)));
-  }, [ranked, filter, marketplaceTypeFilter, marketplaceIntentFilter, marketplaceMaxPrice]);
+    return base.filter((ping) => marketplaceListingMatches(marketplaceListingTypeFilter, ping.marketplaceType, ping.marketplaceIntent, ping.marketplaceSubtype) && (marketplaceMaxPrice == null || (ping.marketplacePrice != null && ping.marketplacePrice <= marketplaceMaxPrice)));
+  }, [ranked, filter, marketplaceListingTypeFilter, marketplaceMaxPrice]);
   const visible = useMemo(() => matchingCategory.filter((ping) => ping.distanceMiles <= radius), [matchingCategory, radius]);
   const wider = useMemo(() => { if (visible.length || locationState !== "granted") return null; return RADII.filter((value) => value > radius).map((value) => ({ radius: value, items: matchingCategory.filter((ping) => ping.distanceMiles <= value) })).find((entry) => entry.items.length) || null; }, [visible.length, matchingCategory, radius, locationState]);
   const summary = visible.length ? visible.slice(0, 2).map((ping) => ping.category === "marketplace" && ping.marketplacePrice != null ? `${formatMarketplacePrice(ping.marketplacePrice, ping.marketplacePricePeriod, ping.marketplaceCurrency || "GBP", true)} · ${ping.distanceMiles.toFixed(1)} mi` : `${CATEGORY_DEFINITIONS[ping.category].shortLabel} ${ping.distanceMiles.toFixed(1)} mi`).join(" · ") : dataMode === "offline" ? "Nearby updates are unavailable." : "Nearby updates, ranked by relevance.";
@@ -417,7 +398,7 @@ export default function FeedPage() {
     <section className="feed-v3-summary"><div><span>AROUND YOU</span><h1>Useful now</h1><p>{summary}</p></div><div className="feed-v3-summary-side"><strong>{visible.length} live</strong><select value={radius} onChange={(event) => writePingRadius(Number(event.target.value) as Radius)} aria-label="Nearby radius">{RADII.map((value) => <option key={value} value={value}>{value} mi</option>)}</select></div></section>
     <LocationBanner state={locationState} onRequest={() => void requestLocation()} />
     <div className="filter-row feed-v3-filters" aria-label="Feed categories"><button type="button" className={filter === "all" ? "active" : ""} onClick={() => writePingCategory("all")}>All</button>{CATEGORY_ORDER.map((key) => { const item = CATEGORY_DEFINITIONS[key]; return <button type="button" key={key} className={filter === key ? "active" : ""} onClick={() => writePingCategory(key)}><PingIcon name={item.icon} size={14} />{item.shortLabel}</button>; })}</div>
-    {filter === "marketplace" && <section className="feed-v3-market-filters"><div><span>MARKETPLACE FILTERS</span><small>Shared with Map</small></div><select aria-label="Marketplace type" value={marketplaceTypeFilter} onChange={(event) => writeMarketplaceType(event.target.value as MarketplaceTypeFilter)}><option value="all">Everything</option>{MARKETPLACE_TYPES.map((value) => <option key={value} value={value}>{MARKETPLACE_TYPE_LABEL[value]}</option>)}</select><select aria-label="Marketplace intent" value={marketplaceIntentFilter} onChange={(event) => writeMarketplaceIntent(event.target.value as MarketplaceIntentFilter)}><option value="all">Buy, rent or wanted</option>{MARKETPLACE_INTENTS.map((value) => <option key={value} value={value}>{MARKETPLACE_INTENT_LABEL[value]}</option>)}</select><select aria-label="Maximum price" value={marketplaceMaxPrice ?? ""} onChange={(event) => writeMarketplaceMaxPrice(event.target.value ? Number(event.target.value) : null)}><option value="">Any price</option>{MARKETPLACE_PRICE_FILTERS.map((price) => <option key={price} value={price}>Up to {formatMarketplacePrice(price, "total")}</option>)}</select></section>}
+    {filter === "marketplace" && <section className="feed-v3-market-filters"><div><span>MARKETPLACE FILTERS</span><small>Shared with Map</small></div><select aria-label="Listing type" value={marketplaceListingTypeFilter} onChange={(event) => writeMarketplaceListingType(event.target.value as MarketplaceListingTypeFilter)}><option value="all">All listing types</option>{MARKETPLACE_LISTING_TYPE_ORDER.map((value) => <option key={value} value={value}>{MARKETPLACE_LISTING_DEFINITIONS[value].label}</option>)}</select><select aria-label="Maximum price" value={marketplaceMaxPrice ?? ""} onChange={(event) => writeMarketplaceMaxPrice(event.target.value ? Number(event.target.value) : null)}><option value="">Any price</option>{MARKETPLACE_PRICE_FILTERS.map((price) => <option key={price} value={price}>Up to {formatMarketplacePrice(price, marketplaceListingTypeFilter === "to_rent" || marketplaceListingTypeFilter === "parking_space" ? "month" : "total")}</option>)}</select></section>}
     <main className="feed-list feed-v3-list">{visible.length ? visible.map((ping) => <FeedCard key={ping.id} ping={ping} onConfirm={confirmPing} onOpen={openPingDetail} />) : <div className="quiet-card feed-v3-quiet"><div className="quiet-icon"><PingIcon name={locationState === "granted" ? "check" : "location"} size={25} /></div><h2>{locationState !== "granted" ? "Turn on location to see nearby pins" : dataMode === "offline" ? "Nearby pins are unavailable" : `Quiet within ${radius} ${radius === 1 ? "mile" : "miles"}`}</h2><p>{locationState !== "granted" ? "Location is used for Feed and Map. Your exact browser position is not published." : dataMode === "offline" ? "Try again in a moment." : wider ? `${wider.items.length} ${wider.items.length === 1 ? "pin is" : "pins are"} available within ${wider.radius} miles.` : filter === "marketplace" ? "No nearby listings match these filters." : "No active pins in this category nearby."}</p>{wider && <button type="button" className="feed-v3-widen" onClick={() => writePingRadius(wider.radius)}>See {wider.radius} mi</button>}</div>}</main>
   </div></div>
   {composerOpen && <Composer onClose={() => { setComposerOpen(false); setPendingCompose(false); }} onPublish={publishPing} />}
@@ -426,7 +407,7 @@ export default function FeedPage() {
     .feed-v3-location-card{margin:0 18px 13px;padding:13px;display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:11px;align-items:center;border:1px solid rgba(60,131,246,.14);border-radius:15px;background:rgba(60,131,246,.045)}.feed-v3-location-card>span{width:36px;height:36px;display:grid;place-items:center;border-radius:11px;background:#fff;color:var(--ping-blue)}.feed-v3-location-card strong{display:block;font-size:11px}.feed-v3-location-card small{display:block;margin-top:3px;color:var(--ping-muted);font-size:8.5px;line-height:1.4}.feed-v3-location-card button{height:34px;border:0;border-radius:10px;background:var(--ping-ink);color:#fff;padding:0 11px;font-size:9px;font-weight:760}.feed-v3-location-card button:disabled{opacity:.55}
     .feed-v3-filters{display:flex!important;overflow-x:auto;scrollbar-width:none;white-space:nowrap;padding:2px 18px 13px!important}.feed-v3-filters::-webkit-scrollbar{display:none}.feed-v3-filters button{display:inline-flex!important;align-items:center;gap:6px;flex:0 0 auto}.feed-v3-market-filters{margin:0 18px 13px;padding:10px;border:1px solid var(--ping-line);border-radius:14px;background:var(--ping-surface);display:grid;grid-template-columns:1fr 1fr;gap:7px}.feed-v3-market-filters>div{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between}.feed-v3-market-filters span{font-size:8px;font-weight:850;letter-spacing:.08em}.feed-v3-market-filters small{font-size:8px;color:var(--ping-muted)}.feed-v3-market-filters select{min-width:0;height:36px;border:1px solid var(--ping-line);border-radius:10px;background:var(--ping-surface-soft);padding:0 8px;font-size:9px;color:var(--ping-ink-2)}.feed-v3-market-filters select:last-child{grid-column:1/-1}
     .feed-v3-list{padding-left:18px!important;padding-right:18px!important;gap:11px!important}.feed-v3-card{padding:15px 15px 13px!important;border-radius:17px!important}.feed-v3-card-top{display:flex;align-items:center;justify-content:space-between;gap:10px}.feed-v3-category{display:inline-flex;align-items:center;gap:7px;color:var(--ping-ink-2);font-size:9.5px;font-weight:760}.feed-v3-category>span{width:28px;height:28px;display:grid;place-items:center;border-radius:9px;background:var(--ping-surface-soft);color:var(--ping-ink-2)}.feed-v3-when{display:flex;align-items:center;gap:5px;color:var(--ping-muted-2);font-size:8.5px}.feed-v3-when strong{color:var(--ping-muted);font-weight:720}.feed-v3-deal-context{display:flex;align-items:center;gap:5px;margin-top:10px;color:#745813;font-size:8.5px}.feed-v3-deal-context strong{color:#423710}.feed-v3-deal-context span{color:#8b783d}.feed-v3-market-context{margin-top:10px;padding:10px 11px;border-radius:12px;background:#f3f4f1;display:flex;align-items:center;justify-content:space-between;gap:10px}.feed-v3-market-context>div{display:flex;align-items:center;flex-wrap:wrap;gap:5px;font-size:8.5px;color:var(--ping-muted)}.feed-v3-market-context strong{color:var(--ping-ink-2)}.feed-v3-market-context>b{font-size:16px;color:var(--ping-ink);white-space:nowrap}.feed-v3-listing-link{display:flex;align-items:center;gap:6px;width:max-content;max-width:100%;margin:2px 0 10px;color:var(--ping-blue);font-size:9px;font-weight:760;text-decoration:none}.feed-v3-title-row{display:flex;align-items:flex-start;gap:8px}.feed-v3-title-row h2{flex:1;min-width:0}.feed-v3-yours{margin-top:12px;padding:4px 6px;border-radius:999px;background:var(--ping-accent-soft);color:var(--ping-accent-ink);font-size:7.5px;font-weight:800}.feed-v3-place{display:flex;align-items:center;gap:5px}.feed-v3-trust{display:flex;flex-wrap:wrap;gap:6px 10px;padding:9px 0;border-top:1px solid var(--ping-line);color:var(--ping-muted);font-size:9px}.feed-v3-trust span{display:inline-flex;align-items:center;gap:4px}.feed-v3-trust b{color:var(--ping-ink-2)}.feed-v3-actions button{display:inline-flex;align-items:center;gap:5px}.feed-v3-quiet .quiet-icon{width:44px;height:44px;display:grid;place-items:center;margin:0 auto;border-radius:14px;background:var(--ping-surface-soft);color:var(--ping-ink-2)}.feed-v3-widen{margin-top:14px;border:0;border-radius:11px;background:var(--ping-ink);color:#fff;padding:10px 14px;font-size:10px;font-weight:780}.ping-card.tone-deal{border-color:rgba(184,146,42,.2)}.ping-card.tone-marketplace{border-color:rgba(32,39,34,.14)}.ping-photo{display:block;width:100%;max-height:300px;object-fit:cover;border-radius:15px;margin:2px 0 14px;background:#eef1eb;border:1px solid #e2e7df}
-    .composer-v3-sheet{max-height:min(92dvh,760px)!important;overflow-y:auto}.composer-v3-category-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.composer-v3-category-grid button{min-height:42px;border:1px solid var(--ping-line);border-radius:12px;background:#fff;color:var(--ping-ink-2);display:flex;align-items:center;justify-content:flex-start;gap:8px;padding:0 10px;font-size:9px;font-weight:720;text-align:left}.composer-v3-category-grid button.selected{border-color:var(--ping-ink);background:var(--ping-ink);color:#fff}.composer-v3-deal-panel,.composer-v3-market-panel{margin-top:13px;padding:12px;border:1px solid var(--ping-line);border-radius:14px;background:#fff}.composer-v3-deal-panel{border-color:rgba(184,146,42,.2);background:#fffdf5}.composer-v3-source-toggle,.composer-v3-market-type{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-bottom:10px}.composer-v3-market-type{grid-template-columns:repeat(3,minmax(0,1fr))}.composer-v3-source-toggle button,.composer-v3-market-type button{min-height:38px;border:1px solid rgba(16,19,17,.1);border-radius:10px;background:#fff;color:var(--ping-ink-2);display:flex;align-items:center;justify-content:center;gap:5px;font-size:8px;font-weight:750}.composer-v3-source-toggle button.selected,.composer-v3-market-type button.selected{background:#202722;color:#fff;border-color:#202722}.composer-v3-deal-panel label,.composer-v3-market-panel label{display:grid;gap:5px;margin-top:9px;color:var(--ping-muted);font-size:9px;font-weight:700}.composer-v3-deal-panel input,.composer-v3-deal-panel select,.composer-v3-market-panel input,.composer-v3-market-panel select{height:40px;border:1px solid var(--ping-line);border-radius:10px;background:#fff;padding:0 10px;color:var(--ping-ink);font-size:11px;min-width:0}.composer-v3-market-price{display:grid;grid-template-columns:1fr 1fr;gap:8px}.composer-v3-price-input,.composer-v3-url{display:flex;align-items:center;height:40px;border:1px solid var(--ping-line);border-radius:10px;background:#fff;padding:0 10px}.composer-v3-price-input span{font-size:12px;font-weight:800}.composer-v3-price-input input,.composer-v3-url input{height:36px!important;border:0!important;padding:0 6px!important;min-width:0;flex:1;outline:0}.composer-v3-url{color:var(--ping-muted)}.composer-v3-deal-panel small,.composer-v3-market-panel>small{display:block;margin-top:9px;color:var(--ping-muted);font-size:8px;line-height:1.45}.composer-v3-market-error{color:var(--ping-danger)!important;font-weight:700}.composer-v3-expiry{margin-top:13px;padding:11px 12px;border:1px solid var(--ping-line);border-radius:13px;background:var(--ping-surface-soft)}.composer-v3-expiry label{display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--ping-ink-2);font-size:9px;font-weight:740}.composer-v3-expiry select{height:34px;border:1px solid var(--ping-line);border-radius:9px;background:#fff;padding:0 8px;font-size:9px}.composer-v3-expiry small{display:block;margin-top:5px;color:var(--ping-muted);font-size:7.5px;line-height:1.4}.composer-photo-picker{margin-top:14px;display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;border:1px solid #dfe5dc;border-radius:14px;padding:12px;background:#fff;cursor:pointer}.composer-photo-picker input{display:none}.composer-photo-picker>span{width:32px;height:32px;display:grid;place-items:center;border-radius:9px;background:var(--ping-surface-soft)}.composer-photo-picker strong{display:block;font-size:11px;color:#354038}.composer-photo-picker small{display:block;margin-top:2px;color:#7a847c;font-size:9px}.composer-photo-picker b{font-size:10px;color:#2f6a35}.composer-photo-preview{position:relative;margin-top:10px}.composer-photo-preview img{display:block;width:100%;max-height:230px;object-fit:cover;border-radius:14px;background:#eef1eb}.composer-photo-preview button{position:absolute;right:8px;top:8px;border:0;border-radius:999px;padding:7px 10px;background:rgba(20,27,21,.82);color:#fff;font-size:9px;font-weight:850}.composer-photo-error{margin-top:8px;border-radius:12px;padding:9px 11px;background:#fff0ed;color:#9a4038;font-size:10px;font-weight:750}
+    .composer-v3-sheet{max-height:min(92dvh,760px)!important;overflow-y:auto}.composer-v3-category-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.composer-v3-category-grid button{min-height:42px;border:1px solid var(--ping-line);border-radius:12px;background:#fff;color:var(--ping-ink-2);display:flex;align-items:center;justify-content:flex-start;gap:8px;padding:0 10px;font-size:9px;font-weight:720;text-align:left}.composer-v3-category-grid button.selected{border-color:var(--ping-ink);background:var(--ping-ink);color:#fff}.composer-v3-deal-panel,.composer-v3-market-panel{margin-top:13px;padding:12px;border:1px solid var(--ping-line);border-radius:14px;background:#fff}.composer-v3-deal-panel{border-color:rgba(184,146,42,.2);background:#fffdf5}.composer-v3-source-toggle,.composer-v3-market-type{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-bottom:10px}.composer-v3-listing-type-label{display:block!important;margin:0 0 6px!important}.composer-v3-source-toggle button,.composer-v3-market-type button{min-height:38px;border:1px solid rgba(16,19,17,.1);border-radius:10px;background:#fff;color:var(--ping-ink-2);display:flex;align-items:center;justify-content:center;gap:5px;font-size:8px;font-weight:750}.composer-v3-source-toggle button.selected,.composer-v3-market-type button.selected{background:#202722;color:#fff;border-color:#202722}.composer-v3-deal-panel label,.composer-v3-market-panel label{display:grid;gap:5px;margin-top:9px;color:var(--ping-muted);font-size:9px;font-weight:700}.composer-v3-deal-panel input,.composer-v3-deal-panel select,.composer-v3-market-panel input,.composer-v3-market-panel select{height:40px;border:1px solid var(--ping-line);border-radius:10px;background:#fff;padding:0 10px;color:var(--ping-ink);font-size:11px;min-width:0}.composer-v3-market-price{display:block}.composer-v3-price-input,.composer-v3-url{display:flex;align-items:center;height:40px;border:1px solid var(--ping-line);border-radius:10px;background:#fff;padding:0 10px}.composer-v3-price-input span{font-size:12px;font-weight:800}.composer-v3-price-input input,.composer-v3-url input{height:36px!important;border:0!important;padding:0 6px!important;min-width:0;flex:1;outline:0}.composer-v3-url{color:var(--ping-muted)}.composer-v3-deal-panel small,.composer-v3-market-panel>small{display:block;margin-top:9px;color:var(--ping-muted);font-size:8px;line-height:1.45}.composer-v3-market-error{color:var(--ping-danger)!important;font-weight:700}.composer-v3-expiry{margin-top:13px;padding:11px 12px;border:1px solid var(--ping-line);border-radius:13px;background:var(--ping-surface-soft)}.composer-v3-expiry label{display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--ping-ink-2);font-size:9px;font-weight:740}.composer-v3-expiry select{height:34px;border:1px solid var(--ping-line);border-radius:9px;background:#fff;padding:0 8px;font-size:9px}.composer-v3-expiry small{display:block;margin-top:5px;color:var(--ping-muted);font-size:7.5px;line-height:1.4}.composer-photo-picker{margin-top:14px;display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;border:1px solid #dfe5dc;border-radius:14px;padding:12px;background:#fff;cursor:pointer}.composer-photo-picker input{display:none}.composer-photo-picker>span{width:32px;height:32px;display:grid;place-items:center;border-radius:9px;background:var(--ping-surface-soft)}.composer-photo-picker strong{display:block;font-size:11px;color:#354038}.composer-photo-picker small{display:block;margin-top:2px;color:#7a847c;font-size:9px}.composer-photo-picker b{font-size:10px;color:#2f6a35}.composer-photo-preview{position:relative;margin-top:10px}.composer-photo-preview img{display:block;width:100%;max-height:230px;object-fit:cover;border-radius:14px;background:#eef1eb}.composer-photo-preview button{position:absolute;right:8px;top:8px;border:0;border-radius:999px;padding:7px 10px;background:rgba(20,27,21,.82);color:#fff;font-size:9px;font-weight:850}.composer-photo-error{margin-top:8px;border-radius:12px;padding:9px 11px;background:#fff0ed;color:#9a4038;font-size:10px;font-weight:750}
     @media(max-width:350px){.feed-v3-summary{margin-left:14px;margin-right:14px;padding:14px}.feed-v3-location-card{margin-left:14px;margin-right:14px;grid-template-columns:34px minmax(0,1fr)}.feed-v3-location-card button{grid-column:1/-1;width:100%}.feed-v3-list{padding-left:14px!important;padding-right:14px!important}.composer-v3-market-type{grid-template-columns:1fr}}
   `}</style>
   </div>;
